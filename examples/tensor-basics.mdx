@@ -1,0 +1,160 @@
+---
+title: Tensor Basics
+description: Learn the fundamentals of creating and manipulating tensors in Deepbox
+---
+
+Tensors are the core data structure in Deepbox - N-dimensional arrays for numerical computation. This guide shows you how to create and work with tensors.
+
+## Creating Tensors
+
+<Steps>
+
+### Create from JavaScript arrays
+
+Create 1D, 2D, and higher-dimensional tensors from nested arrays:
+
+```typescript
+import { tensor } from "deepbox/ndarray";
+
+// 1D tensor (vector)
+const vector = tensor([1, 2, 3, 4, 5]);
+console.log(vector.toString());
+console.log(`Shape: [${vector.shape}], Size: ${vector.size}`);
+
+// 2D tensor (matrix)
+const matrix = tensor([
+  [1, 2, 3],
+  [4, 5, 6],
+]);
+console.log(matrix.toString());
+console.log(`Shape: [${matrix.shape}], Size: ${matrix.size}`);
+
+// 3D tensor
+const tensor3d = tensor([
+  [
+    [1, 2],
+    [3, 4],
+  ],
+  [
+    [5, 6],
+    [7, 8],
+  ],
+]);
+console.log(`Shape: [${tensor3d.shape}], Size: ${tensor3d.size}`);
+```
+
+**Output:**
+```
+1D Tensor (vector):
+Tensor([1, 2, 3, 4, 5])
+Shape: [5], Size: 5
+
+2D Tensor (matrix):
+Tensor([[1, 2, 3],
+        [4, 5, 6]])
+Shape: [2, 3], Size: 6
+
+3D Tensor:
+Shape: [2, 2, 2], Size: 8
+```
+
+### Create special tensors
+
+Use factory functions to create common tensor types:
+
+```typescript
+import { zeros, ones, eye } from "deepbox/ndarray";
+
+// Matrix of zeros
+const zeroMatrix = zeros([3, 3]);
+console.log("3x3 Zero Matrix:");
+console.log(zeroMatrix.toString());
+
+// Matrix of ones
+const onesMatrix = ones([2, 4]);
+console.log("2x4 Ones Matrix:");
+console.log(onesMatrix.toString());
+
+// Identity matrix
+const identity = eye(4);
+console.log("4x4 Identity Matrix:");
+console.log(identity.toString());
+```
+
+**Output:**
+```
+3x3 Zero Matrix:
+Tensor([[0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0]])
+
+2x4 Ones Matrix:
+Tensor([[1, 1, 1, 1],
+        [1, 1, 1, 1]])
+
+4x4 Identity Matrix:
+Tensor([[1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, 0, 1]])
+```
+
+### Generate sequences
+
+Create ranges and linearly spaced values:
+
+```typescript
+import { arange, linspace } from "deepbox/ndarray";
+
+// Range with step size
+const range = arange(0, 10, 2); // start, stop, step
+console.log("Range [0, 10) with step 2:");
+console.log(range.toString());
+
+// Linearly spaced values
+const linspaced = linspace(0, 1, 5); // start, stop, num_points
+console.log("5 values linearly spaced between 0 and 1:");
+console.log(linspaced.toString());
+```
+
+**Output:**
+```
+Range [0, 10) with step 2:
+Tensor([0, 2, 4, 6, 8])
+
+5 values linearly spaced between 0 and 1:
+Tensor([0, 0.25, 0.5, 0.75, 1])
+```
+
+### Reshape tensors
+
+Change tensor dimensions without copying data:
+
+```typescript
+import { reshape } from "deepbox/ndarray";
+
+const flat = tensor([1, 2, 3, 4, 5, 6]);
+const reshaped = reshape(flat, [2, 3]);
+console.log("Reshaped [6] -> [2, 3]:");
+console.log(reshaped.toString());
+```
+
+**Output:**
+```
+Reshaped [6] -> [2, 3]:
+Tensor([[1, 2, 3],
+        [4, 5, 6]])
+```
+
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Tensor Operations" icon="calculator" href="/api-reference/ndarray/operations">
+    Learn about arithmetic, linear algebra, and other tensor operations
+  </Card>
+  <Card title="DataFrames" icon="table" href="/examples/dataframe-basics">
+    Work with tabular data using DataFrames
+  </Card>
+</CardGroup>

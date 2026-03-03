@@ -1,0 +1,442 @@
+---
+title: Linear Models
+description: Linear regression and classification models for Deepbox
+---
+
+## LinearRegression
+
+Ordinary Least Squares Linear Regression.
+
+Fits a linear model with coefficients w = (w1, ..., wp) to minimize the residual sum of squares between the observed targets and the targets predicted by the linear approximation.
+
+### Constructor
+
+```typescript
+new LinearRegression(options?: {
+  fitIntercept?: boolean;
+  normalize?: boolean;
+  copyX?: boolean;
+})
+```
+
+<ParamField path="options.fitIntercept" type="boolean" default="true">
+  Whether to calculate the intercept for this model.
+</ParamField>
+
+<ParamField path="options.normalize" type="boolean" default="false">
+  Whether to normalize features before regression. If true, the regressors X will be normalized before regression by subtracting the mean and dividing by the l2-norm.
+</ParamField>
+
+<ParamField path="options.copyX" type="boolean" default="true">
+  Whether to copy X or overwrite it (if false, X may be overwritten).
+</ParamField>
+
+### Methods
+
+#### fit
+
+```typescript
+fit(X: Tensor, y: Tensor): this
+```
+
+Fit linear model using Ordinary Least Squares.
+
+<ParamField path="X" type="Tensor" required>
+  Training data of shape (n_samples, n_features)
+</ParamField>
+
+<ParamField path="y" type="Tensor" required>
+  Target values of shape (n_samples,)
+</ParamField>
+
+**Returns:** The fitted estimator
+
+**Throws:** `ShapeError`, `DataValidationError`
+
+#### predict
+
+```typescript
+predict(X: Tensor): Tensor
+```
+
+Predict using the linear model.
+
+<ParamField path="X" type="Tensor" required>
+  Samples of shape (n_samples, n_features)
+</ParamField>
+
+**Returns:** Predicted values of shape (n_samples,)
+
+#### score
+
+```typescript
+score(X: Tensor, y: Tensor): number
+```
+
+Return the coefficient of determination R² of the prediction.
+
+R² = 1 - (SS_res / SS_tot), where SS_res is the residual sum of squares and SS_tot is the total sum of squares. Best possible score is 1.0.
+
+**Returns:** R² score
+
+### Properties
+
+<ResponseField name="coef" type="Tensor">
+  Model coefficients (weights) of shape (n_features,)
+</ResponseField>
+
+<ResponseField name="intercept" type="Tensor | undefined">
+  Independent term (bias/intercept) in the linear model
+</ResponseField>
+
+### Example
+
+```typescript
+import { LinearRegression } from 'deepbox/ml';
+import { tensor } from 'deepbox/ndarray';
+
+const X = tensor([[1, 1], [1, 2], [2, 2], [2, 3]]);
+const y = tensor([1, 2, 2, 3]);
+
+const model = new LinearRegression({ fitIntercept: true });
+model.fit(X, y);
+
+const X_test = tensor([[3, 5]]);
+const predictions = model.predict(X_test);
+const score = model.score(X, y);
+```
+
+---
+
+## Ridge
+
+Ridge Regression (L2 Regularized Linear Regression).
+
+Ridge regression addresses multicollinearity by adding a penalty term (L2 regularization) to the loss function.
+
+### Constructor
+
+```typescript
+new Ridge(options?: {
+  alpha?: number;
+  fitIntercept?: boolean;
+  normalize?: boolean;
+  solver?: "auto" | "svd" | "cholesky" | "lsqr" | "sag";
+  maxIter?: number;
+  tol?: number;
+})
+```
+
+<ParamField path="options.alpha" type="number" default="1.0">
+  Regularization strength. Must be >= 0. Larger values specify stronger regularization.
+</ParamField>
+
+<ParamField path="options.fitIntercept" type="boolean" default="true">
+  Whether to calculate the intercept.
+</ParamField>
+
+<ParamField path="options.normalize" type="boolean" default="false">
+  Whether to normalize features before regression.
+</ParamField>
+
+<ParamField path="options.solver" type="string" default="auto">
+  Solver to use: 'auto', 'svd', 'cholesky', 'lsqr', or 'sag'.
+</ParamField>
+
+<ParamField path="options.maxIter" type="number" default="1000">
+  Maximum number of iterations for iterative solvers.
+</ParamField>
+
+<ParamField path="options.tol" type="number" default="1e-4">
+  Tolerance for stopping criterion.
+</ParamField>
+
+### Methods
+
+#### fit
+
+```typescript
+fit(X: Tensor, y: Tensor): this
+```
+
+Fit Ridge regression model.
+
+**Time Complexity:** O(n²p + p³) where n = samples, p = features
+
+#### predict
+
+```typescript
+predict(X: Tensor): Tensor
+```
+
+Predict using the Ridge regression model.
+
+#### score
+
+```typescript
+score(X: Tensor, y: Tensor): number
+```
+
+Return the R² score.
+
+### Properties
+
+<ResponseField name="coef" type="Tensor">
+  Model coefficients of shape (n_features,)
+</ResponseField>
+
+<ResponseField name="intercept" type="number">
+  Intercept value
+</ResponseField>
+
+<ResponseField name="nIter" type="number | undefined">
+  Number of iterations run by the solver (for iterative solvers)
+</ResponseField>
+
+### Example
+
+```typescript
+import { Ridge } from 'deepbox/ml';
+import { tensor } from 'deepbox/ndarray';
+
+const model = new Ridge({ alpha: 0.5 });
+model.fit(X_train, y_train);
+const predictions = model.predict(X_test);
+```
+
+---
+
+## Lasso
+
+Lasso Regression (L1 Regularized Linear Regression).
+
+Lasso performs both regularization and feature selection by adding an L1 penalty that can drive coefficients exactly to zero.
+
+### Constructor
+
+```typescript
+new Lasso(options?: {
+  alpha?: number;
+  fitIntercept?: boolean;
+  normalize?: boolean;
+  maxIter?: number;
+  tol?: number;
+  warmStart?: boolean;
+  positive?: boolean;
+  selection?: "cyclic" | "random";
+  randomState?: number;
+})
+```
+
+<ParamField path="options.alpha" type="number" default="1.0">
+  Regularization strength. Must be >= 0. Controls sparsity of solution.
+</ParamField>
+
+<ParamField path="options.fitIntercept" type="boolean" default="true">
+  Whether to calculate the intercept.
+</ParamField>
+
+<ParamField path="options.normalize" type="boolean" default="false">
+  Whether to normalize features before regression.
+</ParamField>
+
+<ParamField path="options.maxIter" type="number" default="1000">
+  Maximum iterations for coordinate descent.
+</ParamField>
+
+<ParamField path="options.tol" type="number" default="1e-4">
+  Tolerance for convergence. Smaller = more precise but slower.
+</ParamField>
+
+<ParamField path="options.warmStart" type="boolean" default="false">
+  Whether to reuse previous solution as initialization.
+</ParamField>
+
+<ParamField path="options.positive" type="boolean" default="false">
+  Whether to force coefficients to be positive.
+</ParamField>
+
+<ParamField path="options.selection" type="string" default="cyclic">
+  Coordinate selection: 'cyclic' or 'random'.
+</ParamField>
+
+<ParamField path="options.randomState" type="number">
+  Random seed for reproducibility.
+</ParamField>
+
+### Methods
+
+#### fit
+
+```typescript
+fit(X: Tensor, y: Tensor): this
+```
+
+Fit Lasso regression model using Coordinate Descent.
+
+**Time Complexity:** O(k * n * p) where k = iterations, n = samples, p = features
+
+#### predict
+
+```typescript
+predict(X: Tensor): Tensor
+```
+
+Predict using the Lasso regression model.
+
+#### score
+
+```typescript
+score(X: Tensor, y: Tensor): number
+```
+
+Return the R² score.
+
+### Properties
+
+<ResponseField name="coef" type="Tensor">
+  Model coefficients. Many will be exactly zero due to L1 regularization (sparsity).
+</ResponseField>
+
+<ResponseField name="intercept" type="number">
+  Intercept value
+</ResponseField>
+
+<ResponseField name="nIter" type="number | undefined">
+  Number of iterations until convergence
+</ResponseField>
+
+### Example
+
+```typescript
+import { Lasso } from 'deepbox/ml';
+import { tensor } from 'deepbox/ndarray';
+
+const model = new Lasso({ alpha: 0.1, maxIter: 1000 });
+model.fit(X_train, y_train);
+
+// Many coefficients will be exactly 0
+console.log(model.coef);
+
+const predictions = model.predict(X_test);
+```
+
+---
+
+## LogisticRegression
+
+Logistic Regression (Binary and Multiclass Classification).
+
+Logistic regression uses the logistic (sigmoid) function to model the probability of class membership.
+
+### Constructor
+
+```typescript
+new LogisticRegression(options?: {
+  penalty?: "l2" | "none";
+  C?: number;
+  tol?: number;
+  maxIter?: number;
+  fitIntercept?: boolean;
+  learningRate?: number;
+  multiClass?: "ovr" | "auto";
+})
+```
+
+<ParamField path="options.penalty" type="string" default="l2">
+  Regularization type: 'l2' or 'none'.
+</ParamField>
+
+<ParamField path="options.C" type="number" default="1.0">
+  Inverse regularization strength. Must be > 0. Smaller values = stronger regularization.
+</ParamField>
+
+<ParamField path="options.tol" type="number" default="1e-4">
+  Tolerance for stopping criterion.
+</ParamField>
+
+<ParamField path="options.maxIter" type="number" default="100">
+  Maximum number of iterations.
+</ParamField>
+
+<ParamField path="options.fitIntercept" type="boolean" default="true">
+  Whether to fit intercept.
+</ParamField>
+
+<ParamField path="options.learningRate" type="number" default="0.1">
+  Learning rate for gradient descent.
+</ParamField>
+
+<ParamField path="options.multiClass" type="string" default="auto">
+  Multiclass strategy: 'ovr' (One-vs-Rest) or 'auto'.
+</ParamField>
+
+### Methods
+
+#### fit
+
+```typescript
+fit(X: Tensor, y: Tensor): this
+```
+
+Fit logistic regression model. Supports binary and multiclass (One-vs-Rest) classification.
+
+#### predict
+
+```typescript
+predict(X: Tensor): Tensor
+```
+
+Predict class labels for samples.
+
+#### predictProba
+
+```typescript
+predictProba(X: Tensor): Tensor
+```
+
+Predict class probabilities for samples.
+
+**Returns:** Probabilities of shape (n_samples, n_classes)
+
+#### score
+
+```typescript
+score(X: Tensor, y: Tensor): number
+```
+
+Return the mean accuracy on the given test data.
+
+### Properties
+
+<ResponseField name="coef" type="Tensor">
+  Model coefficients (weights). Shape (n_features,) for binary, (n_classes, n_features) for multiclass.
+</ResponseField>
+
+<ResponseField name="intercept" type="number | number[]">
+  Intercept term. Scalar for binary, array for multiclass.
+</ResponseField>
+
+<ResponseField name="classes" type="Tensor | undefined">
+  Unique class labels discovered during fitting.
+</ResponseField>
+
+### Example
+
+```typescript
+import { LogisticRegression } from 'deepbox/ml';
+import { tensor } from 'deepbox/ndarray';
+
+// Binary classification
+const model = new LogisticRegression({ C: 1.0, maxIter: 100 });
+model.fit(X_train, y_train);
+
+const predictions = model.predict(X_test);
+const probabilities = model.predictProba(X_test);
+
+// Multiclass classification
+const multiModel = new LogisticRegression({
+  multiClass: 'ovr'
+});
+multiModel.fit(X_train_multi, y_train_multi);
+```

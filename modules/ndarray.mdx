@@ -1,0 +1,295 @@
+---
+title: NDArray Module
+description: Multi-dimensional array operations and tensor computations
+icon: grid-2
+---
+
+The NDArray module provides the foundation for numerical computing in Deepbox. It offers a powerful N-dimensional array implementation with automatic differentiation, efficient mathematical operations, and seamless integration with machine learning workflows.
+
+## Overview
+
+The NDArray module is the core of Deepbox's numerical computing capabilities, providing:
+
+- **Tensor Creation**: Create tensors from arrays, ranges, or initialize with specific values
+- **Mathematical Operations**: Comprehensive set of element-wise and reduction operations
+- **Linear Algebra**: Matrix operations, decompositions, and solvers
+- **Automatic Differentiation**: Track gradients for machine learning
+- **Sparse Arrays**: Memory-efficient sparse matrix support
+- **Shape Manipulation**: Reshape, transpose, slice, and concatenate operations
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Flexible Creation" icon="wand-magic-sparkles">
+    Create tensors from arrays, ranges, or special initializations like zeros, ones, and identity matrices.
+  </Card>
+  <Card title="Rich Operations" icon="function">
+    Over 100 mathematical operations including trigonometric, exponential, logical, and statistical functions.
+  </Card>
+  <Card title="Automatic Gradients" icon="chart-line">
+    Built-in automatic differentiation with GradTensor for neural network training.
+  </Card>
+  <Card title="Type Safety" icon="shield-check">
+    Full TypeScript support with multiple data types (float32, float64, int32, int64, uint8, bool).
+  </Card>
+</CardGroup>
+
+## Basic Usage
+
+### Creating Tensors
+
+```typescript
+import { tensor, zeros, ones, arange, linspace } from 'deepbox/ndarray';
+
+// From array
+const t1 = tensor([1, 2, 3, 4]);
+const t2 = tensor([[1, 2], [3, 4]]);
+
+// Special initializations
+const z = zeros([3, 3]);      // 3x3 matrix of zeros
+const o = ones([2, 4]);        // 2x4 matrix of ones
+const i = eye(5);              // 5x5 identity matrix
+
+// Range and linear space
+const r = arange(0, 10, 2);    // [0, 2, 4, 6, 8]
+const l = linspace(0, 1, 5);   // [0, 0.25, 0.5, 0.75, 1.0]
+```
+
+### Mathematical Operations
+
+```typescript
+import { add, mul, sin, exp, mean, sum } from 'deepbox/ndarray';
+
+const a = tensor([1, 2, 3, 4]);
+const b = tensor([5, 6, 7, 8]);
+
+// Element-wise operations
+const c = add(a, b);           // [6, 8, 10, 12]
+const d = mul(a, b);           // [5, 12, 21, 32]
+const e = sin(a);
+const f = exp(a);
+
+// Reductions
+const avg = mean(a);           // 2.5
+const total = sum(a);          // 10
+```
+
+### Shape Manipulation
+
+```typescript
+import { reshape, transpose, concatenate, slice } from 'deepbox/ndarray';
+
+const x = tensor([1, 2, 3, 4, 5, 6]);
+
+// Reshape to 2D
+const reshaped = reshape(x, [2, 3]);  // [[1, 2, 3], [4, 5, 6]]
+
+// Transpose
+const transposed = transpose(reshaped);  // [[1, 4], [2, 5], [3, 6]]
+
+// Slicing
+const sliced = slice(reshaped, [[0, 2], [1, 3]]);  // First 2 rows, columns 1-2
+
+// Concatenation
+const a = tensor([[1, 2]]);
+const b = tensor([[3, 4]]);
+const cat = concatenate([a, b], 0);  // [[1, 2], [3, 4]]
+```
+
+### Automatic Differentiation
+
+```typescript
+import { GradTensor, parameter } from 'deepbox/ndarray';
+
+// Create trainable parameters
+const w = parameter([2, 3], { requiresGrad: true });
+const x = new GradTensor([1, 2]);
+
+// Forward pass computes gradients automatically
+const y = w.matmul(x);
+const loss = y.sum();
+
+// Backward pass
+loss.backward();
+
+// Access gradients
+console.log(w.grad);  // Gradient with respect to w
+```
+
+## Core Components
+
+### Tensor Class
+
+The `Tensor` class is the fundamental data structure for all numerical operations:
+
+```typescript
+import { Tensor, tensor } from 'deepbox/ndarray';
+
+const t = tensor([[1, 2, 3], [4, 5, 6]]);
+
+console.log(t.shape);   // [2, 3]
+console.log(t.ndim);    // 2
+console.log(t.size);    // 6
+console.log(t.dtype);   // 'float32'
+```
+
+### GradTensor
+
+Extends `Tensor` with automatic differentiation capabilities:
+
+```typescript
+import { GradTensor, noGrad } from 'deepbox/ndarray';
+
+const x = new GradTensor([1, 2, 3], { requiresGrad: true });
+const y = x.mul(2).sum();
+y.backward();
+
+// Disable gradients for inference
+noGrad(() => {
+  const z = x.mul(2);  // No gradient tracking
+});
+```
+
+### Activation Functions
+
+```typescript
+import { relu, sigmoid, softmax, tanh } from 'deepbox/ndarray';
+
+const x = tensor([-2, -1, 0, 1, 2]);
+
+const r = relu(x);        // [0, 0, 0, 1, 2]
+const s = sigmoid(x);     // [0.119, 0.269, 0.5, 0.731, 0.881]
+const sm = softmax(x);    // Normalized probabilities
+const t = tanh(x);        // [-0.964, -0.762, 0, 0.762, 0.964]
+```
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="Scientific Computing">
+    Perform complex numerical computations with efficient tensor operations:
+    
+    ```typescript
+    import { tensor, dot, transpose } from 'deepbox/ndarray';
+    
+    const A = tensor([[1, 2], [3, 4]]);
+    const b = tensor([5, 6]);
+    const result = dot(A, b);  // [17, 39]
+    ```
+  </Accordion>
+
+  <Accordion title="Data Preprocessing">
+    Transform and normalize data before machine learning:
+    
+    ```typescript
+    import { tensor, mean, std, sub, div } from 'deepbox/ndarray';
+    
+    const data = tensor([[1, 2], [3, 4], [5, 6]]);
+    const mu = mean(data, 0);
+    const sigma = std(data, 0);
+    const normalized = div(sub(data, mu), sigma);
+    ```
+  </Accordion>
+
+  <Accordion title="Neural Network Building Blocks">
+    Implement custom neural network layers with automatic differentiation:
+    
+    ```typescript
+    import { GradTensor, parameter, relu } from 'deepbox/ndarray';
+    
+    class CustomLayer {
+      weight = parameter([10, 20]);
+      bias = parameter([20]);
+      
+      forward(x: GradTensor): GradTensor {
+        return relu(x.matmul(this.weight).add(this.bias));
+      }
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## API Categories
+
+### Creation Functions
+
+- `tensor()` - Create tensor from array
+- `zeros()`, `ones()`, `full()` - Fill with constant values
+- `eye()` - Identity matrix
+- `arange()`, `linspace()`, `logspace()` - Range generation
+- `empty()` - Uninitialized tensor
+
+### Element-wise Operations
+
+- Arithmetic: `add`, `sub`, `mul`, `div`, `pow`
+- Trigonometric: `sin`, `cos`, `tan`, `asin`, `acos`, `atan`
+- Exponential: `exp`, `log`, `sqrt`, `square`
+- Logical: `greater`, `less`, `equal`, `logicalAnd`, `logicalOr`
+
+### Reduction Operations
+
+- `sum`, `mean`, `median`, `std`, `variance`
+- `min`, `max`, `prod`
+- `all`, `any`
+- `argmax`, `argmin`
+
+### Shape Operations
+
+- `reshape`, `flatten`
+- `transpose`, `transpose2d`
+- `squeeze`, `unsqueeze`, `expandDims`
+- `slice`, `gather`
+- `concatenate`, `stack`, `split`
+
+### Sparse Arrays
+
+```typescript
+import { CSRMatrix } from 'deepbox/ndarray';
+
+// Create sparse matrix in CSR format
+const sparse = new CSRMatrix({
+  data: [1, 2, 3],
+  indices: [0, 2, 1],
+  indptr: [0, 2, 3],
+  shape: [2, 3]
+});
+```
+
+## Performance Tips
+
+<Tip>
+  Use vectorized operations instead of loops for better performance. Operations like `add`, `mul`, and `sum` are optimized for speed.
+</Tip>
+
+<Tip>
+  Choose appropriate data types. Use `float32` (default) for most ML tasks, `float64` for high-precision scientific computing.
+</Tip>
+
+<Warning>
+  Avoid creating too many intermediate tensors in tight loops. Reuse tensors when possible or use in-place operations.
+</Warning>
+
+## Related Modules
+
+<CardGroup cols={3}>
+  <Card title="Linear Algebra" icon="square-root-variable" href="/modules/linalg">
+    Matrix operations and decompositions
+  </Card>
+  <Card title="Neural Networks" icon="brain" href="/modules/nn">
+    Build neural networks with GradTensor
+  </Card>
+  <Card title="Random" icon="dice" href="/modules/random">
+    Random tensor generation
+  </Card>
+</CardGroup>
+
+## Learn More
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="book" href="/api/ndarray">
+    Complete API documentation
+  </Card>
+  <Card title="Tutorial" icon="graduation-cap" href="/tutorials/tensors">
+    Learn tensor operations step-by-step
+  </Card>
+</CardGroup>

@@ -1,0 +1,543 @@
+---
+title: Data Splitting
+description: Train/test split and cross-validation utilities
+---
+
+Data splitting utilities for creating training and test sets, with support for stratification and cross-validation.
+
+## trainTestSplit
+
+Split arrays into random train and test subsets.
+
+```typescript
+import { trainTestSplit } from 'deepbox/preprocess';
+import { tensor } from 'deepbox/ndarray';
+
+const X = tensor([[1, 2], [3, 4], [5, 6], [7, 8]]);
+const y = tensor([0, 1, 0, 1]);
+const [XTrain, XTest, yTrain, yTest] = trainTestSplit(X, y, { testSize: 0.25 });
+```
+
+### Signature
+
+```typescript
+function trainTestSplit(
+  X: Tensor,
+  y?: Tensor,
+  options?: {
+    testSize?: number;      // Proportion (0-1) or absolute count
+    trainSize?: number;     // Proportion (0-1) or absolute count
+    randomState?: number;   // Random seed for reproducibility
+    shuffle?: boolean;      // Shuffle before splitting (default: true)
+    stratify?: Tensor;      // Stratify split using these labels
+  }
+): Tensor[]
+```
+
+### Parameters
+
+<ParamField path="X" type="Tensor" required>
+  Feature matrix (2D tensor)
+</ParamField>
+
+<ParamField path="y" type="Tensor">
+  Optional target labels (1D tensor). If provided, returns 4 tensors [XTrain, XTest, yTrain, yTest].
+  If not provided, returns 2 tensors [XTrain, XTest].
+</ParamField>
+
+<ParamField path="options.testSize" type="number">
+  Size of test set:
+  - Float (0-1): Proportion of dataset
+  - Integer ≥1: Absolute number of samples
+  - Default: 0.25 (25% of data)
+</ParamField>
+
+<ParamField path="options.trainSize" type="number">
+  Size of training set:
+  - Float (0-1): Proportion of dataset
+  - Integer ≥1: Absolute number of samples
+  - If not specified, complement of testSize
+</ParamField>
+
+<ParamField path="options.randomState" type="number">
+  Random seed for reproducible splits
+</ParamField>
+
+<ParamField path="options.shuffle" type="boolean" default="true">
+  Whether to shuffle data before splitting
+</ParamField>
+
+<ParamField path="options.stratify" type="Tensor">
+  If provided, data is split in a stratified fashion, preserving the percentage of samples for each class.
+  Must be a 1D tensor with same length as X.
+</ParamField>
+
+### Returns
+
+- **Without y:** `[XTrain, XTest]`
+- **With y:** `[XTrain, XTest, yTrain, yTest]`
+
+### Examples
+
+#### Basic Split
+
+```typescript
+import { trainTestSplit } from 'deepbox/preprocess';
+import { tensor } from 'deepbox/ndarray';
+
+const X = tensor([[1, 2], [3, 4], [5, 6], [7, 8]]);
+const [XTrain, XTest] = trainTestSplit(X, undefined, { testSize: 0.5 });
+// XTrain: 2 samples, XTest: 2 samples
+```
+
+#### Stratified Split
+
+```typescript
+const X = tensor([[1, 2], [3, 4], [5, 6], [7, 8], [9, 10], [11, 12]]);
+const y = tensor([0, 0, 1, 1, 1, 0]);
+
+const [XTrain, XTest, yTrain, yTest] = trainTestSplit(X, y, {
+  testSize: 0.5,
+  stratify: y  // Preserve class distribution
+});
+// yTrain and yTest will have same proportion of 0s and 1s as y
+```
+
+#### Reproducible Split
+
+```typescript
+const [XTrain, XTest, yTrain, yTest] = trainTestSplit(X, y, {
+  testSize: 0.3,
+  randomState: 42  // Same seed = same split
+});
+```
+
+---
+
+## KFold
+
+K-Folds cross-validator.
+
+Provides train/test indices to split data in train/test sets. Splits dataset into k consecutive folds.
+
+```typescript
+import { KFold } from 'deepbox/preprocess';
+import { tensor } from 'deepbox/ndarray';
+
+const X = tensor([[1, 2], [3, 4], [5, 6], [7, 8], [9, 10]]);
+const kfold = new KFold({ nSplits: 5 });
+const splits = kfold.split(X);
+
+for (const { trainIndex, testIndex } of splits) {
+  // Each fold: trainIndex and testIndex are arrays of sample indices
+}
+```
+
+### Constructor
+
+```typescript
+new KFold(options?: {
+  nSplits?: number;       // Number of folds (default: 5)
+  shuffle?: boolean;      // Shuffle before splitting (default: false)
+  randomState?: number;   // Random seed if shuffle=true
+})
+```
+
+### Methods
+
+<ResponseField name="split" type="(X: Tensor) => SplitResult[]">
+  Generate train/test indices for k-fold cross-validation.
+  
+  **Parameters:**
+  - `X` - Data tensor (only uses X.shape[0] for sample count)
+  
+  **Returns:** Array of split objects with `{ trainIndex, testIndex }`
+</ResponseField>
+
+<ResponseField name="getNSplits" type="() => number">
+  Returns the number of splits/folds.
+</ResponseField>
+
+### Example
+
+```typescript
+import { KFold } from 'deepbox/preprocess';
+import { tensor } from 'deepbox/ndarray';
+
+const X = tensor([[1], [2], [3], [4], [5], [6], [7], [8], [9], [10]]);
+const y = tensor([0, 1, 0, 1, 0, 1, 0, 1, 0, 1]);
+
+const kfold = new KFold({ nSplits: 5, shuffle: true, randomState: 42 });
+const splits = kfold.split(X);
+
+for (let i = 0; i < splits.length; i++) {
+  const { trainIndex, testIndex } = splits[i];
+  console.log(`Fold ${i + 1}:`);
+  console.log('Train indices:', trainIndex);
+  console.log('Test indices:', testIndex);
+}
+```
+
+---
+
+## StratifiedKFold
+
+Stratified K-Folds cross-validator.
+
+Provides train/test indices while preserving class distribution in each fold.
+
+```typescript
+import { StratifiedKFold } from 'deepbox/preprocess';
+import { tensor } from 'deepbox/ndarray';
+
+const X = tensor([[1, 2], [3, 4], [5, 6], [7, 8]]);
+const y = tensor([0, 0, 1, 1]);
+const skfold = new StratifiedKFold({ nSplits: 2 });
+const splits = skfold.split(X, y);
+```
+
+### Constructor
+
+```typescript
+new StratifiedKFold(options?: {
+  nSplits?: number;       // Number of folds (default: 5)
+  shuffle?: boolean;      // Shuffle before splitting (default: false)
+  randomState?: number;   // Random seed if shuffle=true
+})
+```
+
+### Methods
+
+<ResponseField name="split" type="(X: Tensor, y: Tensor) => SplitResult[]">
+  Generate stratified train/test indices.
+  
+  **Parameters:**
+  - `X` - Data tensor
+  - `y` - Target labels (1D tensor)
+  
+  **Returns:** Array of split objects with `{ trainIndex, testIndex }`
+  
+  **Note:** Each class must have at least nSplits samples
+</ResponseField>
+
+<ResponseField name="getNSplits" type="() => number">
+  Returns the number of splits/folds.
+</ResponseField>
+
+### Example
+
+```typescript
+import { StratifiedKFold } from 'deepbox/preprocess';
+import { tensor } from 'deepbox/ndarray';
+
+const X = tensor([[1], [2], [3], [4], [5], [6], [7], [8]]);
+const y = tensor([0, 0, 0, 0, 1, 1, 1, 1]);
+
+const skfold = new StratifiedKFold({ nSplits: 4 });
+const splits = skfold.split(X, y);
+
+// Each fold maintains 50/50 class distribution
+for (const { trainIndex, testIndex } of splits) {
+  // Use indices to create train/test sets
+}
+```
+
+---
+
+## GroupKFold
+
+Group K-Fold cross-validator.
+
+Ensures that the same group is not in both training and test sets.
+
+```typescript
+import { GroupKFold } from 'deepbox/preprocess';
+import { tensor } from 'deepbox/ndarray';
+
+const X = tensor([[1], [2], [3], [4], [5], [6]]);
+const y = tensor([0, 0, 1, 1, 1, 0]);
+const groups = tensor([1, 1, 2, 2, 3, 3]);
+
+const gkfold = new GroupKFold({ nSplits: 3 });
+const splits = gkfold.split(X, y, groups);
+```
+
+### Constructor
+
+```typescript
+new GroupKFold(options?: {
+  nSplits?: number;  // Number of folds (default: 5)
+})
+```
+
+### Methods
+
+<ResponseField name="split" type="(X: Tensor, y: Tensor | undefined, groups: Tensor) => SplitResult[]">
+  Generate group-aware train/test indices.
+  
+  **Parameters:**
+  - `X` - Data tensor
+  - `y` - Target labels (can be undefined)
+  - `groups` - Group labels (1D tensor, same length as X)
+  
+  **Returns:** Array of split objects with `{ trainIndex, testIndex }`
+  
+  **Note:** Number of unique groups must be ≥ nSplits
+</ResponseField>
+
+<ResponseField name="getNSplits" type="() => number">
+  Returns the number of splits/folds.
+</ResponseField>
+
+### Example
+
+```typescript
+import { GroupKFold } from 'deepbox/preprocess';
+import { tensor } from 'deepbox/ndarray';
+
+// Patient data - same patient should not be in both train and test
+const X = tensor([[1, 2], [3, 4], [5, 6], [7, 8]]);
+const y = tensor([0, 1, 0, 1]);
+const patientIds = tensor([1, 1, 2, 2]);  // Patient 1 has 2 samples, Patient 2 has 2 samples
+
+const gkfold = new GroupKFold({ nSplits: 2 });
+const splits = gkfold.split(X, y, patientIds);
+
+// Each fold will have different patients in train vs test
+```
+
+---
+
+## LeaveOneOut
+
+Leave-One-Out cross-validator.
+
+Each sample is used once as test set (singleton) while remaining samples form training set.
+
+```typescript
+import { LeaveOneOut } from 'deepbox/preprocess';
+import { tensor } from 'deepbox/ndarray';
+
+const X = tensor([[1], [2], [3], [4]]);
+const loo = new LeaveOneOut();
+const splits = loo.split(X);
+// Generates 4 splits (one for each sample)
+```
+
+### Methods
+
+<ResponseField name="split" type="(X: Tensor) => SplitResult[]">
+  Generate leave-one-out train/test indices.
+  
+  **Parameters:**
+  - `X` - Data tensor
+  
+  **Returns:** Array of n splits where n = number of samples
+</ResponseField>
+
+<ResponseField name="getNSplits" type="(X: Tensor) => number">
+  Returns the number of splits (equal to number of samples).
+</ResponseField>
+
+### Example
+
+```typescript
+import { LeaveOneOut } from 'deepbox/preprocess';
+import { tensor } from 'deepbox/ndarray';
+
+const X = tensor([[1, 2], [3, 4], [5, 6]]);
+const y = tensor([0, 1, 0]);
+
+const loo = new LeaveOneOut();
+const splits = loo.split(X);
+
+for (let i = 0; i < splits.length; i++) {
+  const { trainIndex, testIndex } = splits[i];
+  console.log(`Iteration ${i + 1}:`);
+  console.log('Train:', trainIndex);  // All indices except i
+  console.log('Test:', testIndex);    // [i]
+}
+```
+
+---
+
+## LeavePOut
+
+Leave-P-Out cross-validator.
+
+Generates all possible train/test splits by leaving out p samples.
+
+```typescript
+import { LeavePOut } from 'deepbox/preprocess';
+import { tensor } from 'deepbox/ndarray';
+
+const X = tensor([[1], [2], [3], [4]]);
+const lpo = new LeavePOut(2);  // Leave 2 samples out
+const splits = lpo.split(X);
+// Generates C(4,2) = 6 splits
+```
+
+### Constructor
+
+```typescript
+new LeavePOut(p: number)
+```
+
+**Parameters:**
+- `p` - Number of samples to leave out (must be positive integer)
+
+### Methods
+
+<ResponseField name="split" type="(X: Tensor) => SplitResult[]">
+  Generate all leave-p-out train/test combinations.
+  
+  **Parameters:**
+  - `X` - Data tensor
+  
+  **Returns:** Array of C(n, p) splits where n = number of samples
+  
+  **Warning:** Number of splits grows combinatorially. Limited to 100,000 splits for memory safety.
+</ResponseField>
+
+<ResponseField name="getNSplits" type="(X: Tensor) => number">
+  Returns the number of splits: C(n, p) = n! / (p! * (n-p)!)
+</ResponseField>
+
+### Example
+
+```typescript
+import { LeavePOut } from 'deepbox/preprocess';
+import { tensor } from 'deepbox/ndarray';
+
+const X = tensor([[1], [2], [3], [4], [5]]);
+const lpo = new LeavePOut(2);
+const splits = lpo.split(X);
+
+console.log(`Number of splits: ${splits.length}`);  // C(5,2) = 10
+
+for (const { trainIndex, testIndex } of splits) {
+  console.log('Train:', trainIndex, 'Test:', testIndex);
+}
+```
+
+**Warning:** LeavePOut can generate a very large number of splits:
+- C(10, 2) = 45
+- C(20, 2) = 190
+- C(50, 5) = 2,118,760 ❌ (exceeds limit)
+
+---
+
+## Type Definitions
+
+```typescript
+// Result of a single train/test split
+type SplitResult = {
+  readonly trainIndex: number[];  // Indices for training set
+  readonly testIndex: number[];   // Indices for test set
+};
+```
+
+---
+
+## Cross-Validation Examples
+
+### Model Evaluation with K-Fold
+
+```typescript
+import { KFold } from 'deepbox/preprocess';
+import { tensor } from 'deepbox/ndarray';
+
+const X = tensor([[1, 2], [3, 4], [5, 6], [7, 8], [9, 10]]);
+const y = tensor([0, 1, 0, 1, 0]);
+
+const kfold = new KFold({ nSplits: 5, shuffle: true, randomState: 42 });
+const splits = kfold.split(X);
+
+const scores: number[] = [];
+
+for (const { trainIndex, testIndex } of splits) {
+  // Extract train/test data using indices
+  const XTrain = extractRows(X, trainIndex);
+  const yTrain = extractRows(y, trainIndex);
+  const XTest = extractRows(X, testIndex);
+  const yTest = extractRows(y, testIndex);
+  
+  // Train model and evaluate
+  // const model = trainModel(XTrain, yTrain);
+  // const score = evaluateModel(model, XTest, yTest);
+  // scores.push(score);
+}
+
+const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+console.log('Average cross-validation score:', avgScore);
+```
+
+### Stratified Cross-Validation
+
+```typescript
+import { StratifiedKFold } from 'deepbox/preprocess';
+import { tensor } from 'deepbox/ndarray';
+
+// Imbalanced dataset
+const X = tensor([[1], [2], [3], [4], [5], [6], [7], [8], [9], [10]]);
+const y = tensor([0, 0, 0, 0, 0, 0, 0, 1, 1, 1]);  // 70% class 0, 30% class 1
+
+const skfold = new StratifiedKFold({ nSplits: 5 });
+const splits = skfold.split(X, y);
+
+// Each fold maintains 70/30 class distribution
+for (let i = 0; i < splits.length; i++) {
+  const { trainIndex, testIndex } = splits[i];
+  console.log(`Fold ${i + 1}: ${trainIndex.length} train, ${testIndex.length} test`);
+}
+```
+
+### Time Series Cross-Validation
+
+```typescript
+import { KFold } from 'deepbox/preprocess';
+import { tensor } from 'deepbox/ndarray';
+
+// For time series, use KFold with shuffle=false to maintain order
+const timeSeries = tensor([[1], [2], [3], [4], [5], [6], [7], [8]]);
+
+const kfold = new KFold({ nSplits: 4, shuffle: false });
+const splits = kfold.split(timeSeries);
+
+// Each fold uses consecutive time periods
+for (const { trainIndex, testIndex } of splits) {
+  console.log('Train periods:', trainIndex);
+  console.log('Test periods:', testIndex);
+}
+```
+
+---
+
+## When to Use Each Splitter
+
+<CardGroup cols={2}>
+  <Card title="trainTestSplit" icon="shuffle">
+    **Use for:** Simple train/test splits. Good for large datasets.
+    Supports stratification and reproducible splits.
+  </Card>
+  <Card title="KFold" icon="layer-group">
+    **Use for:** Standard cross-validation. Works well with balanced data.
+    Each sample appears in test set exactly once.
+  </Card>
+  <Card title="StratifiedKFold" icon="scale-balanced">
+    **Use for:** Imbalanced classification. Preserves class distribution.
+    Ensures each fold has representative class proportions.
+  </Card>
+  <Card title="GroupKFold" icon="users">
+    **Use for:** Data with groups (e.g., patients, users).
+    Prevents data leakage by keeping groups separate.
+  </Card>
+  <Card title="LeaveOneOut" icon="circle-dot">
+    **Use for:** Very small datasets. Maximum training data per fold.
+    Computationally expensive (n splits for n samples).
+  </Card>
+  <Card title="LeavePOut" icon="diagram-project">
+    **Use for:** Small datasets needing exhaustive testing.
+    Warning: Combinatorial explosion for large n or p.
+  </Card>
+</CardGroup>

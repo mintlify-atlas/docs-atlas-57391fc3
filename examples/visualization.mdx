@@ -1,0 +1,193 @@
+---
+title: Data Visualization
+description: Create various types of plots to visualize data and results
+---
+
+Visualization is essential for understanding data and communicating results. Deepbox supports SVG and PNG output for publication-quality figures.
+
+## Creating Plots
+
+<Steps>
+
+### Line plots
+
+Visualize continuous data and functions:
+
+```typescript
+import { linspace, sin, cos } from "deepbox/ndarray";
+import { Figure } from "deepbox/plot";
+import { writeFileSync } from "node:fs";
+
+const x = linspace(0, 2 * Math.PI, 100);
+const y1 = sin(x);
+const y2 = cos(x);
+
+const fig = new Figure({ width: 640, height: 480 });
+const ax = fig.addAxes();
+ax.plot(x, y1, { color: "#1f77b4", linewidth: 2 });
+ax.plot(x, y2, { color: "#ff7f0e", linewidth: 2 });
+ax.setTitle("Sine and Cosine Functions");
+ax.setXLabel("x");
+ax.setYLabel("y");
+
+const svg = fig.renderSVG();
+writeFileSync("line-plot.svg", svg.svg);
+console.log("Line plot saved to line-plot.svg");
+```
+
+**Output:**
+```
+Line plot saved to line-plot.svg
+```
+
+### Scatter plots
+
+Show relationships between variables:
+
+```typescript
+import { tensor } from "deepbox/ndarray";
+
+const x_scatter = tensor([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+const y_scatter = tensor([2.3, 4.1, 5.9, 7.8, 10.2, 11.8, 14.3, 16.1, 17.9, 20.1]);
+
+const fig2 = new Figure();
+const ax2 = fig2.addAxes();
+ax2.scatter(x_scatter, y_scatter, { color: "#2ca02c", size: 8 });
+ax2.setTitle("Scatter Plot Example");
+ax2.setXLabel("X values");
+ax2.setYLabel("Y values");
+
+const svg2 = fig2.renderSVG();
+writeFileSync("scatter-plot.svg", svg2.svg);
+console.log("Scatter plot saved to scatter-plot.svg");
+```
+
+**Output:**
+```
+Scatter plot saved to scatter-plot.svg
+```
+
+### Bar charts
+
+Compare categorical data:
+
+```typescript
+const categories = tensor([0, 1, 2, 3, 4]);
+const values = tensor([23, 45, 56, 78, 32]);
+
+const fig3 = new Figure();
+const ax3 = fig3.addAxes();
+ax3.bar(categories, values, { color: "#d62728", edgecolor: "#000000" });
+ax3.setTitle("Bar Chart Example");
+ax3.setXLabel("Categories");
+ax3.setYLabel("Values");
+
+const svg3 = fig3.renderSVG();
+writeFileSync("bar-chart.svg", svg3.svg);
+console.log("Bar chart saved to bar-chart.svg");
+```
+
+**Output:**
+```
+Bar chart saved to bar-chart.svg
+```
+
+### Histograms
+
+Visualize distributions:
+
+```typescript
+const data = tensor([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6, 6, 6, 6, 7, 7, 7, 8, 8, 9]);
+
+const fig4 = new Figure();
+const ax4 = fig4.addAxes();
+ax4.hist(data, 9, { color: "#9467bd" });
+ax4.setTitle("Histogram Example");
+ax4.setXLabel("Value");
+ax4.setYLabel("Frequency");
+
+const svg4 = fig4.renderSVG();
+writeFileSync("histogram.svg", svg4.svg);
+console.log("Histogram saved to histogram.svg");
+```
+
+**Output:**
+```
+Histogram saved to histogram.svg
+```
+
+### Heatmaps
+
+Visualize matrix data:
+
+```typescript
+const heatmapData = tensor([
+  [1, 2, 3, 4],
+  [5, 6, 7, 8],
+  [9, 10, 11, 12],
+]);
+
+const fig5 = new Figure();
+const ax5 = fig5.addAxes();
+ax5.heatmap(heatmapData, { vmin: 1, vmax: 12 });
+ax5.setTitle("Heatmap Example");
+
+const svg5 = fig5.renderSVG();
+writeFileSync("heatmap.svg", svg5.svg);
+console.log("Heatmap saved to heatmap.svg");
+```
+
+**Output:**
+```
+Heatmap saved to heatmap.svg
+```
+
+</Steps>
+
+## Visualization Tips
+
+<AccordionGroup>
+  <Accordion title="Choosing the right plot type">
+    - **Line plots**: Continuous data, time series, functions
+    - **Scatter plots**: Relationships between two variables
+    - **Bar charts**: Categorical comparisons
+    - **Histograms**: Data distributions
+    - **Heatmaps**: Matrix data, correlations
+  </Accordion>
+  
+  <Accordion title="Color selection">
+    Use colorblind-friendly palettes:
+    - `#1f77b4` (blue)
+    - `#ff7f0e` (orange)
+    - `#2ca02c` (green)
+    - `#d62728` (red)
+    - `#9467bd` (purple)
+  </Accordion>
+  
+  <Accordion title="Figure customization">
+    ```typescript
+    const fig = new Figure({ 
+      width: 800,    // Width in pixels
+      height: 600    // Height in pixels
+    });
+    
+    const ax = fig.addAxes();
+    ax.plot(x, y, { 
+      color: "#1f77b4",
+      linewidth: 2,
+      linestyle: "solid"
+    });
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Complete Example" icon="rocket" href="/examples/data-preprocessing">
+    See visualization in a complete data analysis workflow
+  </Card>
+  <Card title="Plot API Reference" icon="book" href="/api-reference/plot/figure">
+    Explore all plotting options
+  </Card>
+</CardGroup>

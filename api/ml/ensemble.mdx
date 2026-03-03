@@ -1,0 +1,196 @@
+---
+title: Ensemble Methods
+description: Gradient boosting classifiers and regressors for Deepbox
+---
+
+## GradientBoostingClassifier
+
+Gradient Boosting Classifier using shallow regression trees. Supports both binary and multiclass classification.
+
+- **Binary:** Optimizes log loss using sigmoid function
+- **Multiclass:** Uses One-vs-Rest (OvR) strategy, training one binary model per class
+
+### Constructor
+
+```typescript
+new GradientBoostingClassifier(options?: {
+  nEstimators?: number;
+  learningRate?: number;
+  maxDepth?: number;
+  minSamplesSplit?: number;
+})
+```
+
+<ParamField path="options.nEstimators" type="number" default="100">
+  Number of boosting stages (trees) to train.
+</ParamField>
+
+<ParamField path="options.learningRate" type="number" default="0.1">
+  Learning rate shrinks the contribution of each tree. Smaller values require more trees.
+</ParamField>
+
+<ParamField path="options.maxDepth" type="number" default="3">
+  Maximum depth of individual regression trees.
+</ParamField>
+
+<ParamField path="options.minSamplesSplit" type="number" default="2">
+  Minimum samples required to split an internal node.
+</ParamField>
+
+### Methods
+
+#### fit
+
+```typescript
+fit(X: Tensor, y: Tensor): this
+```
+
+Fit the gradient boosting classifier on training data.
+
+Builds an additive model by sequentially fitting regression trees to the pseudo-residuals (gradient of log loss).
+
+<ParamField path="X" type="Tensor" required>
+  Training data of shape (n_samples, n_features)
+</ParamField>
+
+<ParamField path="y" type="Tensor" required>
+  Target class labels of shape (n_samples,). Must contain at least 2 classes.
+</ParamField>
+
+**Returns:** The fitted estimator
+
+#### predict
+
+```typescript
+predict(X: Tensor): Tensor
+```
+
+Predict class labels for samples in X.
+
+**Returns:** Predicted class labels of shape (n_samples,)
+
+#### predictProba
+
+```typescript
+predictProba(X: Tensor): Tensor
+```
+
+Predict class probabilities for samples in X.
+
+**Returns:** Class probability matrix of shape (n_samples, n_classes)
+
+#### score
+
+```typescript
+score(X: Tensor, y: Tensor): number
+```
+
+Return the mean accuracy on the given test data and labels.
+
+**Returns:** Accuracy score in range [0, 1]
+
+### Example
+
+```typescript
+import { GradientBoostingClassifier } from 'deepbox/ml';
+import { tensor } from 'deepbox/ndarray';
+
+const X = tensor([[1, 2], [2, 3], [3, 1], [4, 2]]);
+const y = tensor([0, 0, 1, 1]);
+
+const gbc = new GradientBoostingClassifier({ nEstimators: 100 });
+gbc.fit(X, y);
+const predictions = gbc.predict(X);
+const probabilities = gbc.predictProba(X);
+```
+
+---
+
+## GradientBoostingRegressor
+
+Gradient Boosting Regressor that builds an additive model in a forward stage-wise fashion using regression trees as weak learners. Optimizes squared error loss.
+
+### Constructor
+
+```typescript
+new GradientBoostingRegressor(options?: {
+  nEstimators?: number;
+  learningRate?: number;
+  maxDepth?: number;
+  minSamplesSplit?: number;
+})
+```
+
+<ParamField path="options.nEstimators" type="number" default="100">
+  Number of boosting stages (trees).
+</ParamField>
+
+<ParamField path="options.learningRate" type="number" default="0.1">
+  Learning rate shrinks the contribution of each tree.
+</ParamField>
+
+<ParamField path="options.maxDepth" type="number" default="3">
+  Maximum depth of individual regression trees.
+</ParamField>
+
+<ParamField path="options.minSamplesSplit" type="number" default="2">
+  Minimum samples required to split.
+</ParamField>
+
+### Methods
+
+#### fit
+
+```typescript
+fit(X: Tensor, y: Tensor): this
+```
+
+Fit the gradient boosting regressor on training data.
+
+Builds an additive model by sequentially fitting regression trees to the negative gradient (residuals) of the loss function.
+
+<ParamField path="X" type="Tensor" required>
+  Training data of shape (n_samples, n_features)
+</ParamField>
+
+<ParamField path="y" type="Tensor" required>
+  Target values of shape (n_samples,)
+</ParamField>
+
+**Returns:** The fitted estimator
+
+#### predict
+
+```typescript
+predict(X: Tensor): Tensor
+```
+
+Predict target values for samples in X.
+
+Aggregates the initial prediction and the scaled contributions of all trees.
+
+**Returns:** Predicted values of shape (n_samples,)
+
+#### score
+
+```typescript
+score(X: Tensor, y: Tensor): number
+```
+
+Return the R² score on the given test data and target values.
+
+**Returns:** R² score (best possible is 1.0, can be negative)
+
+### Example
+
+```typescript
+import { GradientBoostingRegressor } from 'deepbox/ml';
+import { tensor } from 'deepbox/ndarray';
+
+const X = tensor([[1], [2], [3], [4], [5]]);
+const y = tensor([1.2, 2.1, 2.9, 4.0, 5.1]);
+
+const gbr = new GradientBoostingRegressor({ nEstimators: 100 });
+gbr.fit(X, y);
+const predictions = gbr.predict(X);
+```

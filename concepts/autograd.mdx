@@ -1,0 +1,510 @@
+---
+title: Automatic Differentiation
+description: Reverse-mode automatic differentiation (autograd) for building and training neural networks
+---
+
+# Automatic Differentiation
+
+Deepbox implements **reverse-mode automatic differentiation** (backpropagation) through the `GradTensor` class. This enables gradient-based optimization for machine learning without manual derivative calculations.
+
+## Overview
+
+Automatic differentiation (autograd) tracks operations on tensors to build a **computation graph**, then computes gradients via the chain rule during a backward pass.
+
+```typescript
+import { parameter } from 'deepbox/ndarray';
+
+// Create a parameter that requires gradients
+const x = parameter([2, 3, 4]);
+
+// Compute: f(x) = sum(x²)
+const y = x.mul(x).sum();
+
+// Compute gradients: df/dx = 2x
+y.backward();
+
+console.log(x.grad?.toString());
+// Tensor([4, 6, 8], shape=[3], dtype=float32)
+```
+
+<Info>
+  Autograd only tracks gradients for **numeric dtypes** (float32, float64, int32, uint8, bool). String tensors and int64 (BigInt) are not supported for differentiation.
+</Info>
+
+## GradTensor vs Tensor
+
+| Feature | `Tensor` | `GradTensor` |
+|---------|----------|-------------|
+| Purpose | Numerical arrays | Differentiable arrays |
+| Gradient tracking | No | Yes (when `requiresGrad=true`) |
+| Computation graph | Not recorded | Recorded for backward pass |
+| Use case | Data, inference | Training, optimization |
+| Memory overhead | Lower | Higher (stores graph) |
+
+<Tip>
+  Use `Tensor` for inference and data processing. Use `GradTensor` only when training models or computing derivatives.
+</Tip>
+
+## Creating GradTensors
+
+### Using `parameter()`
+
+The `parameter()` function creates a `GradTensor` with `requiresGrad=true`:
+
+```typescript
+import { parameter } from 'deepbox/ndarray';
+
+// Scalar parameter
+const bias = parameter([0.5]);
+
+// Weight matrix
+const W = parameter([
+  [0.1, 0.2],
+  [0.3, 0.4],
+]);
+
+console.log(W.requiresGrad);  // true
+```
+
+### From Existing Tensors
+
+Convert a `Tensor` to `GradTensor`:
+
+```typescript
+import { GradTensor, tensor } from 'deepbox/ndarray';
+
+const t = tensor([1, 2, 3]);
+const gt = GradTensor.fromTensor(t, { requiresGrad: true });
+
+console.log(gt.requiresGrad);  // true
+```
+
+### Creating Scalars
+
+```typescript
+import { GradTensor } from 'deepbox/ndarray';
+
+const learningRate = GradTensor.scalar(0.01, {
+  requiresGrad: false,
+  dtype: 'float32',
+});
+
+console.log(learningRate.shape);  // []
+```
+
+## Gradient Computation
+
+### Basic Example
+
+```typescript
+import { parameter } from 'deepbox/ndarray';
+
+// f(x) = x²
+const x = parameter([2, 3, 4]);
+const y = x.mul(x);
+
+// Sum to get scalar loss
+const loss = y.sum();
+
+// Compute gradients
+loss.backward();
+
+console.log('x:', x.tensor.toString());
+// Tensor([2, 3, 4], shape=[3], dtype=float32)
+
+console.log('f(x):', y.tensor.toString());
+// Tensor([4, 9, 16], shape=[3], dtype=float32)
+
+console.log('df/dx:', x.grad?.toString());
+// Tensor([4, 6, 8], shape=[3], dtype=float32)
+// df/dx = 2x → [4, 6, 8]
+```
+
+### Multi-Variable Gradients
+
+Compute gradients for multiple parameters:
+
+```typescript
+import { parameter } from 'deepbox/ndarray';
+
+const a = parameter([
+  [1, 2],
+  [3, 4],
+]);
+
+const w = parameter([[0.5], [0.5]]);
+
+// y = sum(a @ w)
+const z = a.matmul(w).sum();
+z.backward();
+
+console.log('dz/da:', a.grad?.toString());
+// Gradient with respect to a
+
+console.log('dz/dw:', w.grad?.toString());
+// Gradient with respect to w
+```
+
+### Chained Operations
+
+Autograd automatically handles complex computation graphs:
+
+```typescript
+import { parameter, GradTensor, tensor } from 'deepbox/ndarray';
+
+const p = parameter([1, 2, 3, 4]);
+
+// f(p) = sum(relu(2p - 3))
+const two = GradTensor.fromTensor(tensor([2, 2, 2, 2]), {
+  requiresGrad: false,
+});
+const three = GradTensor.fromTensor(tensor([3, 3, 3, 3]), {
+  requiresGrad: false,
+});
+
+const scaled = p.mul(two);        // 2p
+const shifted = scaled.sub(three); // 2p - 3
+const activated = shifted.relu();  // relu(2p - 3)
+const loss = activated.sum();      // sum(...)
+
+loss.backward();
+
+console.log('p:', p.tensor.toString());
+// Tensor([1, 2, 3, 4], shape=[4], dtype=float32)
+
+console.log('activated:', activated.tensor.toString());
+// Tensor([0, 1, 3, 5], shape=[4], dtype=float32)
+// relu sets negatives to zero
+
+console.log('grad:', p.grad?.toString());
+// Tensor([0, 2, 2, 2], shape=[4], dtype=float32)
+// Gradient is 2 where input > 1.5, else 0
+```
+
+## Gradient Management
+
+### Zero Gradients
+
+Gradients accumulate by default. Clear them between training steps:
+
+```typescript
+import { parameter } from 'deepbox/ndarray';
+
+const v = parameter([1, 2, 3]);
+
+// First backward pass
+const loss1 = v.mul(v).sum();
+loss1.backward();
+console.log(v.grad?.toString());
+// Tensor([2, 4, 6], shape=[3], dtype=float32)
+
+// Zero gradients before next pass
+v.zeroGrad();
+console.log(v.grad?.toString());
+// Tensor([0, 0, 0], shape=[3], dtype=float32)
+
+// Second backward pass
+const loss2 = v.sum();
+loss2.backward();
+console.log(v.grad?.toString());
+// Tensor([1, 1, 1], shape=[3], dtype=float32)
+```
+
+<Warning>
+  Always call `zeroGrad()` before computing gradients for a new batch, or gradients will accumulate from previous iterations.
+</Warning>
+
+### Setting Gradients Manually
+
+```typescript
+import { parameter, tensor } from 'deepbox/ndarray';
+
+const x = parameter([1, 2, 3]);
+
+// Set custom gradient
+const customGrad = tensor([0.1, 0.2, 0.3]);
+x.setGrad(customGrad);
+
+console.log(x.grad?.toString());
+// Tensor([0.1, 0.2, 0.3], shape=[3], dtype=float32)
+```
+
+### Detaching from Graph
+
+Create a copy without gradient tracking:
+
+```typescript
+import { parameter } from 'deepbox/ndarray';
+
+const x = parameter([1, 2, 3]);
+const y = x.mul(x);
+
+// Detach: stop tracking gradients
+const detached = y.detach();
+
+console.log(x.requiresGrad);        // true
+console.log(detached.requiresGrad); // false
+```
+
+## Disabling Gradient Tracking
+
+### Using `noGrad()`
+
+Temporarily disable gradient tracking for inference:
+
+```typescript
+import { parameter, noGrad } from 'deepbox/ndarray';
+
+const q = parameter([1, 2, 3]);
+
+noGrad(() => {
+  // Operations inside do NOT track gradients
+  const result = q.mul(q);
+  console.log(result.requiresGrad);  // false
+});
+
+// Back to normal gradient tracking
+const result2 = q.mul(q);
+console.log(result2.requiresGrad);  // true
+```
+
+<Warning>
+  `noGrad()` only accepts **synchronous** callbacks. Passing an async function throws an error because the gradient flag would restore before async work completes.
+</Warning>
+
+### Module-Level State
+
+Gradient tracking is controlled by a module-level singleton `gradEnabled`:
+
+```typescript
+// Conceptual (internal state):
+let gradEnabled = true;
+
+// noGrad() temporarily sets it to false
+noGrad(() => {
+  // gradEnabled = false
+  // ...
+});
+// gradEnabled = true again
+```
+
+<Info>
+  Because JavaScript is single-threaded, this global flag is safe in synchronous code. Do not rely on it across async boundaries.
+</Info>
+
+## Supported Operations
+
+GradTensor supports automatic differentiation for:
+
+### Arithmetic
+
+```typescript
+const a = parameter([1, 2]);
+const b = parameter([3, 4]);
+
+a.add(b)      // Addition
+a.sub(b)      // Subtraction
+a.mul(b)      // Multiplication
+a.div(b)      // Division
+a.neg()       // Negation
+```
+
+### Mathematical Functions
+
+```typescript
+const x = parameter([1, 2, 3]);
+
+x.pow(2)      // Power (x²)
+x.sqrt()      // Square root
+x.exp()       // Exponential
+x.log()       // Natural logarithm
+x.abs()       // Absolute value
+x.clip(0, 5)  // Clipping
+```
+
+### Activations
+
+```typescript
+const x = parameter([1, 2, 3]);
+
+x.relu()      // ReLU: max(0, x)
+x.sigmoid()   // Sigmoid: 1 / (1 + e^-x)
+x.tanh()      // Hyperbolic tangent
+```
+
+### Reductions
+
+```typescript
+const x = parameter([[1, 2], [3, 4]]);
+
+x.sum()              // Sum all elements
+x.sum(0)             // Sum along axis 0
+x.sum(0, true)       // Sum with keepdims=true
+x.mean()             // Mean
+x.max()              // Maximum
+x.min()              // Minimum
+```
+
+### Linear Algebra
+
+```typescript
+const a = parameter([[1, 2], [3, 4]]);
+const b = parameter([[5, 6], [7, 8]]);
+
+a.matmul(b)   // Matrix multiplication
+```
+
+### Shape Operations
+
+```typescript
+const x = parameter([1, 2, 3, 4, 5, 6]);
+
+x.reshape([2, 3])     // Reshape
+x.flatten()           // Flatten to 1D
+x.transpose()         // Transpose
+x.view([3, 2])        // Create view
+```
+
+### Indexing
+
+```typescript
+const x = parameter([1, 2, 3, 4, 5]);
+const indices = parameter([0, 2, 4]);
+
+x.slice({ start: 1, end: 4 })  // Slice
+x.gather(indices, 0)           // Gather
+```
+
+## Advanced: Custom Gradients
+
+For custom operations, define backward functions:
+
+```typescript
+import { GradTensor } from 'deepbox/ndarray';
+import { mul, add } from 'deepbox/ndarray';
+
+// Conceptual example (internal API)
+function customOp(input: GradTensor): GradTensor {
+  const outTensor = /* ... compute forward ... */;
+  const requiresGrad = input.requiresGrad;
+
+  return GradTensor.create({
+    tensor: outTensor,
+    requiresGrad,
+    prev: requiresGrad ? [input] : [],
+    backward: () => {
+      if (!requiresGrad) return;
+      const grad = /* ... compute gradient ... */;
+      input.accumulateGrad(grad);
+    },
+  });
+}
+```
+
+<Note>
+  Most users don't need to implement custom gradients. Deepbox provides gradients for all built-in operations.
+</Note>
+
+## Gradient Behavior Notes
+
+### Max/Min Tie-Breaking
+
+When multiple elements share the max/min value, **all tied positions receive the full gradient**:
+
+```typescript
+import { parameter } from 'deepbox/ndarray';
+
+const x = parameter([1, 3, 3, 2]);
+const y = x.max();
+y.backward();
+
+console.log(x.grad?.toString());
+// Tensor([0, 1, 1, 0], shape=[4], dtype=float32)
+// Both positions with value 3 get gradient 1
+```
+
+<Warning>
+  Gradient magnitude is multiplied by the tie count. This differs from some frameworks that divide gradients among ties.
+</Warning>
+
+### Broadcasting in Gradients
+
+Gradients are automatically reduced to match input shapes:
+
+```typescript
+import { parameter, GradTensor, tensor } from 'deepbox/ndarray';
+
+const a = parameter([[1], [2]]);
+const b = GradTensor.fromTensor(tensor([[1, 2, 3]]), { requiresGrad: false });
+
+// Broadcasting: [2,1] + [1,3] → [2,3]
+const c = a.add(b);
+const loss = c.sum();
+
+loss.backward();
+
+console.log(a.shape);       // [2, 1]
+console.log(a.grad?.shape); // [2, 1] (reduced from [2, 3])
+```
+
+## Training Example
+
+Putting it all together:
+
+```typescript
+import { parameter, GradTensor, tensor } from 'deepbox/ndarray';
+
+// Initialize parameters
+const W = parameter([[0.1, 0.2], [0.3, 0.4]]);
+const b = parameter([0, 0]);
+
+// Training data
+const X = GradTensor.fromTensor(
+  tensor([[1, 2], [3, 4], [5, 6]]),
+  { requiresGrad: false }
+);
+const y_true = GradTensor.fromTensor(
+  tensor([[1], [2], [3]]),
+  { requiresGrad: false }
+);
+
+// Training loop
+for (let epoch = 0; epoch < 10; epoch++) {
+  // Forward pass
+  const logits = X.matmul(W).add(b);  // Broadcasting
+  const loss = logits.sub(y_true).pow(2).mean();
+
+  // Backward pass
+  W.zeroGrad();
+  b.zeroGrad();
+  loss.backward();
+
+  // Manual gradient descent (0.01 learning rate)
+  const lr = 0.01;
+  // W -= lr * W.grad (conceptually)
+  // In practice, use an optimizer
+
+  console.log(`Epoch ${epoch}, Loss: ${loss.tensor.data[0]}`);
+}
+```
+
+<Tip>
+  For real training, use optimizers from `deepbox/nn` (SGD, Adam, etc.) instead of manual parameter updates.
+</Tip>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Neural Networks" icon="brain" href="/essentials/neural-networks">
+    Build models with layers and optimizers
+  </Card>
+  <Card title="Optimizers" icon="gauge" href="/api-reference/nn/optimizers">
+    Gradient descent, Adam, RMSprop, and more
+  </Card>
+</CardGroup>
+
+## API Reference
+
+<Card title="GradTensor API" icon="code" href="/api-reference/ndarray/gradtensor">
+  Complete API documentation for GradTensor
+</Card>

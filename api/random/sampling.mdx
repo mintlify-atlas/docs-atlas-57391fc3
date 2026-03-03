@@ -1,0 +1,153 @@
+---
+title: Random Sampling
+description: Functions for random sampling and permutations
+---
+
+## Overview
+
+Random sampling functions allow you to randomly select elements from populations, shuffle arrays, and generate permutations.
+
+## Functions
+
+### choice
+
+Random sample from array.
+
+```ts
+function choice(
+  a: Tensor | number,
+  size?: number | Shape,
+  replace?: boolean,
+  p?: Tensor
+): Tensor
+```
+
+<ParamField path="a" type="Tensor | number" required>
+  Input array or integer (if integer, sample from arange(a))
+</ParamField>
+
+<ParamField path="size" type="number | Shape">
+  Number of samples or output shape (default: 1)
+</ParamField>
+
+<ParamField path="replace" type="boolean">
+  Whether to sample with replacement (default: true)
+</ParamField>
+
+<ParamField path="p" type="Tensor">
+  Optional probability weights for weighted sampling
+</ParamField>
+
+<ResponseField name="Returns" type="Tensor">
+  Tensor of randomly selected elements
+</ResponseField>
+
+**Important:**
+- Input tensor must be contiguous (no slicing/striding)
+- With replacement: can sample more elements than population size
+- Without replacement: size must be ≤ population size
+- Does NOT modify the input tensor (returns a new tensor)
+- If `a` is a number, the population is `0..a-1` and output dtype is int32
+
+**Example:**
+
+```ts
+import { choice, tensor } from 'deepbox/random';
+
+const x = tensor([1, 2, 3, 4, 5]);
+const sample = choice(x, 3);  // Pick 3 elements with replacement
+
+// Without replacement
+const unique = choice(x, 3, false);  // All different elements
+
+// Weighted sampling
+const weights = tensor([0.1, 0.1, 0.2, 0.3, 0.3]);
+const weighted = choice(x, 10, true, weights);
+```
+
+### shuffle
+
+Randomly shuffle array in-place.
+
+```ts
+function shuffle(x: Tensor): void
+```
+
+<ParamField path="x" type="Tensor" required>
+  Input tensor (MODIFIED IN-PLACE)
+</ParamField>
+
+**Warning:** This function mutates the input tensor directly.
+
+**Important:**
+- Uses Fisher-Yates shuffle algorithm (O(n) time, optimal)
+- Input tensor must be contiguous (no slicing/striding)
+- All elements are preserved, only their order changes
+- Deterministic when seed is set via `setSeed()`
+- If you need a shuffled copy without mutation, use `permutation()` instead
+
+**Example:**
+
+```ts
+import { shuffle, tensor } from 'deepbox/random';
+
+const x = tensor([1, 2, 3, 4, 5]);
+shuffle(x);  // x is now shuffled IN-PLACE
+console.log(x);  // e.g., [3, 1, 5, 2, 4]
+```
+
+### permutation
+
+Return random permutation of array.
+
+```ts
+function permutation(x: Tensor | number): Tensor
+```
+
+<ParamField path="x" type="Tensor | number" required>
+  Input tensor or integer
+</ParamField>
+
+<ResponseField name="Returns" type="Tensor">
+  New tensor with shuffled values
+</ResponseField>
+
+**Important:**
+- Returns a NEW tensor (does NOT modify input)
+- If x is an integer, returns permutation of arange(x)
+- If x is a tensor, returns a shuffled copy with the same shape
+- Tensor inputs must be contiguous (no slicing/striding)
+- Uses Fisher-Yates shuffle algorithm internally
+- Deterministic when seed is set via `setSeed()`
+- Numeric input is limited to `x <= 2^31` for int32 output
+
+**Example:**
+
+```ts
+import { permutation, tensor } from 'deepbox/random';
+
+// Permutation of integers
+const x = permutation(10);  // Random permutation of [0...9]
+
+// Permutation of tensor (does not modify original)
+const original = tensor([1, 2, 3, 4, 5]);
+const shuffled = permutation(original);
+// original is unchanged
+```
+
+## Seed Management
+
+All sampling functions respect the global random seed. Use `setSeed()`, `getSeed()`, and `clearSeed()` from the distributions module to control randomness.
+
+**Example:**
+
+```ts
+import { setSeed, choice, permutation, tensor } from 'deepbox/random';
+
+// Deterministic sampling
+setSeed(42);
+const a = choice(tensor([1, 2, 3, 4, 5]), 3);
+setSeed(42);
+const b = choice(tensor([1, 2, 3, 4, 5]), 3);
+// a and b contain identical values
+```

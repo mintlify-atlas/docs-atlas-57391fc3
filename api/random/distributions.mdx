@@ -1,0 +1,449 @@
+---
+title: Random Distributions
+description: Generate random samples from various probability distributions
+---
+
+## Overview
+
+Random distribution functions generate samples from standard probability distributions. All functions support deterministic sampling via `setSeed()`.
+
+## Seed Management
+
+### setSeed
+
+Set global random seed for deterministic sampling.
+
+```ts
+function setSeed(seed: number): void
+```
+
+<ParamField path="seed" type="number" required>
+  Random seed value (any finite number)
+</ParamField>
+
+**Example:**
+
+```ts
+import { setSeed, rand } from 'deepbox/random';
+
+setSeed(42);
+const a = rand([5]);
+setSeed(42);
+const b = rand([5]);
+// a and b contain identical values
+```
+
+### getSeed
+
+Get current random seed.
+
+```ts
+function getSeed(): number | undefined
+```
+
+<ResponseField name="Returns" type="number | undefined">
+  Current seed value or undefined if not set
+</ResponseField>
+
+### clearSeed
+
+Clear the current random seed and revert to cryptographically secure randomness.
+
+```ts
+function clearSeed(): void
+```
+
+## Continuous Distributions
+
+### uniform
+
+Random samples from continuous uniform distribution.
+
+```ts
+function uniform(
+  low?: number,
+  high?: number,
+  shape?: Shape,
+  opts?: RandomOptions
+): Tensor
+```
+
+<ParamField path="low" type="number">
+  Lower boundary (default: 0)
+</ParamField>
+
+<ParamField path="high" type="number">
+  Upper boundary (default: 1)
+</ParamField>
+
+<ParamField path="shape" type="Shape">
+  Output shape (default: [])
+</ParamField>
+
+<ParamField path="opts.dtype" type="DType">
+  Data type: `'float32'` or `'float64'` (default: `'float32'`)
+</ParamField>
+
+<ParamField path="opts.device" type="Device">
+  Device placement
+</ParamField>
+
+<ResponseField name="Returns" type="Tensor">
+  Tensor with values uniformly distributed in [low, high)
+</ResponseField>
+
+**Example:**
+
+```ts
+import { uniform } from 'deepbox/random';
+
+const x = uniform(-1, 1, [3, 3]);  // Values between -1 and 1
+```
+
+### normal
+
+Random samples from normal (Gaussian) distribution.
+
+```ts
+function normal(
+  mean?: number,
+  std?: number,
+  shape?: Shape,
+  opts?: RandomOptions
+): Tensor
+```
+
+<ParamField path="mean" type="number">
+  Mean of distribution (default: 0)
+</ParamField>
+
+<ParamField path="std" type="number">
+  Standard deviation (default: 1)
+</ParamField>
+
+<ParamField path="shape" type="Shape">
+  Output shape (default: [])
+</ParamField>
+
+<ParamField path="opts" type="RandomOptions">
+  Options (dtype, device)
+</ParamField>
+
+<ResponseField name="Returns" type="Tensor">
+  Tensor with normally distributed values
+</ResponseField>
+
+Uses Box-Muller transform internally. All values are finite.
+
+**Example:**
+
+```ts
+import { normal } from 'deepbox/random';
+
+const x = normal(0, 2, [100]);  // Mean 0, std 2
+```
+
+### exponential
+
+Random samples from exponential distribution.
+
+```ts
+function exponential(scale?: number, shape?: Shape, opts?: RandomOptions): Tensor
+```
+
+<ParamField path="scale" type="number">
+  Scale parameter (1/lambda, default: 1, must be > 0)
+</ParamField>
+
+<ParamField path="shape" type="Shape">
+  Output shape (default: [])
+</ParamField>
+
+<ParamField path="opts" type="RandomOptions">
+  Options (dtype, device)
+</ParamField>
+
+<ResponseField name="Returns" type="Tensor">
+  Tensor with exponentially distributed values (all positive)
+</ResponseField>
+
+Mean = scale, variance = scale². Uses inverse transform sampling.
+
+**Example:**
+
+```ts
+import { exponential } from 'deepbox/random';
+
+const x = exponential(2, [100]);
+```
+
+### gamma
+
+Random samples from gamma distribution.
+
+```ts
+function gamma(
+  shape_param: number,
+  scale?: number,
+  shape?: Shape,
+  opts?: RandomOptions
+): Tensor
+```
+
+<ParamField path="shape_param" type="number" required>
+  Shape parameter (k, must be > 0)
+</ParamField>
+
+<ParamField path="scale" type="number">
+  Scale parameter (theta, default: 1, must be > 0)
+</ParamField>
+
+<ParamField path="shape" type="Shape">
+  Output shape (default: [])
+</ParamField>
+
+<ParamField path="opts" type="RandomOptions">
+  Options (dtype, device)
+</ParamField>
+
+<ResponseField name="Returns" type="Tensor">
+  Tensor with gamma distributed values (all positive)
+</ResponseField>
+
+Mean = shape_param * scale. Uses Marsaglia and Tsang's method (2000).
+
+**Example:**
+
+```ts
+import { gamma } from 'deepbox/random';
+
+const x = gamma(2, 2, [100]);
+```
+
+### beta
+
+Random samples from beta distribution.
+
+```ts
+function beta(
+  alpha: number,
+  beta_param: number,
+  shape?: Shape,
+  opts?: RandomOptions
+): Tensor
+```
+
+<ParamField path="alpha" type="number" required>
+  Alpha parameter (must be > 0)
+</ParamField>
+
+<ParamField path="beta_param" type="number" required>
+  Beta parameter (must be > 0)
+</ParamField>
+
+<ParamField path="shape" type="Shape">
+  Output shape (default: [])
+</ParamField>
+
+<ParamField path="opts" type="RandomOptions">
+  Options (dtype, device)
+</ParamField>
+
+<ResponseField name="Returns" type="Tensor">
+  Tensor with values in the open interval (0, 1)
+</ResponseField>
+
+Mean = alpha / (alpha + beta). Uses ratio of two gamma distributions.
+
+**Example:**
+
+```ts
+import { beta } from 'deepbox/random';
+
+const x = beta(2, 5, [100]);
+```
+
+## Discrete Distributions
+
+### binomial
+
+Random samples from binomial distribution.
+
+```ts
+function binomial(
+  n: number,
+  p: number,
+  shape?: Shape,
+  opts?: RandomOptions
+): Tensor
+```
+
+<ParamField path="n" type="number" required>
+  Number of trials (non-negative integer)
+</ParamField>
+
+<ParamField path="p" type="number" required>
+  Probability of success (in [0, 1])
+</ParamField>
+
+<ParamField path="shape" type="Shape">
+  Output shape (default: [])
+</ParamField>
+
+<ParamField path="opts.dtype" type="DType">
+  Data type: `'int32'` or `'int64'` (default: `'int32'`)
+</ParamField>
+
+<ParamField path="opts.device" type="Device">
+  Device placement
+</ParamField>
+
+<ResponseField name="Returns" type="Tensor">
+  Tensor with number of successes in range [0, n]
+</ResponseField>
+
+Generates number of successes in n independent Bernoulli trials.
+
+**Example:**
+
+```ts
+import { binomial } from 'deepbox/random';
+
+const x = binomial(10, 0.5, [100]);  // 10 coin flips, 100 times
+```
+
+### poisson
+
+Random samples from Poisson distribution.
+
+```ts
+function poisson(lambda: number, shape?: Shape, opts?: RandomOptions): Tensor
+```
+
+<ParamField path="lambda" type="number" required>
+  Expected number of events (rate, must be >= 0)
+</ParamField>
+
+<ParamField path="shape" type="Shape">
+  Output shape (default: [])
+</ParamField>
+
+<ParamField path="opts.dtype" type="DType">
+  Data type: `'int32'` or `'int64'` (default: `'int32'`)
+</ParamField>
+
+<ParamField path="opts.device" type="Device">
+  Device placement
+</ParamField>
+
+<ResponseField name="Returns" type="Tensor">
+  Tensor with Poisson distributed values
+</ResponseField>
+
+Uses Knuth's method for lambda < 30, transformed rejection for lambda >= 30.
+
+**Example:**
+
+```ts
+import { poisson } from 'deepbox/random';
+
+const x = poisson(5, [100]);  // Rate = 5 events
+```
+
+## Basic Functions
+
+### rand
+
+Random values in half-open interval [0, 1).
+
+```ts
+function rand(shape: Shape, opts?: RandomOptions): Tensor
+```
+
+<ParamField path="shape" type="Shape" required>
+  Output shape
+</ParamField>
+
+<ParamField path="opts" type="RandomOptions">
+  Options (dtype, device)
+</ParamField>
+
+<ResponseField name="Returns" type="Tensor">
+  Tensor with values uniformly distributed in [0, 1)
+</ResponseField>
+
+**Example:**
+
+```ts
+import { rand } from 'deepbox/random';
+
+const x = rand([2, 3]);  // 2x3 matrix of random values
+```
+
+### randn
+
+Random samples from standard normal distribution.
+
+```ts
+function randn(shape: Shape, opts?: RandomOptions): Tensor
+```
+
+<ParamField path="shape" type="Shape" required>
+  Output shape
+</ParamField>
+
+<ParamField path="opts" type="RandomOptions">
+  Options (dtype, device)
+</ParamField>
+
+<ResponseField name="Returns" type="Tensor">
+  Tensor with normally distributed values (mean=0, std=1)
+</ResponseField>
+
+**Example:**
+
+```ts
+import { randn } from 'deepbox/random';
+
+const x = randn([2, 3]);  // 2x3 matrix of normal random values
+```
+
+### randint
+
+Random integers in half-open interval [low, high).
+
+```ts
+function randint(low: number, high: number, shape: Shape, opts?: RandomOptions): Tensor
+```
+
+<ParamField path="low" type="number" required>
+  Lowest integer (inclusive)
+</ParamField>
+
+<ParamField path="high" type="number" required>
+  Highest integer (exclusive)
+</ParamField>
+
+<ParamField path="shape" type="Shape" required>
+  Output shape
+</ParamField>
+
+<ParamField path="opts.dtype" type="DType">
+  Data type: `'int32'` or `'int64'` (default: `'int32'`)
+</ParamField>
+
+<ParamField path="opts.device" type="Device">
+  Device placement
+</ParamField>
+
+<ResponseField name="Returns" type="Tensor">
+  Tensor with integers uniformly distributed in [low, high)
+</ResponseField>
+
+**Example:**
+
+```ts
+import { randint } from 'deepbox/random';
+
+const x = randint(0, 10, [5]);  // 5 random integers from 0 to 9
+```

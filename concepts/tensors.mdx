@@ -1,0 +1,387 @@
+---
+title: Tensor Fundamentals
+description: Learn about tensors, the core data structure in Deepbox for numerical computing
+---
+
+# Tensor Fundamentals
+
+Tensors are the fundamental data structure in Deepbox. They represent multi-dimensional arrays with typed storage, supporting operations for scientific computing, machine learning, and data analysis.
+
+## What is a Tensor?
+
+A **tensor** is an N-dimensional array with:
+- **Shape**: Dimensions of the array (e.g., `[2, 3]` for a 2×3 matrix)
+- **DType**: Data type of elements (`float32`, `float64`, `int32`, `int64`, `uint8`, `bool`, `string`)
+- **Data**: Underlying typed array storage
+- **Strides**: Memory layout for efficient indexing
+- **Device**: Where data resides (`cpu`, `webgpu`, `wasm`)
+
+<Info>
+  Tensors use **row-major (C-order)** memory layout by default, where the last dimension has stride 1.
+</Info>
+
+## Creating Tensors
+
+### From Arrays
+
+Create tensors from JavaScript nested arrays:
+
+```typescript
+import { tensor } from 'deepbox/ndarray';
+
+// 1D tensor (vector)
+const vector = tensor([1, 2, 3, 4, 5]);
+console.log(vector.shape);  // [5]
+console.log(vector.dtype);  // 'float32'
+
+// 2D tensor (matrix)
+const matrix = tensor([
+  [1, 2, 3],
+  [4, 5, 6],
+]);
+console.log(matrix.shape);  // [2, 3]
+console.log(matrix.size);   // 6
+
+// 3D tensor
+const tensor3d = tensor([
+  [[1, 2], [3, 4]],
+  [[5, 6], [7, 8]],
+]);
+console.log(tensor3d.shape);  // [2, 2, 2]
+console.log(tensor3d.ndim);   // 3
+```
+
+### Creation Functions
+
+Deepbox provides utilities for common tensor patterns:
+
+```typescript
+import { zeros, ones, eye, arange, linspace, randn } from 'deepbox/ndarray';
+
+// Zeros
+const z = zeros([3, 3]);
+// [[0, 0, 0],
+//  [0, 0, 0],
+//  [0, 0, 0]]
+
+// Ones
+const o = ones([2, 4]);
+// [[1, 1, 1, 1],
+//  [1, 1, 1, 1]]
+
+// Identity matrix
+const I = eye(4);
+// [[1, 0, 0, 0],
+//  [0, 1, 0, 0],
+//  [0, 0, 1, 0],
+//  [0, 0, 0, 1]]
+
+// Range with step
+const range = arange(0, 10, 2);  // [0, 2, 4, 6, 8]
+
+// Linearly spaced values
+const lin = linspace(0, 1, 5);  // [0, 0.25, 0.5, 0.75, 1]
+
+// Random normal distribution
+const rand = randn([3, 3]);
+```
+
+### Specifying Data Types
+
+Control the underlying storage type:
+
+```typescript
+import { tensor, zeros } from 'deepbox/ndarray';
+
+// Float64 for high precision
+const f64 = tensor([1, 2, 3], { dtype: 'float64' });
+
+// Int32 for integer operations
+const i32 = tensor([1, 2, 3], { dtype: 'int32' });
+
+// BigInt for 64-bit integers
+const i64 = tensor([1n, 2n, 3n], { dtype: 'int64' });
+
+// Boolean tensors
+const bool = zeros([3, 3], { dtype: 'bool' });
+```
+
+<Warning>
+  The `int64` dtype uses JavaScript `BigInt` and requires `n` suffix for literals. Some operations (like gradients) are not supported for int64.
+</Warning>
+
+## Tensor Properties
+
+The `Tensor` class exposes several read-only properties:
+
+```typescript
+import { tensor } from 'deepbox/ndarray';
+
+const t = tensor([
+  [1, 2, 3],
+  [4, 5, 6],
+]);
+
+t.shape    // [2, 3] - dimensions
+t.size     // 6 - total number of elements
+t.ndim     // 2 - number of dimensions
+t.dtype    // 'float32' - data type
+t.device   // 'cpu' - where data resides
+t.strides  // [3, 1] - memory strides (row-major)
+t.offset   // 0 - offset into data buffer
+t.data     // Float32Array(6) - underlying storage
+```
+
+### Memory Strides
+
+Strides determine how to access elements in memory:
+
+```typescript
+// For shape [2, 3] with row-major layout:
+// strides = [3, 1]
+//
+// To access element [i, j]:
+// offset = i * 3 + j * 1
+//
+// Example: element [1, 2] → offset = 1*3 + 2*1 = 5
+```
+
+Strides enable efficient views without copying data (see [reshape](#reshaping) and [transpose](#transposing)).
+
+## Shape Manipulation
+
+### Reshaping
+
+Change tensor dimensions without copying data:
+
+```typescript
+import { tensor, reshape } from 'deepbox/ndarray';
+
+const flat = tensor([1, 2, 3, 4, 5, 6]);
+const matrix = reshape(flat, [2, 3]);
+// [[1, 2, 3],
+//  [4, 5, 6]]
+
+// Or use method syntax
+const cube = flat.reshape([2, 3, 1]);
+console.log(cube.shape);  // [2, 3, 1]
+```
+
+<Note>
+  The total number of elements must remain the same. Reshaping `[6]` to `[2, 3]` works, but `[6]` to `[2, 2]` throws a `ShapeError`.
+</Note>
+
+### Flattening
+
+Collapse to 1D:
+
+```typescript
+import { flatten } from 'deepbox/ndarray';
+
+const matrix = tensor([
+  [1, 2, 3],
+  [4, 5, 6],
+]);
+const flat = flatten(matrix);
+console.log(flat.shape);  // [6]
+```
+
+### Transposing
+
+Reverse or permute axes:
+
+```typescript
+import { transpose } from 'deepbox/ndarray';
+
+const a = tensor([
+  [1, 2, 3],
+  [4, 5, 6],
+]);
+
+// Default: reverse all axes
+const at = transpose(a);
+// [[1, 4],
+//  [2, 5],
+//  [3, 6]]
+
+// Custom permutation
+const b = tensor([[[1, 2], [3, 4]]]);
+const bt = transpose(b, [2, 0, 1]);
+console.log(bt.shape);  // [2, 1, 2]
+```
+
+### Expanding & Squeezing Dimensions
+
+```typescript
+import { expandDims, squeeze, unsqueeze } from 'deepbox/ndarray';
+
+const x = tensor([1, 2, 3]);  // shape: [3]
+
+// Add dimension at axis 0
+const expanded = expandDims(x, 0);  // shape: [1, 3]
+
+// Add dimension at axis 1
+const unsqueezed = unsqueeze(x, 1);  // shape: [3, 1]
+
+// Remove size-1 dimensions
+const y = tensor([[[1]], [[2]]]);
+console.log(y.shape);  // [2, 1, 1]
+const squeezed = squeeze(y);
+console.log(squeezed.shape);  // [2]
+```
+
+## Indexing and Slicing
+
+### Element Access
+
+Access individual elements:
+
+```typescript
+import { tensor } from 'deepbox/ndarray';
+
+const t = tensor([
+  [1, 2, 3],
+  [4, 5, 6],
+]);
+
+// Direct access
+t.at(0, 1);   // 2
+t.at(1, 2);   // 6
+
+// Negative indices
+t.at(-1, -1);  // 6 (last element)
+t.at(-2, 0);   // 1 (second-to-last row, first column)
+```
+
+### Slicing
+
+Extract sub-tensors:
+
+```typescript
+import { slice } from 'deepbox/ndarray';
+
+const a = tensor([
+  [1, 2, 3, 4],
+  [5, 6, 7, 8],
+  [9, 10, 11, 12],
+]);
+
+// Slice rows [0:2] (first two rows)
+const rows = slice(a, { start: 0, end: 2 });
+// [[1, 2, 3, 4],
+//  [5, 6, 7, 8]]
+
+// Slice columns [1:3]
+const cols = slice(a, undefined, { start: 1, end: 3 });
+// [[2, 3],
+//  [6, 7],
+//  [10, 11]]
+
+// With step
+const every_other = slice(a, { start: 0, end: 3, step: 2 });
+// [[1, 2, 3, 4],
+//  [9, 10, 11, 12]]
+```
+
+### Advanced Indexing
+
+Gather elements by indices:
+
+```typescript
+import { gather } from 'deepbox/ndarray';
+
+const data = tensor([10, 20, 30, 40, 50]);
+const indices = tensor([0, 2, 4]);
+
+const selected = gather(data, indices, 0);
+// [10, 30, 50]
+```
+
+## Conversion
+
+### To Nested Arrays
+
+```typescript
+import { tensor } from 'deepbox/ndarray';
+
+const t = tensor([
+  [1, 2],
+  [3, 4],
+]);
+
+const array = t.toArray();
+// [[1, 2], [3, 4]]
+```
+
+### String Representation
+
+```typescript
+const t = tensor([1, 2, 3]);
+console.log(t.toString());
+// "Tensor([1, 2, 3], shape=[3], dtype=float32)"
+```
+
+## Type System
+
+Deepbox tensors are fully typed:
+
+```typescript
+import type { Tensor, Shape, DType } from 'deepbox/ndarray';
+
+// Generic tensor
+const t1: Tensor = tensor([1, 2, 3]);
+
+// Specific shape and dtype
+const t2: Tensor<[2, 3], 'float64'> = tensor(
+  [[1, 2, 3], [4, 5, 6]],
+  { dtype: 'float64' }
+);
+
+// Shape type
+type MatrixShape = [number, number];
+const shape: Shape = [2, 3];
+
+// DType type
+const dtype: DType = 'float32';
+```
+
+## Memory Efficiency
+
+Tensors support **memory views** for zero-copy operations:
+
+```typescript
+import { tensor } from 'deepbox/ndarray';
+
+const original = tensor([1, 2, 3, 4, 5, 6]);
+
+// Reshape creates a view (no copy)
+const matrix = original.reshape([2, 3]);
+
+// Both share the same underlying data
+console.log(matrix.data === original.data);  // true
+
+// Transpose also creates a view
+const transposed = matrix.transpose();
+console.log(transposed.data === original.data);  // true
+```
+
+<Tip>
+  Operations that can be performed through stride manipulation (reshape, transpose, slice) return views. Operations that change values (add, mul) create new tensors.
+</Tip>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Broadcasting" icon="arrows-maximize" href="/concepts/broadcasting">
+    Learn how operations work on tensors with different shapes
+  </Card>
+  <Card title="Autograd" icon="function" href="/concepts/autograd">
+    Automatic differentiation for machine learning
+  </Card>
+</CardGroup>
+
+## API Reference
+
+<Card title="Tensor API" icon="code" href="/api-reference/ndarray/tensor">
+  Complete API documentation for tensors
+</Card>

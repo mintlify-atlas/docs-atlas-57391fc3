@@ -1,0 +1,466 @@
+---
+title: Matrix Decompositions
+description: Matrix factorization methods for linear algebra operations
+---
+
+## Overview
+
+Matrix decompositions factorize a matrix into products of simpler matrices, enabling efficient computation of inverses, solutions to linear systems, eigenvalues, and other properties.
+
+---
+
+## svd
+
+Singular Value Decomposition (SVD).
+
+Factorizes matrix A into three matrices: **A = U × Σ × V^T**
+
+```ts
+import { svd } from 'deepbox/linalg';
+import { tensor } from 'deepbox/ndarray';
+
+const A = tensor([[1, 2], [3, 4], [5, 6]]);
+const [U, s, Vt] = svd(A);
+
+console.log(U.shape);   // [3, 3] if fullMatrices=true, [3, 2] if false
+console.log(s.shape);   // [2]
+console.log(Vt.shape);  // [2, 2]
+```
+
+### Signature
+
+```ts
+function svd(
+  a: Tensor,
+  fullMatrices?: boolean
+): [Tensor, Tensor, Tensor]
+```
+
+### Parameters
+
+<ParamField path="a" type="Tensor" required>
+  Input matrix of shape (M, N). Must be 2D.
+</ParamField>
+
+<ParamField path="fullMatrices" type="boolean" default="true">
+  If true, U has shape (M, M) and Vt has shape (N, N).
+  If false, U has shape (M, K) and Vt has shape (K, N) where K = min(M, N).
+</ParamField>
+
+### Returns
+
+Tuple of three tensors `[U, s, Vt]`:
+
+- **U**: Left singular vectors of shape (M, M) or (M, K)
+- **s**: Singular values of shape (K,) in descending order
+- **Vt**: Right singular vectors transposed of shape (N, N) or (K, N)
+
+### Algorithm
+
+One-sided Jacobi (Hestenes) SVD:
+1. Apply cyclic Jacobi rotations to orthogonalize columns of A
+2. Column norms converge to singular values
+3. Right singular vectors are accumulated as the product of rotations
+4. Left singular vectors are normalized columns of the rotated matrix
+
+This approach is substantially more stable for ill-conditioned matrices than the normal-equations approach.
+
+### Properties
+
+- A = U @ diag(s) @ Vt
+- U and V are orthogonal matrices
+- Singular values are non-negative and sorted in descending order
+
+### Errors
+
+- **ShapeError**: If input is not 2D
+- **DTypeError**: If input has string dtype
+- **DataValidationError**: If input contains non-finite values (NaN, Infinity)
+
+---
+
+## qr
+
+QR decomposition using Householder reflections.
+
+Factorizes matrix A into **Q × R** where Q is orthogonal and R is upper triangular.
+
+```ts
+import { qr } from 'deepbox/linalg';
+import { tensor } from 'deepbox/ndarray';
+
+const A = tensor([[12, -51, 4], [6, 167, -68], [-4, 24, -41]]);
+const [Q, R] = qr(A);
+
+// Verify: A ≈ Q @ R
+// Verify: Q is orthogonal (Q^T @ Q ≈ I)
+```
+
+### Signature
+
+```ts
+function qr(
+  a: Tensor,
+  mode?: 'reduced' | 'complete'
+): [Tensor, Tensor]
+```
+
+### Parameters
+
+<ParamField path="a" type="Tensor" required>
+  Input matrix of shape (M, N). Must be 2D.
+</ParamField>
+
+<ParamField path="mode" type="'reduced' | 'complete'" default="'reduced'">
+  Decomposition mode:
+  - `'reduced'`: Q has shape (M, K), R has shape (K, N) where K = min(M, N)
+  - `'complete'`: Q has shape (M, M), R has shape (M, N)
+</ParamField>
+
+### Returns
+
+Tuple of two tensors `[Q, R]`:
+
+- **Q**: Orthogonal matrix (Q^T × Q = I)
+- **R**: Upper triangular matrix
+
+### Algorithm
+
+Householder reflections (Golub & Van Loan, Algorithm 5.2.1):
+- Iteratively zeros out elements below the diagonal using orthogonal reflections
+- Numerically stable and efficient for dense matrices
+
+### Properties
+
+- A = Q @ R
+- Q is orthogonal: Q^T @ Q = I
+- R is upper triangular
+
+### Errors
+
+- **ShapeError**: If input is not 2D
+- **DTypeError**: If input has string dtype
+- **DataValidationError**: If input contains non-finite values (NaN, Infinity)
+
+---
+
+## lu
+
+LU decomposition with partial pivoting.
+
+Factorizes matrix A into **P × A = L × U** where P is a permutation matrix, L is lower triangular with unit diagonal, and U is upper triangular.
+
+```ts
+import { lu } from 'deepbox/linalg';
+import { tensor } from 'deepbox/ndarray';
+
+const A = tensor([[2, 1, 1], [4, 3, 3], [8, 7, 9]]);
+const [P, L, U] = lu(A);
+
+// Verify: P @ A ≈ L @ U
+```
+
+### Signature
+
+```ts
+function lu(a: Tensor): [Tensor, Tensor, Tensor]
+```
+
+### Parameters
+
+<ParamField path="a" type="Tensor" required>
+  Input matrix of shape (M, N). Must be 2D.
+</ParamField>
+
+### Returns
+
+Tuple of three tensors `[P, L, U]`:
+
+- **P**: Permutation matrix of shape (M, M)
+- **L**: Lower triangular matrix of shape (M, K) where K = min(M, N)
+- **U**: Upper triangular matrix of shape (K, N)
+
+### Algorithm
+
+Gaussian elimination with partial pivoting (Golub & Van Loan, Algorithm 3.4.1):
+- Partial pivoting ensures numerical stability
+- Rank-deficient matrices with zero pivots are handled gracefully
+
+### Properties
+
+- P @ A = L @ U
+- L has unit diagonal (L[i,i] = 1)
+- Partial pivoting ensures numerical stability
+
+### Errors
+
+- **ShapeError**: If input is not 2D
+- **DTypeError**: If input has string dtype
+- **DataValidationError**: If input contains non-finite values (NaN, Infinity)
+
+---
+
+## cholesky
+
+Cholesky decomposition for symmetric positive definite matrices.
+
+Factorizes matrix A into **L × L^T** where L is lower triangular.
+
+```ts
+import { cholesky } from 'deepbox/linalg';
+import { tensor } from 'deepbox/ndarray';
+
+// Positive definite matrix
+const A = tensor([[4, 12, -16], [12, 37, -43], [-16, -43, 98]]);
+const L = cholesky(A);
+
+// Verify: A ≈ L @ L^T
+```
+
+### Signature
+
+```ts
+function cholesky(a: Tensor): Tensor
+```
+
+### Parameters
+
+<ParamField path="a" type="Tensor" required>
+  Symmetric positive definite matrix of shape (N, N). Must be 2D and square.
+</ParamField>
+
+### Returns
+
+Lower triangular matrix L where A = L × L^T
+
+### Algorithm
+
+Cholesky-Banachiewicz algorithm:
+- Time Complexity: O(N³/3) - approximately half the cost of LU decomposition
+- No pivoting required due to positive definiteness
+- More stable than LU for positive definite matrices
+
+### Properties
+
+- A = L @ L^T
+- L is lower triangular (L[i,j] = 0 for j > i)
+- L has positive diagonal elements
+- Much faster than LU decomposition for positive definite matrices
+- Determinant: det(A) = (product of L[i,i])²
+
+### Requirements
+
+- Matrix must be symmetric: A = A^T
+- Matrix must be positive definite: x^T × A × x > 0 for all x ≠ 0
+
+### Errors
+
+- **ShapeError**: If input is not 2D square matrix
+- **DTypeError**: If input has string dtype
+- **DataValidationError**: If matrix is not symmetric
+- **DataValidationError**: If matrix is not positive definite
+- **DataValidationError**: If input contains non-finite values (NaN, Infinity)
+
+---
+
+## eig
+
+Compute eigenvalues and eigenvectors of a square matrix.
+
+Solves **A × v = λ × v** where λ are eigenvalues and v are eigenvectors.
+
+```ts
+import { eig } from 'deepbox/linalg';
+import { tensor } from 'deepbox/ndarray';
+
+const A = tensor([[1, 2], [2, 1]]);
+const [eigenvalues, eigenvectors] = eig(A);
+
+// Verify: A @ eigenvectors[:,i] ≈ eigenvalues[i] * eigenvectors[:,i]
+```
+
+### Signature
+
+```ts
+function eig(
+  a: Tensor,
+  options?: EigOptions
+): [Tensor, Tensor]
+
+type EigOptions = {
+  maxIter?: number;
+  tol?: number;
+}
+```
+
+### Parameters
+
+<ParamField path="a" type="Tensor" required>
+  Square matrix of shape (N, N). Must be 2D.
+</ParamField>
+
+<ParamField path="options" type="EigOptions">
+  Optional configuration:
+  - `maxIter`: Maximum QR iterations (default: 300)
+  - `tol`: Convergence tolerance for subdiagonal norm (default: 1e-10)
+</ParamField>
+
+### Returns
+
+Tuple of two tensors `[eigenvalues, eigenvectors]`:
+
+- **eigenvalues**: Real values of shape (N,)
+- **eigenvectors**: Column vectors of shape (N, N) where eigenvectors[:,i] corresponds to eigenvalues[i]
+
+### Algorithm
+
+- **Symmetric matrices**: Jacobi iteration (stable, accurate)
+- **General matrices**: QR iteration with Hessenberg reduction
+
+### Properties
+
+- A @ v[:,i] = λ[i] × v[:,i]
+- Eigenvectors are normalized
+
+### Limitations
+
+- Only real eigenvalues are supported
+- Matrices with complex eigenvalues will throw **InvalidParameterError**
+- For symmetric/Hermitian matrices, use `eigh()` for better performance
+- May not converge for some matrices (bounded QR iterations)
+
+### Errors
+
+- **ShapeError**: If input is not square matrix
+- **DTypeError**: If input has string dtype
+- **DataValidationError**: If input contains non-finite values (NaN, Infinity)
+- **InvalidParameterError**: If matrix has complex eigenvalues
+- **ConvergenceError**: If QR iteration fails to converge
+
+---
+
+## eigvals
+
+Compute eigenvalues only (faster than eig).
+
+```ts
+import { eigvals } from 'deepbox/linalg';
+import { tensor } from 'deepbox/ndarray';
+
+const A = tensor([[1, 2], [2, 1]]);
+const eigenvalues = eigvals(A);
+console.log(eigenvalues);  // [3, -1]
+```
+
+### Signature
+
+```ts
+function eigvals(
+  a: Tensor,
+  options?: EigOptions
+): Tensor
+```
+
+### Parameters
+
+<ParamField path="a" type="Tensor" required>
+  Square matrix of shape (N, N)
+</ParamField>
+
+<ParamField path="options" type="EigOptions">
+  Same as `eig()` options
+</ParamField>
+
+### Returns
+
+Array of real eigenvalues
+
+### Limitations
+
+- Matrices with complex eigenvalues are not supported and will throw **InvalidParameterError**
+
+---
+
+## eigh
+
+Compute eigenvalues and eigenvectors of a symmetric/Hermitian matrix.
+
+More efficient than `eig()` for symmetric matrices.
+
+```ts
+import { eigh } from 'deepbox/linalg';
+import { tensor } from 'deepbox/ndarray';
+
+const A = tensor([[1, 2], [2, 1]]);  // Symmetric
+const [eigenvalues, eigenvectors] = eigh(A);
+```
+
+### Signature
+
+```ts
+function eigh(a: Tensor): [Tensor, Tensor]
+```
+
+### Parameters
+
+<ParamField path="a" type="Tensor" required>
+  Symmetric matrix of shape (N, N)
+</ParamField>
+
+### Returns
+
+Tuple of two tensors `[eigenvalues, eigenvectors]`:
+
+- **eigenvalues**: Real values in ascending order
+- **eigenvectors**: Orthonormal column vectors
+
+### Properties
+
+- All eigenvalues are real
+- Eigenvectors are orthonormal
+- More efficient and numerically stable than `eig()` for symmetric matrices
+
+### Errors
+
+- **ShapeError**: If input is not square matrix
+- **DTypeError**: If input has string dtype
+- **DataValidationError**: If input is not symmetric
+- **DataValidationError**: If input contains non-finite values (NaN, Infinity)
+
+---
+
+## eigvalsh
+
+Compute eigenvalues only of symmetric matrix (faster than eigh).
+
+```ts
+import { eigvalsh } from 'deepbox/linalg';
+import { tensor } from 'deepbox/ndarray';
+
+const A = tensor([[1, 2], [2, 1]]);
+const eigenvalues = eigvalsh(A);
+console.log(eigenvalues);  // [-1, 3]
+```
+
+### Signature
+
+```ts
+function eigvalsh(a: Tensor): Tensor
+```
+
+### Parameters
+
+<ParamField path="a" type="Tensor" required>
+  Symmetric square matrix of shape (N, N)
+</ParamField>
+
+### Returns
+
+Array of real eigenvalues in ascending order
+
+### Errors
+
+- **ShapeError**: If input is not square matrix
+- **DTypeError**: If input has string dtype
+- **DataValidationError**: If input is not symmetric
+- **DataValidationError**: If input contains non-finite values (NaN, Infinity)

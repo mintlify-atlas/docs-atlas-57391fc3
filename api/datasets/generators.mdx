@@ -1,0 +1,343 @@
+---
+title: Dataset Generators
+description: Generate synthetic datasets for testing and prototyping
+---
+
+## Overview
+
+Dataset generators create synthetic data with controlled properties. All generators support reproducible output via the `randomState` parameter.
+
+## Classification Generators
+
+### makeClassification
+
+Generate a random n-class classification dataset.
+
+```ts
+function makeClassification(options?: {
+  nSamples?: number;
+  nFeatures?: number;
+  nInformative?: number;
+  nRedundant?: number;
+  nClasses?: number;
+  flipY?: number;
+  randomState?: number;
+}): [Tensor, Tensor]
+```
+
+<ParamField path="options.nSamples" type="number">
+  Number of samples (default: 100)
+</ParamField>
+
+<ParamField path="options.nFeatures" type="number">
+  Total number of features (default: 20)
+</ParamField>
+
+<ParamField path="options.nInformative" type="number">
+  Number of informative features (default: 2)
+</ParamField>
+
+<ParamField path="options.nRedundant" type="number">
+  Number of redundant features (default: 2)
+</ParamField>
+
+<ParamField path="options.nClasses" type="number">
+  Number of classes (default: 2)
+</ParamField>
+
+<ParamField path="options.flipY" type="number">
+  Fraction of labels to flip for noise (default: 0.01)
+</ParamField>
+
+<ParamField path="options.randomState" type="number">
+  Seed for reproducibility
+</ParamField>
+
+<ResponseField name="Returns" type="[Tensor, Tensor]">
+  Tuple of [X, y] where X has shape [nSamples, nFeatures] and y has shape [nSamples] (int32)
+</ResponseField>
+
+Produces informative features drawn from class-conditional Gaussians, redundant features as random linear combinations of the informative ones, and noise features sampled from N(0, 1).
+
+**Example:**
+
+```ts
+import { makeClassification } from 'deepbox/datasets';
+
+const [X, y] = makeClassification({
+  nSamples: 1000,
+  nFeatures: 20,
+  nInformative: 10,
+  nRedundant: 5,
+  nClasses: 3,
+  randomState: 42
+});
+console.log(X.shape);  // [1000, 20]
+console.log(y.shape);  // [1000]
+```
+
+### makeBlobs
+
+Generate isotropic Gaussian blobs for clustering.
+
+```ts
+function makeBlobs(options?: {
+  nSamples?: number;
+  nFeatures?: number;
+  centers?: number | number[][];
+  clusterStd?: number;
+  randomState?: number;
+  shuffle?: boolean;
+}): [Tensor, Tensor]
+```
+
+<ParamField path="options.nSamples" type="number">
+  Total number of samples (default: 100)
+</ParamField>
+
+<ParamField path="options.nFeatures" type="number">
+  Number of features per sample (default: 2). Ignored when `centers` is an array.
+</ParamField>
+
+<ParamField path="options.centers" type="number | number[][]">
+  Number of cluster centers or explicit center coordinates (default: 3)
+</ParamField>
+
+<ParamField path="options.clusterStd" type="number">
+  Standard deviation of each cluster (default: 1.0)
+</ParamField>
+
+<ParamField path="options.shuffle" type="boolean">
+  Whether to shuffle the samples (default: true)
+</ParamField>
+
+<ParamField path="options.randomState" type="number">
+  Seed for reproducibility
+</ParamField>
+
+<ResponseField name="Returns" type="[Tensor, Tensor]">
+  Tuple of [X, y] where X has shape [nSamples, nFeatures] and y has shape [nSamples] (int32)
+</ResponseField>
+
+Samples are drawn from Gaussian distributions centered at randomly generated or user-specified locations.
+
+**Example:**
+
+```ts
+import { makeBlobs } from 'deepbox/datasets';
+
+// Random centers
+const [X, y] = makeBlobs({
+  nSamples: 300,
+  centers: 3,
+  clusterStd: 0.5,
+  randomState: 42
+});
+
+// Explicit centers
+const [X2, y2] = makeBlobs({
+  nSamples: 300,
+  centers: [[0, 0], [5, 5], [5, 0]],
+  clusterStd: 0.8
+});
+```
+
+### makeMoons
+
+Generate two interleaving half-circle (moons) dataset.
+
+```ts
+function makeMoons(options?: {
+  nSamples?: number;
+  noise?: number;
+  shuffle?: boolean;
+  randomState?: number;
+}): [Tensor, Tensor]
+```
+
+<ParamField path="options.nSamples" type="number">
+  Total number of samples, split evenly between the two moons (default: 100)
+</ParamField>
+
+<ParamField path="options.noise" type="number">
+  Standard deviation of Gaussian noise (default: 0)
+</ParamField>
+
+<ParamField path="options.shuffle" type="boolean">
+  Whether to shuffle the samples (default: true)
+</ParamField>
+
+<ParamField path="options.randomState" type="number">
+  Seed for reproducibility
+</ParamField>
+
+<ResponseField name="Returns" type="[Tensor, Tensor]">
+  Tuple of [X, y] where X has shape [nSamples, 2] and y has shape [nSamples] (int32)
+</ResponseField>
+
+Useful for testing algorithms that handle non-linearly separable data.
+
+**Example:**
+
+```ts
+import { makeMoons } from 'deepbox/datasets';
+
+const [X, y] = makeMoons({
+  nSamples: 200,
+  noise: 0.1,
+  randomState: 42
+});
+```
+
+### makeCircles
+
+Generate a large circle containing a smaller circle in 2D.
+
+```ts
+function makeCircles(options?: {
+  nSamples?: number;
+  noise?: number;
+  factor?: number;
+  shuffle?: boolean;
+  randomState?: number;
+}): [Tensor, Tensor]
+```
+
+<ParamField path="options.nSamples" type="number">
+  Total number of samples, split evenly between inner and outer circles (default: 100)
+</ParamField>
+
+<ParamField path="options.noise" type="number">
+  Standard deviation of Gaussian noise (default: 0)
+</ParamField>
+
+<ParamField path="options.factor" type="number">
+  Scale factor between inner and outer circle, must be in (0, 1) (default: 0.8)
+</ParamField>
+
+<ParamField path="options.shuffle" type="boolean">
+  Whether to shuffle the samples (default: true)
+</ParamField>
+
+<ParamField path="options.randomState" type="number">
+  Seed for reproducibility
+</ParamField>
+
+<ResponseField name="Returns" type="[Tensor, Tensor]">
+  Tuple of [X, y] where X has shape [nSamples, 2] and y has shape [nSamples] (int32)
+</ResponseField>
+
+Useful for testing algorithms that handle non-linearly separable data.
+
+**Example:**
+
+```ts
+import { makeCircles } from 'deepbox/datasets';
+
+const [X, y] = makeCircles({
+  nSamples: 200,
+  noise: 0.05,
+  factor: 0.5,
+  randomState: 42
+});
+```
+
+### makeGaussianQuantiles
+
+Generate a dataset with classes separated by concentric Gaussian quantile shells.
+
+```ts
+function makeGaussianQuantiles(options?: {
+  nSamples?: number;
+  nFeatures?: number;
+  nClasses?: number;
+  randomState?: number;
+}): [Tensor, Tensor]
+```
+
+<ParamField path="options.nSamples" type="number">
+  Number of samples (default: 100)
+</ParamField>
+
+<ParamField path="options.nFeatures" type="number">
+  Number of features (default: 2)
+</ParamField>
+
+<ParamField path="options.nClasses" type="number">
+  Number of classes (default: 3)
+</ParamField>
+
+<ParamField path="options.randomState" type="number">
+  Seed for reproducibility
+</ParamField>
+
+<ResponseField name="Returns" type="[Tensor, Tensor]">
+  Tuple of [X, y] where X has shape [nSamples, nFeatures] and y has shape [nSamples] (int32)
+</ResponseField>
+
+Samples are drawn from an isotropic Gaussian and assigned to classes based on quantile boundaries of their Euclidean distance from the origin.
+
+**Example:**
+
+```ts
+import { makeGaussianQuantiles } from 'deepbox/datasets';
+
+const [X, y] = makeGaussianQuantiles({
+  nSamples: 500,
+  nFeatures: 3,
+  nClasses: 4,
+  randomState: 42
+});
+```
+
+## Regression Generators
+
+### makeRegression
+
+Generate a random regression dataset.
+
+```ts
+function makeRegression(options?: {
+  nSamples?: number;
+  nFeatures?: number;
+  noise?: number;
+  randomState?: number;
+}): [Tensor, Tensor]
+```
+
+<ParamField path="options.nSamples" type="number">
+  Number of samples (default: 100)
+</ParamField>
+
+<ParamField path="options.nFeatures" type="number">
+  Number of features (default: 100)
+</ParamField>
+
+<ParamField path="options.noise" type="number">
+  Standard deviation of Gaussian noise on the target (default: 0)
+</ParamField>
+
+<ParamField path="options.randomState" type="number">
+  Seed for reproducibility
+</ParamField>
+
+<ResponseField name="Returns" type="[Tensor, Tensor]">
+  Tuple of [X, y] where X has shape [nSamples, nFeatures] and y has shape [nSamples]
+</ResponseField>
+
+Features are drawn from N(0, 1) and the target is a linear combination of the features with optional Gaussian noise.
+
+**Example:**
+
+```ts
+import { makeRegression } from 'deepbox/datasets';
+
+const [X, y] = makeRegression({
+  nSamples: 1000,
+  nFeatures: 10,
+  noise: 5.0,
+  randomState: 42
+});
+console.log(X.shape);  // [1000, 10]
+console.log(y.shape);  // [1000]
+```

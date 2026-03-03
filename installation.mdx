@@ -1,0 +1,336 @@
+---
+title: "Installation"
+description: "Install Deepbox and set up your TypeScript development environment"
+---
+
+## Requirements
+
+Before installing Deepbox, ensure your system meets the following requirements:
+
+<Note>
+  **Node.js Version:** Deepbox requires Node.js `>= 24.13.0`
+</Note>
+
+Check your Node.js version:
+
+```bash
+node --version
+```
+
+If you need to upgrade, download the latest version from [nodejs.org](https://nodejs.org/).
+
+## Install Deepbox
+
+Install Deepbox using your preferred package manager:
+
+<CodeGroup>
+
+```bash npm
+npm install deepbox
+```
+
+```bash yarn
+yarn add deepbox
+```
+
+```bash pnpm
+pnpm add deepbox
+```
+
+</CodeGroup>
+
+## Verify Installation
+
+Create a simple test file to verify your installation:
+
+```typescript test.ts
+import { tensor, add } from "deepbox/ndarray";
+
+const a = tensor([1, 2, 3]);
+const b = tensor([4, 5, 6]);
+const c = add(a, b);
+
+console.log(c.toString()); // Output: tensor([5, 7, 9])
+```
+
+Run the file:
+
+<CodeGroup>
+
+```bash tsx
+npx tsx test.ts
+```
+
+```bash ts-node
+npx ts-node test.ts
+```
+
+```bash node
+# Compile first
+npx tsc test.ts
+node test.js
+```
+
+</CodeGroup>
+
+If you see `tensor([5, 7, 9])`, congratulations! Deepbox is installed correctly.
+
+## Import Strategies
+
+Deepbox provides flexible import strategies to suit your needs:
+
+### Per-Module Imports (Recommended)
+
+Import from specific modules for optimal tree-shaking and smaller bundle sizes:
+
+```typescript
+import { tensor, add, mul } from "deepbox/ndarray";
+import { DataFrame } from "deepbox/dataframe";
+import { LinearRegression } from "deepbox/ml";
+import { StandardScaler } from "deepbox/preprocess";
+import { accuracy, f1Score } from "deepbox/metrics";
+```
+
+### Namespace Imports
+
+Use namespace imports when you prefer explicit module prefixes:
+
+```typescript
+import * as db from "deepbox";
+
+const t = db.ndarray.tensor([1, 2, 3]);
+const df = new db.dataframe.DataFrame({ col: [1, 2, 3] });
+const model = new db.ml.LinearRegression();
+```
+
+### Available Modules
+
+Deepbox is organized into the following modules:
+
+<AccordionGroup>
+  <Accordion icon="cube" title="deepbox/core">
+    Types, errors, validation, dtype helpers, and configuration
+    
+    ```typescript
+    import type { DType, Shape, Device } from "deepbox/core";
+    ```
+  </Accordion>
+
+  <Accordion icon="grid" title="deepbox/ndarray">
+    N-D tensors with autograd, broadcasting, 90+ operations, and sparse matrices
+    
+    ```typescript
+    import { tensor, add, matmul, parameter } from "deepbox/ndarray";
+    ```
+  </Accordion>
+
+  <Accordion icon="calculator" title="deepbox/linalg">
+    SVD, QR, LU, Cholesky, eigenvalue decomposition, solvers, and norms
+    
+    ```typescript
+    import { svd, qr, solve, inv } from "deepbox/linalg";
+    ```
+  </Accordion>
+
+  <Accordion icon="table" title="deepbox/dataframe">
+    DataFrame and Series with 50+ operations and CSV I/O
+    
+    ```typescript
+    import { DataFrame, Series } from "deepbox/dataframe";
+    ```
+  </Accordion>
+
+  <Accordion icon="chart-simple" title="deepbox/stats">
+    Descriptive stats, correlations, and hypothesis tests
+    
+    ```typescript
+    import { mean, std, ttest, anova } from "deepbox/stats";
+    ```
+  </Accordion>
+
+  <Accordion icon="bullseye" title="deepbox/metrics">
+    40+ ML metrics for classification, regression, and clustering
+    
+    ```typescript
+    import { accuracy, f1Score, r2Score } from "deepbox/metrics";
+    ```
+  </Accordion>
+
+  <Accordion icon="sliders" title="deepbox/preprocess">
+    Scalers, encoders, normalizers, and cross-validation splits
+    
+    ```typescript
+    import { StandardScaler, trainTestSplit } from "deepbox/preprocess";
+    ```
+  </Accordion>
+
+  <Accordion icon="robot" title="deepbox/ml">
+    Classical ML models (Linear, Ridge, Lasso, Trees, SVM, KNN, Ensembles)
+    
+    ```typescript
+    import { LinearRegression, RandomForestClassifier } from "deepbox/ml";
+    ```
+  </Accordion>
+
+  <Accordion icon="brain" title="deepbox/nn">
+    Neural network layers (Linear, Conv, RNN/LSTM/GRU, Attention, Normalization)
+    
+    ```typescript
+    import { Sequential, Linear, ReLU, mseLoss } from "deepbox/nn";
+    ```
+  </Accordion>
+
+  <Accordion icon="gauge" title="deepbox/optim">
+    Optimizers (SGD, Adam, AdamW, RMSprop) and LR schedulers
+    
+    ```typescript
+    import { Adam, CosineAnnealingLR } from "deepbox/optim";
+    ```
+  </Accordion>
+
+  <Accordion icon="dice" title="deepbox/random">
+    Distributions (uniform, normal, binomial, gamma, beta) and sampling
+    
+    ```typescript
+    import { normal, uniform, choice } from "deepbox/random";
+    ```
+  </Accordion>
+
+  <Accordion icon="database" title="deepbox/datasets">
+    Built-in datasets (Iris, Digits, Breast Cancer) and synthetic generators
+    
+    ```typescript
+    import { loadIris, makeClassification } from "deepbox/datasets";
+    ```
+  </Accordion>
+
+  <Accordion icon="chart-line" title="deepbox/plot">
+    SVG/PNG plotting (scatter, line, bar, histogram, heatmap, contour)
+    
+    ```typescript
+    import { scatter, plot, hist, heatmap, saveFig } from "deepbox/plot";
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## TypeScript Configuration
+
+For the best development experience, configure your `tsconfig.json`:
+
+```json tsconfig.json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "lib": ["ES2022"]
+  }
+}
+```
+
+<Tip>
+  Enable `strict` mode to take full advantage of Deepbox's type safety.
+</Tip>
+
+## Package Information
+
+Deepbox is published to npm with the following characteristics:
+
+- **Package name:** `deepbox`
+- **Current version:** `0.2.0`
+- **License:** MIT
+- **Bundle format:** ESM and CommonJS
+- **Type definitions:** Included
+- **Runtime dependencies:** Zero
+
+### Module Exports
+
+Deepbox uses modern ESM exports with CommonJS fallbacks:
+
+```json package.json
+{
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts"
+}
+```
+
+Every module has dedicated exports for tree-shaking:
+
+```typescript
+// ESM
+import { tensor } from "deepbox/ndarray";
+
+// CommonJS
+const { tensor } = require("deepbox/ndarray");
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Quick Start Guide"
+    icon="rocket"
+    href="/quickstart"
+  >
+    Build your first Deepbox application in 5 minutes
+  </Card>
+  <Card
+    title="Core Concepts"
+    icon="book"
+    href="/concepts/tensors"
+  >
+    Learn about tensors, autograd, and broadcasting
+  </Card>
+  <Card
+    title="API Reference"
+    icon="code"
+    href="/api/ndarray/tensor"
+  >
+    Explore the complete API documentation
+  </Card>
+  <Card
+    title="Examples"
+    icon="lightbulb"
+    href="/examples/tensor-basics"
+  >
+    See practical examples and use cases
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion icon="triangle-exclamation" title="Module resolution errors">
+    If you encounter module resolution errors, ensure:
+    
+    1. Your Node.js version is >= 24.13.0
+    2. Your `tsconfig.json` has `"moduleResolution": "bundler"` or `"node16"`
+    3. You're using a compatible bundler (Vite, esbuild, Rollup, Webpack 5+)
+  </Accordion>
+
+  <Accordion icon="circle-exclamation" title="Type errors">
+    If you see TypeScript errors:
+    
+    1. Ensure you have `"strict": true` in your `tsconfig.json`
+    2. Install `@types/node` if you haven't already
+    3. Clear your TypeScript cache: `rm -rf node_modules/.cache`
+  </Accordion>
+
+  <Accordion icon="memory" title="Out of memory errors">
+    For large tensor operations, you may need to increase Node.js memory:
+    
+    ```bash
+    node --max-old-space-size=4096 your-script.js
+    ```
+  </Accordion>
+</AccordionGroup>
+
+<Note>
+  Need help? Check the [GitHub Issues](https://github.com/jehaad1/Deepbox/issues) or open a new issue.
+</Note>

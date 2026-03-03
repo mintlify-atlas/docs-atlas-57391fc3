@@ -1,0 +1,229 @@
+---
+title: Statistical Plots
+description: Specialized plots for statistical analysis
+---
+
+## Overview
+
+Statistical plotting functions provide visualizations for data distributions and relationships.
+
+## Distribution Plots
+
+### boxplot
+
+Plot a box-and-whisker diagram.
+
+```ts
+function boxplot(data: Tensor, options?: PlotOptions): void
+```
+
+<ParamField path="data" type="Tensor" required>
+  Data values for the box plot
+</ParamField>
+
+<ParamField path="options" type="PlotOptions">
+  Styling options (color, linewidth, etc.)
+</ParamField>
+
+Box plots display the distribution of data based on five-number summary: minimum, first quartile, median, third quartile, and maximum.
+
+**Example:**
+
+```ts
+import { boxplot, randn } from 'deepbox/plot';
+
+const data = randn([100]);
+boxplot(data);
+```
+
+### violinplot
+
+Plot a violin diagram.
+
+```ts
+function violinplot(data: Tensor, options?: PlotOptions): void
+```
+
+<ParamField path="data" type="Tensor" required>
+  Data values for the violin plot
+</ParamField>
+
+<ParamField path="options" type="PlotOptions">
+  Styling options
+</ParamField>
+
+Violin plots combine box plots with kernel density estimation to show the full distribution shape.
+
+### hist
+
+Plot a histogram.
+
+```ts
+function hist(
+  x: Tensor,
+  bins?: number | (PlotOptions & { bins?: number }),
+  options?: PlotOptions
+): void
+```
+
+<ParamField path="x" type="Tensor" required>
+  Data values
+</ParamField>
+
+<ParamField path="bins" type="number | object">
+  Number of bins (default: 10) or options object with bins property
+</ParamField>
+
+<ParamField path="options" type="PlotOptions">
+  Styling options
+</ParamField>
+
+Histograms show the frequency distribution of continuous data by grouping values into bins.
+
+**Example:**
+
+```ts
+import { hist, randn } from 'deepbox/plot';
+
+const data = randn([1000]);
+hist(data, 30, { color: '#2ca02c' });
+```
+
+## Relationship Plots
+
+### scatter
+
+Plot points to show relationships between variables.
+
+```ts
+function scatter(x: Tensor, y: Tensor, options?: PlotOptions): void
+```
+
+<ParamField path="x" type="Tensor" required>
+  X-axis values
+</ParamField>
+
+<ParamField path="y" type="Tensor" required>
+  Y-axis values
+</ParamField>
+
+<ParamField path="options" type="PlotOptions">
+  Styling options (color, size, alpha, etc.)
+</ParamField>
+
+Scatter plots reveal correlations, clusters, and outliers in bivariate data.
+
+**Example:**
+
+```ts
+import { scatter, randn, tensor } from 'deepbox/plot';
+
+const x = randn([100]);
+const y = randn([100]);
+scatter(x, y, { color: '#ff7f0e', size: 3, alpha: 0.6 });
+```
+
+### heatmap
+
+Display data as a color-coded matrix.
+
+```ts
+function heatmap(data: Tensor, options?: PlotOptions): void
+```
+
+<ParamField path="data" type="Tensor" required>
+  2D tensor with values to visualize
+</ParamField>
+
+<ParamField path="options" type="PlotOptions">
+  Styling options (colormap, vmin, vmax, etc.)
+</ParamField>
+
+Heatmaps are effective for visualizing correlation matrices, confusion matrices, and dense numerical data.
+
+**Example:**
+
+```ts
+import { heatmap, tensor } from 'deepbox/plot';
+
+const correlation = tensor([
+  [1.0, 0.8, 0.3],
+  [0.8, 1.0, 0.5],
+  [0.3, 0.5, 1.0]
+]);
+heatmap(correlation, { colormap: 'coolwarm', vmin: -1, vmax: 1 });
+```
+
+## Categorical Plots
+
+### bar
+
+Plot vertical bars for categorical data.
+
+```ts
+function bar(x: Tensor, height: Tensor, options?: PlotOptions): void
+```
+
+<ParamField path="x" type="Tensor" required>
+  Category positions
+</ParamField>
+
+<ParamField path="height" type="Tensor" required>
+  Bar heights
+</ParamField>
+
+<ParamField path="options" type="PlotOptions">
+  Styling options
+</ParamField>
+
+### barh
+
+Plot horizontal bars for categorical data.
+
+```ts
+function barh(y: Tensor, width: Tensor, options?: PlotOptions): void
+```
+
+<ParamField path="y" type="Tensor" required>
+  Category positions
+</ParamField>
+
+<ParamField path="width" type="Tensor" required>
+  Bar widths
+</ParamField>
+
+<ParamField path="options" type="PlotOptions">
+  Styling options
+</ParamField>
+
+### pie
+
+Plot a pie chart for proportional data.
+
+```ts
+function pie(values: Tensor, labels?: readonly string[], options?: PlotOptions): void
+```
+
+<ParamField path="values" type="Tensor" required>
+  Slice sizes
+</ParamField>
+
+<ParamField path="labels" type="string[]">
+  Optional labels for each slice
+</ParamField>
+
+<ParamField path="options" type="PlotOptions">
+  Styling options
+</ParamField>
+
+Pie charts show proportions of a whole, most effective when there are 2-6 categories.
+
+**Example:**
+
+```ts
+import { pie, tensor } from 'deepbox/plot';
+
+const values = tensor([30, 25, 20, 15, 10]);
+const labels = ['Category A', 'Category B', 'Category C', 'Category D', 'Category E'];
+pie(values, labels);
+```

@@ -1,0 +1,293 @@
+---
+title: Clustering Metrics
+description: Metrics for evaluating clustering algorithms
+---
+
+## Overview
+
+Clustering metrics evaluate the quality of cluster assignments produced by unsupervised learning algorithms.
+
+## Functions
+
+### silhouetteScore
+
+Computes the mean Silhouette Coefficient over all samples.
+
+```ts
+function silhouetteScore(
+  X: Tensor,
+  labels: Tensor,
+  metric?: "euclidean" | "precomputed",
+  options?: { sampleSize?: number; randomState?: number }
+): number
+```
+
+<ParamField path="X" type="Tensor" required>
+  Feature matrix of shape [n_samples, n_features], or a precomputed distance matrix
+</ParamField>
+
+<ParamField path="labels" type="Tensor" required>
+  Cluster labels for each sample
+</ParamField>
+
+<ParamField path="metric" type="string">
+  Distance metric: `'euclidean'` (default) or `'precomputed'`
+</ParamField>
+
+<ParamField path="options.sampleSize" type="number">
+  Number of samples to use for approximation (required when n > 2000)
+</ParamField>
+
+<ParamField path="options.randomState" type="number">
+  Seed for reproducible sampling
+</ParamField>
+
+<ResponseField name="Returns" type="number">
+  Mean silhouette coefficient in range [-1, 1]
+</ResponseField>
+
+The Silhouette Coefficient measures how similar a sample is to its own cluster compared to other clusters. Values range from -1 to 1, where higher values indicate better-defined clusters.
+
+Time complexity: O(n²) where n is the number of samples.
+
+### silhouetteSamples
+
+Computes the Silhouette Coefficient for each sample.
+
+```ts
+function silhouetteSamples(
+  X: Tensor,
+  labels: Tensor,
+  metric?: "euclidean" | "precomputed"
+): Tensor
+```
+
+<ParamField path="X" type="Tensor" required>
+  Feature matrix of shape [n_samples, n_features], or a precomputed distance matrix
+</ParamField>
+
+<ParamField path="labels" type="Tensor" required>
+  Cluster labels for each sample
+</ParamField>
+
+<ParamField path="metric" type="string">
+  Distance metric: `'euclidean'` (default) or `'precomputed'`
+</ParamField>
+
+<ResponseField name="Returns" type="Tensor">
+  Tensor of silhouette coefficients in range [-1, 1] for each sample
+</ResponseField>
+
+### daviesBouldinScore
+
+Computes the Davies-Bouldin index.
+
+```ts
+function daviesBouldinScore(X: Tensor, labels: Tensor): number
+```
+
+<ParamField path="X" type="Tensor" required>
+  Feature matrix of shape [n_samples, n_features]
+</ParamField>
+
+<ParamField path="labels" type="Tensor" required>
+  Cluster labels for each sample
+</ParamField>
+
+<ResponseField name="Returns" type="number">
+  Davies-Bouldin index (lower is better, 0 is minimum)
+</ResponseField>
+
+The Davies-Bouldin index measures the average similarity ratio of each cluster with its most similar cluster. Lower values indicate better clustering.
+
+### calinskiHarabaszScore
+
+Computes the Calinski-Harabasz index (Variance Ratio Criterion).
+
+```ts
+function calinskiHarabaszScore(X: Tensor, labels: Tensor): number
+```
+
+<ParamField path="X" type="Tensor" required>
+  Feature matrix of shape [n_samples, n_features]
+</ParamField>
+
+<ParamField path="labels" type="Tensor" required>
+  Cluster labels for each sample
+</ParamField>
+
+<ResponseField name="Returns" type="number">
+  Calinski-Harabasz index (higher is better)
+</ResponseField>
+
+The score is the ratio of between-cluster dispersion to within-cluster dispersion. Higher values indicate better-defined clusters.
+
+### adjustedRandScore
+
+Computes the Adjusted Rand Index (ARI).
+
+```ts
+function adjustedRandScore(labelsTrue: Tensor, labelsPred: Tensor): number
+```
+
+<ParamField path="labelsTrue" type="Tensor" required>
+  Ground truth cluster labels
+</ParamField>
+
+<ParamField path="labelsPred" type="Tensor" required>
+  Predicted cluster labels
+</ParamField>
+
+<ResponseField name="Returns" type="number">
+  Adjusted Rand Index in range [-1, 1]
+</ResponseField>
+
+The ARI measures the similarity between two clusterings, adjusted for chance. Values: 1 = perfect agreement, 0 = random labeling, less than 0 = worse than random.
+
+### adjustedMutualInfoScore
+
+Computes the Adjusted Mutual Information (AMI) between two clusterings.
+
+```ts
+function adjustedMutualInfoScore(
+  labelsTrue: Tensor,
+  labelsPred: Tensor,
+  averageMethod?: "min" | "geometric" | "arithmetic" | "max"
+): number
+```
+
+<ParamField path="labelsTrue" type="Tensor" required>
+  Ground truth cluster labels
+</ParamField>
+
+<ParamField path="labelsPred" type="Tensor" required>
+  Predicted cluster labels
+</ParamField>
+
+<ParamField path="averageMethod" type="string">
+  Method to compute the normalizer: `'min'`, `'geometric'`, `'arithmetic'` (default), or `'max'`
+</ParamField>
+
+<ResponseField name="Returns" type="number">
+  Adjusted Mutual Information score, typically in range [0, 1]
+</ResponseField>
+
+### normalizedMutualInfoScore
+
+Computes the Normalized Mutual Information (NMI) between two clusterings.
+
+```ts
+function normalizedMutualInfoScore(
+  labelsTrue: Tensor,
+  labelsPred: Tensor,
+  averageMethod?: "min" | "geometric" | "arithmetic" | "max"
+): number
+```
+
+<ParamField path="labelsTrue" type="Tensor" required>
+  Ground truth cluster labels
+</ParamField>
+
+<ParamField path="labelsPred" type="Tensor" required>
+  Predicted cluster labels
+</ParamField>
+
+<ParamField path="averageMethod" type="string">
+  Method to compute the normalizer (default: `'arithmetic'`)
+</ParamField>
+
+<ResponseField name="Returns" type="number">
+  Normalized Mutual Information score in range [0, 1]
+</ResponseField>
+
+### fowlkesMallowsScore
+
+Computes the Fowlkes-Mallows Index (FMI).
+
+```ts
+function fowlkesMallowsScore(labelsTrue: Tensor, labelsPred: Tensor): number
+```
+
+<ParamField path="labelsTrue" type="Tensor" required>
+  Ground truth cluster labels
+</ParamField>
+
+<ParamField path="labelsPred" type="Tensor" required>
+  Predicted cluster labels
+</ParamField>
+
+<ResponseField name="Returns" type="number">
+  Fowlkes-Mallows score in range [0, 1]
+</ResponseField>
+
+The FMI is the geometric mean of pairwise precision and recall.
+
+### homogeneityScore
+
+Computes the homogeneity score of a clustering.
+
+```ts
+function homogeneityScore(labelsTrue: Tensor, labelsPred: Tensor): number
+```
+
+<ParamField path="labelsTrue" type="Tensor" required>
+  Ground truth class labels
+</ParamField>
+
+<ParamField path="labelsPred" type="Tensor" required>
+  Predicted cluster labels
+</ParamField>
+
+<ResponseField name="Returns" type="number">
+  Homogeneity score in range [0, 1]
+</ResponseField>
+
+A clustering satisfies homogeneity if all of its clusters contain only data points which are members of a single class.
+
+### completenessScore
+
+Computes the completeness score of a clustering.
+
+```ts
+function completenessScore(labelsTrue: Tensor, labelsPred: Tensor): number
+```
+
+<ParamField path="labelsTrue" type="Tensor" required>
+  Ground truth class labels
+</ParamField>
+
+<ParamField path="labelsPred" type="Tensor" required>
+  Predicted cluster labels
+</ParamField>
+
+<ResponseField name="Returns" type="number">
+  Completeness score in range [0, 1]
+</ResponseField>
+
+A clustering satisfies completeness if all data points that are members of a given class are assigned to the same cluster.
+
+### vMeasureScore
+
+Computes the V-measure score of a clustering.
+
+```ts
+function vMeasureScore(labelsTrue: Tensor, labelsPred: Tensor, beta?: number): number
+```
+
+<ParamField path="labelsTrue" type="Tensor" required>
+  Ground truth class labels
+</ParamField>
+
+<ParamField path="labelsPred" type="Tensor" required>
+  Predicted cluster labels
+</ParamField>
+
+<ParamField path="beta" type="number">
+  Weight of homogeneity vs completeness (default: 1.0)
+</ParamField>
+
+<ResponseField name="Returns" type="number">
+  V-measure score in range [0, 1]
+</ResponseField>
+
+V-measure is the harmonic mean of homogeneity and completeness. When beta > 1, completeness is weighted more; when beta < 1, homogeneity is weighted more.

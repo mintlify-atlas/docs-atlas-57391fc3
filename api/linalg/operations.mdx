@@ -1,0 +1,582 @@
+---
+title: Matrix Operations
+description: Matrix inverse, norms, determinant, trace, and rank
+---
+
+## Overview
+
+Matrix operations compute fundamental properties and transformations of matrices, including inverse, pseudo-inverse, norms, determinant, trace, condition number, and rank.
+
+---
+
+## inv
+
+Compute the inverse of a matrix.
+
+Finds matrix A^(-1) such that **A × A^(-1) = I**.
+
+```ts
+import { inv } from 'deepbox/linalg';
+import { tensor, matmul } from 'deepbox/ndarray';
+
+const A = tensor([[1, 2], [3, 4]]);
+const Ainv = inv(A);
+
+// Verify: A * A^(-1) ≈ I
+const I = matmul(A, Ainv);
+```
+
+### Signature
+
+```ts
+function inv(a: Tensor): Tensor
+```
+
+### Parameters
+
+<ParamField path="a" type="Tensor" required>
+  Square matrix of shape (N, N). Must be non-singular.
+</ParamField>
+
+### Returns
+
+Inverse matrix of shape (N, N)
+
+### Algorithm
+
+LU decomposition with partial pivoting:
+1. Factor A = P × L × U
+2. Solve A × X = I for each column of X
+
+### Properties
+
+- A × inv(A) = I
+- inv(inv(A)) = A
+- inv(A×B) = inv(B) × inv(A)
+- det(inv(A)) = 1 / det(A)
+
+### Requirements
+
+- Matrix must be square
+- Matrix must be non-singular (det(A) ≠ 0)
+
+### Errors
+
+- **ShapeError**: If matrix is not square or not 2D
+- **DTypeError**: If input has string dtype
+- **DataValidationError**: If matrix is singular or contains non-finite values
+
+---
+
+## pinv
+
+Compute the Moore-Penrose pseudo-inverse.
+
+Generalization of matrix inverse for non-square or singular matrices.
+
+```ts
+import { pinv } from 'deepbox/linalg';
+import { tensor } from 'deepbox/ndarray';
+
+// Non-square matrix
+const A = tensor([[1, 2], [3, 4], [5, 6]]);
+const Apinv = pinv(A);
+
+console.log(Apinv.shape);  // [2, 3]
+```
+
+### Signature
+
+```ts
+function pinv(a: Tensor, rcond?: number): Tensor
+```
+
+### Parameters
+
+<ParamField path="a" type="Tensor" required>
+  Input matrix of shape (M, N). Can be any shape.
+</ParamField>
+
+<ParamField path="rcond" type="number">
+  Cutoff for small singular values. Default: machine epsilon × max(M, N).
+  Singular values smaller than rcond × largest_singular_value are treated as zero.
+</ParamField>
+
+### Returns
+
+Pseudo-inverse of shape (N, M)
+
+### Algorithm
+
+Using SVD:
+1. A = U × Σ × V^T
+2. pinv(A) = V × Σ^+ × U^T
+
+where Σ^+ is pseudo-inverse of Σ (1/s_i for s_i > rcond, else 0)
+
+### Properties
+
+- A × pinv(A) × A = A
+- pinv(A) × A × pinv(A) = pinv(A)
+- For full rank square matrix: pinv(A) = inv(A)
+- For overdetermined system: pinv(A) gives least squares solution
+- For underdetermined system: pinv(A) gives minimum norm solution
+
+### Use Cases
+
+```ts
+// Singular matrix
+const A = tensor([[1, 2], [2, 4]]);  // Rank 1
+const Apinv = pinv(A);  // Works! (inv would fail)
+
+// Overdetermined system
+const A = tensor([[1, 1], [1, 2], [1, 3]]);
+const b = tensor([2, 3, 5]);
+const x = matmul(pinv(A), b);  // Least squares solution
+```
+
+### Errors
+
+- **ShapeError**: If input is not 2D matrix
+- **DTypeError**: If input has string dtype
+- **InvalidParameterError**: If rcond is negative or non-finite
+- **DataValidationError**: If input contains non-finite values (NaN, Infinity)
+
+---
+
+## det
+
+Compute the determinant of a matrix.
+
+Scalar value representing signed volume of the parallelepiped formed by matrix rows.
+
+```ts
+import { det } from 'deepbox/linalg';
+import { tensor } from 'deepbox/ndarray';
+
+const A = tensor([[1, 2], [3, 4]]);
+console.log(det(A));  // -2
+```
+
+### Signature
+
+```ts
+function det(a: Tensor): number
+```
+
+### Parameters
+
+<ParamField path="a" type="Tensor" required>
+  Square matrix of shape (N, N).
+</ParamField>
+
+### Returns
+
+Determinant value (scalar)
+
+### Algorithm
+
+LU decomposition with partial pivoting:
+- det(A) = pivSign × product(diag(U))
+- Time Complexity: O(N³)
+- Space Complexity: O(N²)
+
+### Properties
+
+- det(A) = 0 if and only if A is singular (non-invertible)
+- det(A×B) = det(A) × det(B)
+- det(A^T) = det(A)
+- det(c×A) = c^N × det(A) for scalar c and N×N matrix A
+- det(I) = 1 for identity matrix
+- det(inv(A)) = 1 / det(A)
+
+### Errors
+
+- **ShapeError**: If input is not a 2D square matrix
+- **DTypeError**: If input has string dtype
+- **DataValidationError**: If input contains non-finite values (NaN, Infinity)
+
+---
+
+## slogdet
+
+Compute sign and natural logarithm of the determinant.
+
+More numerically stable than `det()` for large matrices or matrices with very large/small determinants.
+
+```ts
+import { slogdet } from 'deepbox/linalg';
+import { tensor } from 'deepbox/ndarray';
+
+const A = tensor([[1, 2], [3, 4]]);
+const [sign, logdet] = slogdet(A);
+// det(A) = sign * exp(logdet)
+```
+
+### Signature
+
+```ts
+function slogdet(a: Tensor): [Tensor, Tensor]
+```
+
+### Parameters
+
+<ParamField path="a" type="Tensor" required>
+  Square matrix of shape (N, N).
+</ParamField>
+
+### Returns
+
+Tuple of two 0D tensors `[sign, logdet]`:
+
+- **sign**: +1, -1, or 0
+- **logdet**: Natural log of |det(A)|, -Infinity if singular
+
+### Mathematical Relation
+
+det(A) = sign × exp(logdet)
+
+### Advantages over det()
+
+- Avoids overflow for large determinants
+- Avoids underflow for small determinants
+- More numerically stable for ill-conditioned matrices
+
+### Errors
+
+- **ShapeError**: If input is not a 2D square matrix
+- **DTypeError**: If input has string dtype
+- **DataValidationError**: If input contains non-finite values (NaN, Infinity)
+
+---
+
+## trace
+
+Compute the trace of a matrix.
+
+Sum of diagonal elements. Supports offset diagonals and batched operations.
+
+```ts
+import { trace } from 'deepbox/linalg';
+import { tensor } from 'deepbox/ndarray';
+
+const A = tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]]);
+console.log(trace(A));      // 1 + 5 + 9 = 15
+console.log(trace(A, 1));   // 2 + 6 = 8 (upper diagonal)
+console.log(trace(A, -1));  // 4 + 8 = 12 (lower diagonal)
+```
+
+### Signature
+
+```ts
+function trace(
+  a: Tensor,
+  offset?: number,
+  axis1?: Axis,
+  axis2?: Axis
+): Tensor
+```
+
+### Parameters
+
+<ParamField path="a" type="Tensor" required>
+  Input matrix (at least 2D).
+</ParamField>
+
+<ParamField path="offset" type="number" default="0">
+  Integer offset from main diagonal:
+  - 0: main diagonal
+  - Greater than 0: upper diagonal (k-th diagonal above main)
+  - Less than 0: lower diagonal (k-th diagonal below main)
+</ParamField>
+
+<ParamField path="axis1" type="Axis" default="0">
+  First axis to take the diagonal from.
+</ParamField>
+
+<ParamField path="axis2" type="Axis" default="1">
+  Second axis to take the diagonal from.
+</ParamField>
+
+### Returns
+
+Trace values as tensor (one per slice if input is batched)
+
+### Algorithm
+
+Direct summation:
+- Time Complexity: O(min(M, N)) where M×N is matrix size
+- Space Complexity: O(1)
+
+### Properties
+
+- trace(A) = sum of eigenvalues (for square matrices)
+- trace(A×B) = trace(B×A) (cyclic property)
+- trace(A + B) = trace(A) + trace(B) (linearity)
+- trace(c×A) = c × trace(A) for scalar c
+- trace(A^T) = trace(A)
+
+### Errors
+
+- **ShapeError**: If input is not at least 2D
+- **InvalidParameterError**: If axis values are invalid/identical or offset is non-integer
+- **DTypeError**: If input has string dtype
+- **DataValidationError**: If input contains non-finite values (NaN, Infinity)
+
+---
+
+## norm
+
+Matrix or vector norm.
+
+Computes various matrix and vector norms measuring magnitude or size.
+
+```ts
+import { norm } from 'deepbox/linalg';
+import { tensor } from 'deepbox/ndarray';
+
+// Vector norms
+const v = tensor([3, 4]);
+console.log(norm(v));           // 5 (L2 norm)
+console.log(norm(v, 1));        // 7 (L1 norm)
+console.log(norm(v, Infinity)); // 4 (max norm)
+
+// Matrix norms
+const A = tensor([[1, 2], [3, 4]]);
+console.log(norm(A, 'fro'));    // Frobenius norm
+console.log(norm(A, 2));        // Spectral norm (largest singular value)
+```
+
+### Signature
+
+```ts
+function norm(
+  x: Tensor,
+  ord?: number | 'fro' | 'nuc',
+  axis?: Axis | Axis[],
+  keepdims?: boolean
+): Tensor | number
+```
+
+### Parameters
+
+<ParamField path="x" type="Tensor" required>
+  Input array (vector or matrix).
+</ParamField>
+
+<ParamField path="ord" type="number | 'fro' | 'nuc'">
+  Order of the norm:
+  
+  **For vectors:**
+  - undefined or 2: L2 norm (Euclidean)
+  - 1: L1 norm (Manhattan)
+  - Infinity: Max norm
+  - -Infinity: Min norm
+  - 0: L0 "norm" (number of non-zero elements)
+  - p: Lp norm (p > 0)
+  
+  **For matrices:**
+  - 'fro': Frobenius norm
+  - 'nuc': Nuclear norm (sum of singular values)
+  - 1: Max column sum
+  - -1: Min column sum
+  - 2: Largest singular value (spectral norm)
+  - -2: Smallest singular value
+  - Infinity: Max row sum
+  - -Infinity: Min row sum
+</ParamField>
+
+<ParamField path="axis" type="Axis | Axis[]">
+  Axis or axes along which to compute norm.
+</ParamField>
+
+<ParamField path="keepdims" type="boolean" default="false">
+  Keep reduced dimensions.
+</ParamField>
+
+### Returns
+
+Norm value (scalar or tensor depending on axis)
+
+### Common Norm Types
+
+#### Vector Norms
+
+```ts
+const v = tensor([3, 4]);
+
+// L2 norm (Euclidean distance)
+norm(v);        // sqrt(3² + 4²) = 5
+
+// L1 norm (Manhattan distance)
+norm(v, 1);     // |3| + |4| = 7
+
+// Max norm
+norm(v, Infinity);  // max(|3|, |4|) = 4
+
+// Lp norm
+norm(v, 3);     // (|3|³ + |4|³)^(1/3)
+```
+
+#### Matrix Norms
+
+```ts
+const A = tensor([[1, -2], [3, 4]]);
+
+// Frobenius norm (most common)
+norm(A, 'fro');  // sqrt(1² + 2² + 3² + 4²) = sqrt(30)
+
+// Spectral norm (largest singular value)
+norm(A, 2);      // Largest singular value
+
+// Nuclear norm (sum of singular values)
+norm(A, 'nuc');  // Sum of all singular values
+
+// Max column sum (1-norm)
+norm(A, 1);      // max(|1|+|3|, |-2|+|4|) = 6
+
+// Max row sum (infinity norm)
+norm(A, Infinity); // max(|1|+|-2|, |3|+|4|) = 7
+```
+
+### Errors
+
+- **DTypeError**: If input has string dtype
+- **DataValidationError**: If input contains non-finite values (NaN, Infinity)
+- **InvalidParameterError**: If norm order or axis values are invalid
+- **ShapeError**: If axis configuration is incompatible with input
+
+---
+
+## cond
+
+Condition number of a matrix.
+
+Measures how sensitive the solution of A×x=b is to changes in b. Large condition number indicates ill-conditioned matrix.
+
+```ts
+import { cond } from 'deepbox/linalg';
+import { tensor } from 'deepbox/ndarray';
+
+const A = tensor([[1, 2], [2, 4.001]]);
+console.log(cond(A));  // Large number (ill-conditioned)
+
+const I = tensor([[1, 0], [0, 1]]);
+console.log(cond(I));  // 1 (well-conditioned)
+```
+
+### Signature
+
+```ts
+function cond(a: Tensor, p?: number | 'fro'): number
+```
+
+### Parameters
+
+<ParamField path="a" type="Tensor" required>
+  Input matrix of shape (M, N).
+</ParamField>
+
+<ParamField path="p" type="number | 'fro'">
+  Norm order. Only 2-norm and Frobenius norm are supported.
+</ParamField>
+
+### Returns
+
+Condition number (≥ 1, infinity for singular matrices)
+
+### Formula
+
+cond(A) = ||A|| × ||A^(-1)||
+
+For 2-norm: cond(A) = σ_max / σ_min (ratio of largest to smallest singular value)
+
+### Interpretation
+
+- **cond(A) = 1**: Perfectly conditioned (e.g., identity matrix)
+- **cond(A) < 100**: Well-conditioned
+- **cond(A) > 10^6**: Ill-conditioned (loss of precision)
+- **cond(A) = ∞**: Singular matrix
+
+### Errors
+
+- **ShapeError**: If input is not a 2D matrix
+- **DTypeError**: If input has string dtype
+- **DataValidationError**: If input contains non-finite values (NaN, Infinity)
+- **InvalidParameterError**: If p is unsupported
+
+---
+
+## matrixRank
+
+Compute the rank of a matrix.
+
+Number of linearly independent rows/columns. Uses SVD to count singular values above a threshold.
+
+```ts
+import { matrixRank } from 'deepbox/linalg';
+import { tensor } from 'deepbox/ndarray';
+
+const A = tensor([[1, 2], [2, 4]]);  // Rank 1 (linearly dependent rows)
+console.log(matrixRank(A));  // 1
+
+const B = tensor([[1, 0], [0, 1]]);  // Full rank
+console.log(matrixRank(B));  // 2
+```
+
+### Signature
+
+```ts
+function matrixRank(a: Tensor, tol?: number): number
+```
+
+### Parameters
+
+<ParamField path="a" type="Tensor" required>
+  Input matrix of shape (M, N).
+</ParamField>
+
+<ParamField path="tol" type="number">
+  Threshold for small singular values.
+  Default: max(M,N) × largest_singular_value × machine_epsilon.
+  Singular values > tol are counted as non-zero.
+</ParamField>
+
+### Returns
+
+Rank (integer between 0 and min(M, N))
+
+### Algorithm
+
+SVD-based rank computation:
+1. Compute SVD: A = U × Σ × V^T
+2. Count singular values > threshold
+- Time Complexity: O(min(M,N) × M × N)
+- Space Complexity: O(M×N)
+
+### Properties
+
+- 0 ≤ rank(A) ≤ min(M, N)
+- rank(A) = rank(A^T)
+- rank(A) = number of non-zero singular values
+- Full rank: rank(A) = min(M, N)
+- Rank deficient: rank(A) < min(M, N)
+
+### Use Cases
+
+```ts
+// Check if matrix is full rank
+const A = tensor([[1, 2], [3, 4]]);
+const isFullRank = matrixRank(A) === Math.min(...A.shape);
+
+// Detect linear dependence
+const B = tensor([[1, 2, 3], [2, 4, 6]]);  // Second row = 2 × first row
+console.log(matrixRank(B));  // 1 (not 2)
+```
+
+### Errors
+
+- **ShapeError**: If input is not a 2D matrix
+- **DTypeError**: If input has string dtype
+- **InvalidParameterError**: If tol is negative or non-finite
+- **DataValidationError**: If input contains non-finite values (NaN, Infinity)

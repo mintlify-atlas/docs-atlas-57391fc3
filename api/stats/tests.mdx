@@ -1,0 +1,742 @@
+---
+title: 'Hypothesis Tests'
+description: 'Statistical tests for comparing distributions and testing hypotheses'
+icon: 'flask-vial'
+---
+
+## Test Results
+
+All hypothesis test functions return a `TestResult` object:
+
+```typescript
+type TestResult = {
+  statistic: number;  // Test statistic value
+  pvalue: number;     // Probability of observing this result under null hypothesis
+};
+```
+
+**Interpreting p-values:**
+- **p < 0.05:** Statistically significant at 5% level (reject null hypothesis)
+- **p < 0.01:** Statistically significant at 1% level (strong evidence)
+- **p ≥ 0.05:** Not statistically significant (fail to reject null hypothesis)
+
+---
+
+## t-Tests
+
+### ttest_1samp
+
+One-sample t-test.
+
+```typescript
+function ttest_1samp(
+  a: Tensor,
+  popmean: number
+): TestResult
+```
+
+<ParamField path="a" type="Tensor" required>
+  Sample data
+</ParamField>
+
+<ParamField path="popmean" type="number" required>
+  Expected population mean under null hypothesis
+</ParamField>
+
+<ResponseField name="return" type="TestResult">
+  Test result with statistic and p-value
+</ResponseField>
+
+Tests whether the mean of a sample differs from a known population mean.
+
+**Null Hypothesis (H₀):** The sample mean equals the population mean (μ = μ₀)
+
+**Statistical Context:**
+The test statistic is `t = (x̄ - μ₀) / (s / √n)` where x̄ is sample mean, s is sample standard deviation, and n is sample size. Under H₀, this follows a t-distribution with n-1 degrees of freedom.
+
+**Assumptions:**
+- Sample is randomly drawn from population
+- Data is approximately normally distributed (or n > 30 by CLT)
+- Observations are independent
+
+Requires at least 2 samples.
+
+```typescript
+const sample = tensor([5.2, 4.8, 5.1, 5.3, 4.9]);
+const result = ttest_1samp(sample, 5.0);
+// Test if sample mean differs from 5.0
+```
+
+---
+
+### ttest_ind
+
+Independent two-sample t-test.
+
+```typescript
+function ttest_ind(
+  a: Tensor,
+  b: Tensor,
+  equalVar?: boolean
+): TestResult
+```
+
+<ParamField path="a" type="Tensor" required>
+  First sample
+</ParamField>
+
+<ParamField path="b" type="Tensor" required>
+  Second sample
+</ParamField>
+
+<ParamField path="equalVar" type="boolean" default="true">
+  If true, uses pooled variance (Student's t-test). If false, uses Welch's t-test (unequal variances).
+</ParamField>
+
+<ResponseField name="return" type="TestResult">
+  Test result with statistic and p-value
+</ResponseField>
+
+Tests whether means of two independent samples are equal.
+
+**Null Hypothesis (H₀):** The two population means are equal (μ₁ = μ₂)
+
+**Statistical Context:**
+- **Student's t-test (equalVar=true):** Assumes equal population variances, uses pooled variance estimate
+- **Welch's t-test (equalVar=false):** Does not assume equal variances, uses Welch-Satterthwaite approximation for degrees of freedom
+
+**Assumptions:**
+- Samples are independent
+- Data in each group is approximately normally distributed
+- If equalVar=true, population variances are equal (test with Levene's test)
+
+Requires at least 2 samples in each group.
+
+```typescript
+const control = tensor([4.2, 4.5, 4.3, 4.6, 4.4]);
+const treatment = tensor([5.1, 5.3, 5.2, 5.4, 5.0]);
+const result = ttest_ind(control, treatment);
+// Test if treatment group has different mean than control
+```
+
+---
+
+### ttest_rel
+
+Paired-sample t-test.
+
+```typescript
+function ttest_rel(
+  a: Tensor,
+  b: Tensor
+): TestResult
+```
+
+<ParamField path="a" type="Tensor" required>
+  First set of measurements (before)
+</ParamField>
+
+<ParamField path="b" type="Tensor" required>
+  Second set of measurements (after) - must have same length as a
+</ParamField>
+
+<ResponseField name="return" type="TestResult">
+  Test result with statistic and p-value
+</ResponseField>
+
+Tests whether means of two related samples are equal.
+
+**Null Hypothesis (H₀):** The mean difference is zero (μ_diff = 0)
+
+**Statistical Context:**
+The paired t-test is equivalent to a one-sample t-test on the differences. It's more powerful than the independent t-test when observations are paired because it controls for individual variation.
+
+**Use Cases:**
+- Before/after measurements on same subjects
+- Matched pairs (twins, siblings)
+- Repeated measurements on same experimental units
+- Left vs right measurements on same subjects
+
+**Assumptions:**
+- Pairs are randomly selected
+- Differences are approximately normally distributed
+- Pairs are independent of each other
+
+Requires at least 2 paired samples.
+
+```typescript
+const before = tensor([120, 135, 140, 130, 125]);
+const after = tensor([115, 128, 135, 125, 120]);
+const result = ttest_rel(before, after);
+// Test if blood pressure changed after treatment
+```
+
+---
+
+## ANOVA
+
+### f_oneway
+
+One-way ANOVA.
+
+```typescript
+function f_oneway(
+  ...samples: Tensor[]
+): TestResult
+```
+
+<ParamField path="samples" type="Tensor[]" required>
+  Two or more sample groups to compare
+</ParamField>
+
+<ResponseField name="return" type="TestResult">
+  Test result with F-statistic and p-value
+</ResponseField>
+
+Tests whether means of two or more groups are all equal.
+
+**Null Hypothesis (H₀):** All group means are equal (μ₁ = μ₂ = ... = μₖ)
+
+**Statistical Context:**
+ANOVA (Analysis of Variance) decomposes total variance into between-group and within-group components. The F-statistic is the ratio of between-group variance to within-group variance. Large F values indicate greater differences between groups relative to within-group variation.
+
+**Assumptions:**
+- Samples are independent
+- Data in each group is approximately normally distributed
+- Population variances are equal (homoscedasticity - test with Levene's test)
+
+**Post-hoc Tests:**
+If ANOVA is significant, use post-hoc tests (like Tukey's HSD) to determine which specific groups differ.
+
+```typescript
+const group1 = tensor([23, 25, 24, 26, 25]);
+const group2 = tensor([28, 30, 29, 31, 30]);
+const group3 = tensor([20, 22, 21, 23, 22]);
+const result = f_oneway(group1, group2, group3);
+// Test if any group means differ
+```
+
+---
+
+## Variance Tests
+
+### levene
+
+Levene's test for equality of variances.
+
+```typescript
+function levene(
+  center: 'mean' | 'median' | 'trimmed',
+  ...samples: Tensor[]
+): TestResult
+```
+
+<ParamField path="center" type="'mean' | 'median' | 'trimmed'" required>
+  Method for centering:
+  - `'median'`: Most robust to non-normality (recommended)
+  - `'mean'`: Traditional Levene's test
+  - `'trimmed'`: 10% trimmed mean (compromise)
+</ParamField>
+
+<ParamField path="samples" type="Tensor[]" required>
+  Two or more sample groups to compare (each group must have at least 2 samples)
+</ParamField>
+
+<ResponseField name="return" type="TestResult">
+  Test result with W-statistic and p-value
+</ResponseField>
+
+Tests whether two or more groups have equal variances. More robust than Bartlett's test for non-normal data.
+
+**Null Hypothesis (H₀):** All group variances are equal (σ₁² = σ₂² = ... = σₖ²)
+
+**Statistical Context:**
+Levene's test performs an ANOVA on absolute deviations from group centers. The 'median' option (Brown-Forsythe test) is most robust to departures from normality.
+
+**Use Cases:**
+- Testing ANOVA assumption of homogeneity of variance
+- Determining whether to use pooled or unpooled variance in t-tests
+- Quality control (comparing process variability)
+
+```typescript
+const group1 = tensor([1, 2, 3, 4, 5]);
+const group2 = tensor([2, 4, 6, 8, 10]);
+const result = levene('median', group1, group2);
+```
+
+---
+
+### bartlett
+
+Bartlett's test for equality of variances.
+
+```typescript
+function bartlett(
+  ...samples: Tensor[]
+): TestResult
+```
+
+<ParamField path="samples" type="Tensor[]" required>
+  Two or more sample groups to compare (each group must have at least 2 samples)
+</ParamField>
+
+<ResponseField name="return" type="TestResult">
+  Test result with chi-square statistic and p-value
+</ResponseField>
+
+Tests whether two or more groups have equal variances. Assumes data is normally distributed; use Levene's test for non-normal data.
+
+**Null Hypothesis (H₀):** All group variances are equal (σ₁² = σ₂² = ... = σₖ²)
+
+**Statistical Context:**
+Bartlett's test is more powerful than Levene's test when data is normally distributed, but very sensitive to departures from normality. The test statistic approximately follows a chi-square distribution with k-1 degrees of freedom.
+
+**When to Use:**
+- Data is known to be normally distributed
+- Need maximum power for detecting variance differences
+- For non-normal data, use Levene's test instead
+
+```typescript
+const group1 = tensor([1, 2, 3, 4, 5]);
+const group2 = tensor([2, 4, 6, 8, 10]);
+const result = bartlett(group1, group2);
+```
+
+---
+
+## Chi-Square Tests
+
+### chisquare
+
+Chi-square goodness of fit test.
+
+```typescript
+function chisquare(
+  f_obs: Tensor,
+  f_exp?: Tensor
+): TestResult
+```
+
+<ParamField path="f_obs" type="Tensor" required>
+  Observed frequencies (must be non-negative)
+</ParamField>
+
+<ParamField path="f_exp" type="Tensor">
+  Expected frequencies (must be positive and sum to same total as f_obs). If not provided, assumes uniform distribution.
+</ParamField>
+
+<ResponseField name="return" type="TestResult">
+  Test result with chi-square statistic and p-value
+</ResponseField>
+
+Tests whether observed frequencies differ from expected frequencies.
+
+**Null Hypothesis (H₀):** Observed frequencies follow the expected distribution
+
+**Statistical Context:**
+The test statistic is `χ² = Σ((O - E)² / E)` where O is observed and E is expected frequency. Under H₀, this follows a chi-square distribution with k-1 degrees of freedom.
+
+**Assumptions:**
+- Categories are mutually exclusive
+- Observations are independent
+- Expected frequency in each category should be at least 5 (rule of thumb)
+
+**Use Cases:**
+- Testing goodness of fit to theoretical distribution
+- Testing uniformity of categorical data
+- Comparing observed vs expected counts
+
+```typescript
+// Test if die is fair (expected uniform distribution)
+const rolls = tensor([18, 22, 19, 21, 20, 20]); // 120 rolls
+const result = chisquare(rolls);
+
+// Test specific distribution
+const observed = tensor([30, 45, 25]);
+const expected = tensor([25, 50, 25]);
+const result2 = chisquare(observed, expected);
+```
+
+---
+
+## Normality Tests
+
+### shapiro
+
+Shapiro-Wilk test for normality.
+
+```typescript
+function shapiro(
+  x: Tensor
+): TestResult
+```
+
+<ParamField path="x" type="Tensor" required>
+  Sample data (size must be between 3 and 5000)
+</ParamField>
+
+<ResponseField name="return" type="TestResult">
+  Test result with W-statistic and p-value
+</ResponseField>
+
+Tests whether data comes from a normal distribution.
+
+**Null Hypothesis (H₀):** The data is normally distributed
+
+**Statistical Context:**
+The Shapiro-Wilk test is based on the correlation between the data and the corresponding normal scores. W-statistic ranges from 0 to 1, with values closer to 1 indicating normality. This implementation uses Algorithm AS R94 (Royston, 1995).
+
+**Power:**
+Shapiro-Wilk is one of the most powerful normality tests, especially for small to moderate sample sizes. It's generally preferred over Kolmogorov-Smirnov.
+
+**Sample Size:**
+- Minimum: 3 observations
+- Maximum: 5000 observations
+- Most powerful for n < 50
+
+```typescript
+const data = tensor([2.3, 2.5, 2.4, 2.6, 2.5, 2.7]);
+const result = shapiro(data);
+// Test if data is normally distributed
+```
+
+---
+
+### normaltest
+
+D'Agostino-Pearson omnibus test for normality.
+
+```typescript
+function normaltest(
+  a: Tensor
+): TestResult
+```
+
+<ParamField path="a" type="Tensor" required>
+  Sample data (requires at least 8 samples)
+</ParamField>
+
+<ResponseField name="return" type="TestResult">
+  Test result with K² statistic and p-value
+</ResponseField>
+
+Tests for normality using D'Agostino-Pearson's omnibus test combining skewness and kurtosis.
+
+**Null Hypothesis (H₀):** The data is normally distributed
+
+**Statistical Context:**
+Combines tests for skewness and kurtosis into a single omnibus test. The test statistic K² = Z₁² + Z₂² approximately follows a chi-square distribution with 2 degrees of freedom, where Z₁ is the standardized skewness and Z₂ is the standardized kurtosis.
+
+**Advantages:**
+- Works well for larger sample sizes
+- Explicitly tests both skewness and kurtosis
+- Less affected by ties than Shapiro-Wilk
+
+Requires at least 8 samples.
+
+```typescript
+const data = tensor([1.2, 2.3, 1.9, 2.5, 2.1, 2.8, 2.0, 2.4]);
+const result = normaltest(data);
+```
+
+---
+
+### anderson
+
+Anderson-Darling test for normality.
+
+```typescript
+function anderson(
+  x: Tensor
+): {
+  statistic: number;
+  critical_values: number[];
+  significance_level: number[];
+}
+```
+
+<ParamField path="x" type="Tensor" required>
+  Sample data
+</ParamField>
+
+<ResponseField name="return" type="object">
+  Object with:
+  - `statistic`: Anderson-Darling A² statistic
+  - `critical_values`: Critical values at [15%, 10%, 5%, 2.5%, 1%] significance levels
+  - `significance_level`: [0.15, 0.1, 0.05, 0.025, 0.01]
+</ResponseField>
+
+Tests for normality using the Anderson-Darling test.
+
+**Null Hypothesis (H₀):** The data is normally distributed
+
+**Statistical Context:**
+The Anderson-Darling test is a modification of the Kolmogorov-Smirnov test that gives more weight to the tails. It's particularly sensitive to departures from normality in the tails of the distribution.
+
+**Interpretation:**
+If the statistic is larger than the critical value at a given significance level, reject the null hypothesis at that level.
+
+**Use Cases:**
+- Testing normality with emphasis on tail behavior
+- When outliers or tail behavior is important
+- Quality control applications
+
+```typescript
+const data = tensor([1.2, 2.3, 1.9, 2.5, 2.1]);
+const result = anderson(data);
+// Compare statistic to critical_values
+if (result.statistic > result.critical_values[2]) {
+  console.log('Reject normality at 5% level');
+}
+```
+
+---
+
+### kstest
+
+Kolmogorov-Smirnov test for goodness of fit.
+
+```typescript
+function kstest(
+  data: Tensor,
+  cdf: 'norm' | ((x: number) => number)
+): TestResult
+```
+
+<ParamField path="data" type="Tensor" required>
+  Sample data
+</ParamField>
+
+<ParamField path="cdf" type="'norm' | ((x: number) => number)" required>
+  Cumulative distribution function to test against. Use `'norm'` for standard normal, or provide custom CDF function.
+</ParamField>
+
+<ResponseField name="return" type="TestResult">
+  Test result with D-statistic and p-value
+</ResponseField>
+
+Tests whether data comes from a specified distribution.
+
+**Null Hypothesis (H₀):** The data follows the specified distribution
+
+**Statistical Context:**
+The KS test computes the maximum vertical distance (D-statistic) between the empirical CDF and the theoretical CDF. The p-value uses the Kolmogorov distribution (asymptotic approximation).
+
+**Characteristics:**
+- Distribution-free (non-parametric)
+- Works with continuous distributions
+- Less powerful than Shapiro-Wilk for testing normality
+- More general (can test any distribution)
+
+```typescript
+// Test against standard normal
+const data = tensor([0.1, -0.5, 0.8, -0.2, 0.3]);
+const result = kstest(data, 'norm');
+
+// Test against custom distribution
+const customCdf = (x: number) => 1 / (1 + Math.exp(-x)); // Logistic CDF
+const result2 = kstest(data, customCdf);
+```
+
+---
+
+## Non-Parametric Tests
+
+### mannwhitneyu
+
+Mann-Whitney U test (non-parametric).
+
+```typescript
+function mannwhitneyu(
+  x: Tensor,
+  y: Tensor
+): TestResult
+```
+
+<ParamField path="x" type="Tensor" required>
+  First sample
+</ParamField>
+
+<ParamField path="y" type="Tensor" required>
+  Second sample
+</ParamField>
+
+<ResponseField name="return" type="TestResult">
+  Test result with U-statistic and p-value (using normal approximation with tie and continuity correction)
+</ResponseField>
+
+Tests whether two independent samples come from the same distribution.
+
+**Null Hypothesis (H₀):** The two populations have the same distribution
+
+**Statistical Context:**
+The Mann-Whitney U test (also called Wilcoxon rank-sum test) is the non-parametric alternative to the independent t-test. It ranks all observations from both groups together and tests whether the rank sums differ significantly.
+
+**Advantages over t-test:**
+- No assumption of normality
+- Robust to outliers
+- Works with ordinal data
+- More powerful than t-test when assumptions are violated
+
+**When to Use:**
+- Non-normal distributions
+- Ordinal data
+- Presence of outliers
+- Small sample sizes
+
+Uses normal approximation with tie and continuity correction.
+
+```typescript
+const control = tensor([12, 15, 14, 13, 16]);
+const treatment = tensor([18, 20, 19, 21, 17]);
+const result = mannwhitneyu(control, treatment);
+```
+
+---
+
+### wilcoxon
+
+Wilcoxon signed-rank test (non-parametric paired test).
+
+```typescript
+function wilcoxon(
+  x: Tensor,
+  y?: Tensor
+): TestResult
+```
+
+<ParamField path="x" type="Tensor" required>
+  First set of measurements (or differences if y not provided)
+</ParamField>
+
+<ParamField path="y" type="Tensor">
+  Second set of measurements. If provided, tests paired differences.
+</ParamField>
+
+<ResponseField name="return" type="TestResult">
+  Test result with W+ statistic and p-value (using normal approximation with tie and continuity correction)
+</ResponseField>
+
+Non-parametric test for paired samples or single sample median.
+
+**Null Hypothesis (H₀):** The median of differences is zero
+
+**Statistical Context:**
+The Wilcoxon signed-rank test is the non-parametric alternative to the paired t-test. It ranks the absolute values of differences and tests whether positive ranks dominate negative ranks (or vice versa).
+
+**Advantages over paired t-test:**
+- No assumption of normality for differences
+- Robust to outliers
+- More powerful when assumptions are violated
+
+**When to Use:**
+- Non-normal differences
+- Ordinal data
+- Presence of outliers in differences
+- Small sample sizes
+
+Uses normal approximation with tie and continuity correction. Zero differences are excluded.
+
+```typescript
+// Paired test
+const before = tensor([85, 90, 88, 92, 87]);
+const after = tensor([80, 85, 83, 88, 84]);
+const result = wilcoxon(before, after);
+
+// One-sample test (test if median differs from 0)
+const diffs = tensor([2.5, -1.0, 3.2, 1.5, -0.5]);
+const result2 = wilcoxon(diffs);
+```
+
+---
+
+### kruskal
+
+Kruskal-Wallis H-test (non-parametric version of ANOVA).
+
+```typescript
+function kruskal(
+  ...samples: Tensor[]
+): TestResult
+```
+
+<ParamField path="samples" type="Tensor[]" required>
+  Two or more sample groups to compare
+</ParamField>
+
+<ResponseField name="return" type="TestResult">
+  Test result with H-statistic and p-value (using chi-square approximation with tie correction)
+</ResponseField>
+
+Tests whether samples come from the same distribution (non-parametric alternative to one-way ANOVA).
+
+**Null Hypothesis (H₀):** All groups have the same distribution
+
+**Statistical Context:**
+The Kruskal-Wallis test ranks all observations across all groups and tests whether the mean ranks differ between groups. The H-statistic approximately follows a chi-square distribution with k-1 degrees of freedom.
+
+**Advantages over ANOVA:**
+- No assumption of normality
+- No assumption of equal variances
+- Robust to outliers
+- Works with ordinal data
+
+**Post-hoc Tests:**
+If significant, use Dunn's test or pairwise Mann-Whitney tests with multiple comparison correction.
+
+Uses chi-square approximation with tie correction.
+
+```typescript
+const group1 = tensor([23, 25, 24, 26, 25]);
+const group2 = tensor([28, 30, 29, 31, 30]);
+const group3 = tensor([20, 22, 21, 23, 22]);
+const result = kruskal(group1, group2, group3);
+```
+
+---
+
+### friedmanchisquare
+
+Friedman test (non-parametric repeated measures ANOVA).
+
+```typescript
+function friedmanchisquare(
+  ...samples: Tensor[]
+): TestResult
+```
+
+<ParamField path="samples" type="Tensor[]" required>
+  Three or more related samples (all must have the same length)
+</ParamField>
+
+<ResponseField name="return" type="TestResult">
+  Test result with chi-square statistic and p-value (using chi-square approximation with tie correction)
+</ResponseField>
+
+Tests whether related samples have different distributions (non-parametric alternative to repeated measures ANOVA).
+
+**Null Hypothesis (H₀):** The distributions of all related samples are the same
+
+**Statistical Context:**
+The Friedman test ranks observations within each block (subject) and tests whether the mean ranks differ across treatments. It's used when the same subjects are measured under different conditions.
+
+**Use Cases:**
+- Repeated measurements on same subjects
+- Matched groups (e.g., siblings, matched controls)
+- Block designs in experiments
+- When data is ordinal or non-normal
+
+**Assumptions:**
+- Observations are ranked within blocks
+- Blocks are independent
+- At least 3 related samples required
+
+Uses chi-square approximation with tie correction.
+
+```typescript
+// 5 subjects tested under 3 conditions
+const condition1 = tensor([8, 9, 7, 8, 9]);
+const condition2 = tensor([9, 10, 8, 9, 10]);
+const condition3 = tensor([7, 8, 6, 7, 8]);
+const result = friedmanchisquare(condition1, condition2, condition3);
+```

@@ -1,0 +1,437 @@
+---
+title: Series
+description: One-dimensional labeled array capable of holding any data type
+---
+
+## Overview
+
+A Series is a one-dimensional labeled array that can hold any data type. It is similar to a column in a spreadsheet or database table, combining:
+
+- An array of **data values**
+- An array of **index labels** (can be strings or numbers)
+- An optional **name**
+
+## Constructor
+
+<ParamField path="data" type="T[]" required>
+  Array of values to store in the Series
+</ParamField>
+
+<ParamField path="options" type="SeriesOptions">
+  Configuration options for Series construction.
+  
+  <Expandable title="properties">
+    <ParamField path="index" type="(string | number)[]">
+      Custom index labels (defaults to 0, 1, 2, ...)
+    </ParamField>
+    
+    <ParamField path="name" type="string">
+      Optional name for the Series
+    </ParamField>
+    
+    <ParamField path="copy" type="boolean" default="true">
+      Whether to copy data on construction. Set to false for performance if data ownership can be transferred.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+```ts
+import { Series } from 'deepbox/dataframe';
+
+// Create a numeric series
+const s = new Series([1, 2, 3, 4], { name: 'numbers' });
+
+// Create a series with custom index
+const s2 = new Series(['a', 'b', 'c'], {
+  index: ['row1', 'row2', 'row3'],
+  name: 'letters'
+});
+```
+
+## Properties
+
+### data
+
+Get the underlying data array.
+
+<ResponseField name="data" type="readonly T[]">
+  Read-only view of the data array
+</ResponseField>
+
+### index
+
+Get the index labels.
+
+<ResponseField name="index" type="readonly (string | number)[]">
+  Read-only view of the index array
+</ResponseField>
+
+### name
+
+Get the Series name.
+
+<ResponseField name="name" type="string | undefined">
+  The name of this Series, or undefined if not set
+</ResponseField>
+
+### length
+
+Get the number of elements in the Series.
+
+<ResponseField name="length" type="number">
+  Length of the Series
+</ResponseField>
+
+## Data Access
+
+### get()
+
+Get a value by label.
+
+This method is an alias for `loc()`. It performs strict label-based lookup.
+For positional access, use `iloc()`.
+
+<ParamField path="label" type="string | number" required>
+  The index label to look up
+</ParamField>
+
+<ResponseField name="return" type="T | undefined">
+  The value at that label, or undefined if not found
+</ResponseField>
+
+```ts
+const s = new Series([10, 20, 30], { index: ['a', 'b', 'c'] });
+s.get('a');  // 10
+s.get('z');  // undefined
+```
+
+### loc()
+
+Access a value by label (label-based indexing).
+
+<ParamField path="label" type="string | number" required>
+  The index label to look up
+</ParamField>
+
+<ResponseField name="return" type="T | undefined">
+  The value at that label, or undefined if not found
+</ResponseField>
+
+```ts
+const s = new Series([10, 20], { index: ['a', 'b'] });
+s.loc('a');  // 10
+```
+
+### iloc()
+
+Access a value by integer position (position-based indexing).
+
+<ParamField path="position" type="number" required>
+  The integer position (0-based)
+</ParamField>
+
+<ResponseField name="return" type="T | undefined">
+  The value at that position, or undefined if out of bounds
+</ResponseField>
+
+```ts
+const s = new Series([10, 20, 30]);
+s.iloc(0);  // 10
+s.iloc(2);  // 30
+```
+
+## Selection
+
+### head()
+
+Return the first n elements.
+
+<ParamField path="n" type="number" default="5">
+  Number of elements to return
+</ParamField>
+
+<ResponseField name="return" type="Series<T>">
+  New Series with the first n elements
+</ResponseField>
+
+```ts
+const s = new Series([1, 2, 3, 4, 5, 6]);
+s.head(3);  // Series([1, 2, 3])
+```
+
+### tail()
+
+Return the last n elements.
+
+<ParamField path="n" type="number" default="5">
+  Number of elements to return
+</ParamField>
+
+<ResponseField name="return" type="Series<T>">
+  New Series with the last n elements
+</ResponseField>
+
+```ts
+const s = new Series([1, 2, 3, 4, 5, 6]);
+s.tail(3);  // Series([4, 5, 6])
+```
+
+### filter()
+
+Filter Series by a boolean predicate function.
+
+Filters both data AND index to maintain alignment.
+
+<ParamField path="predicate" type="(value: T, index: number) => boolean" required>
+  Function that returns true for elements to keep
+</ParamField>
+
+<ResponseField name="return" type="Series<T>">
+  New Series with only elements that passed the predicate
+</ResponseField>
+
+```ts
+const s = new Series([1, 2, 3, 4, 5]);
+s.filter(x => x > 2);  // Series([3, 4, 5])
+```
+
+## Transformation
+
+### map()
+
+Transform each element using a mapping function.
+
+<ParamField path="fn" type="(value: T, index: number) => U" required>
+  Function to apply to each element
+</ParamField>
+
+<ResponseField name="return" type="Series<U>">
+  New Series with transformed values
+</ResponseField>
+
+```ts
+const s = new Series([1, 2, 3]);
+s.map(x => x * 2);  // Series([2, 4, 6])
+```
+
+### sort()
+
+Sort the Series values.
+
+Preserves index-value mapping by sorting `[value, index]` pairs.
+
+<ParamField path="ascending" type="boolean" default="true">
+  Sort in ascending order
+</ParamField>
+
+<ResponseField name="return" type="Series<T>">
+  New sorted Series with index reordered to match
+</ResponseField>
+
+```ts
+const s = new Series([3, 1, 2], { index: ['a', 'b', 'c'] });
+s.sort();  // Series([1, 2, 3]) with index ['b', 'c', 'a']
+```
+
+## Unique Values
+
+### unique()
+
+Get unique values in the Series.
+
+<ResponseField name="return" type="T[]">
+  Array of unique values (order preserved)
+</ResponseField>
+
+```ts
+const s = new Series([1, 2, 2, 3, 1]);
+s.unique();  // [1, 2, 3]
+```
+
+### valueCounts()
+
+Count occurrences of unique values.
+
+Returns a Series where index is the unique values and data is their counts.
+
+<ResponseField name="return" type="Series<number>">
+  Series where index is unique values and data is their counts
+</ResponseField>
+
+```ts
+const s = new Series(['a', 'b', 'a', 'c', 'a']);
+s.valueCounts();  // Series([3, 1, 1]) with index ['a', 'b', 'c']
+```
+
+## Statistical Methods
+
+All statistical methods skip null, undefined, and NaN values.
+
+### sum()
+
+Calculate the sum of all values.
+
+<ResponseField name="return" type="number">
+  Sum of all numeric values
+</ResponseField>
+
+```ts
+const s = new Series([1, 2, null, 3, 4]);
+s.sum();  // 10
+```
+
+### mean()
+
+Calculate the arithmetic mean (average) of all values.
+
+<ResponseField name="return" type="number">
+  Mean of all numeric values
+</ResponseField>
+
+```ts
+const s = new Series([1, 2, null, 3, 4]);
+s.mean();  // 2.5
+```
+
+### median()
+
+Calculate the median (middle value) of all values.
+
+For even-length Series, returns the average of the two middle values.
+
+<ResponseField name="return" type="number">
+  Median value
+</ResponseField>
+
+```ts
+const s = new Series([1, 2, 3, 4, 5]);
+s.median();  // 3
+```
+
+### std()
+
+Calculate the standard deviation of all values.
+
+Uses sample standard deviation (divides by n-1).
+
+<ResponseField name="return" type="number">
+  Standard deviation
+</ResponseField>
+
+```ts
+const s = new Series([2, 4, 6, 8]);
+s.std();  // ~2.58
+```
+
+### var()
+
+Calculate the variance of all values.
+
+Uses sample variance (divides by n-1).
+
+<ResponseField name="return" type="number">
+  Variance
+</ResponseField>
+
+```ts
+const s = new Series([2, 4, 6, 8]);
+s.var();  // ~6.67
+```
+
+### min()
+
+Find the minimum value in the Series.
+
+<ResponseField name="return" type="number">
+  Minimum value
+</ResponseField>
+
+```ts
+const s = new Series([5, 2, 8, 1, 9]);
+s.min();  // 1
+```
+
+### max()
+
+Find the maximum value in the Series.
+
+<ResponseField name="return" type="number">
+  Maximum value
+</ResponseField>
+
+```ts
+const s = new Series([5, 2, 8, 1, 9]);
+s.max();  // 9
+```
+
+## Conversion
+
+### toArray()
+
+Convert the Series to a plain JavaScript array.
+
+Returns a shallow copy of the data.
+
+<ResponseField name="return" type="T[]">
+  Array copy of the data
+</ResponseField>
+
+```ts
+const s = new Series([1, 2, 3]);
+const arr = s.toArray();  // [1, 2, 3]
+```
+
+### toTensor()
+
+Convert the Series to an ndarray Tensor.
+
+<ResponseField name="return" type="Tensor">
+  Tensor containing the Series data
+</ResponseField>
+
+```ts
+import { Series } from 'deepbox/dataframe';
+
+const s = new Series([1, 2, 3, 4]);
+const t = s.toTensor();  // Tensor([1, 2, 3, 4])
+```
+
+### toString()
+
+Return a human-readable string representation of this Series.
+
+Each row is printed as `index  value`, with an optional name/length footer.
+Large Series are truncated with an ellipsis.
+
+<ParamField path="maxRows" type="number" default="20">
+  Maximum rows to display before summarizing
+</ParamField>
+
+<ResponseField name="return" type="string">
+  Formatted string representation
+</ResponseField>
+
+```ts
+const s = new Series([10, 20, 30], { name: 'values' });
+s.toString();
+// "0  10
+// 1  20
+// 2  30
+// Name: values, Length: 3"
+```
+
+## Type Information
+
+The Series class is generic and supports type parameters:
+
+```ts
+// Explicitly typed Series
+const numbers: Series<number> = new Series([1, 2, 3]);
+const strings: Series<string> = new Series(['a', 'b', 'c']);
+
+// Type inference
+const inferred = new Series([1, 2, 3]);  // Series<number>
+
+// Mixed types
+const mixed = new Series([1, 'a', true]);  // Series<string | number | boolean>
+```

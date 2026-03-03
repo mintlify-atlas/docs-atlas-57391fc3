@@ -1,0 +1,591 @@
+---
+title: Optimization Module
+description: Optimizers and learning rate schedulers for training neural networks
+icon: arrows-rotate
+---
+
+The Optimization (optim) module provides gradient-based optimization algorithms and learning rate scheduling for training neural networks. It includes popular optimizers like SGD, Adam, RMSprop, and various learning rate schedulers.
+
+## Overview
+
+The optim module offers:
+
+- **Optimizers**: SGD, Adam, AdamW, RMSprop, Adagrad, Adadelta, Nadam
+- **Learning Rate Schedulers**: Step, exponential, cosine annealing, plateau-based
+- **Parameter Groups**: Different learning rates for different layers
+- **State Management**: Save and restore optimizer state
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="PyTorch-Compatible API" icon="fire">
+    Familiar optimizer interface with parameter groups.
+  </Card>
+  <Card title="Adaptive Methods" icon="sparkles">
+    Adam, AdamW, and RMSprop for faster convergence.
+  </Card>
+  <Card title="LR Scheduling" icon="chart-line">
+    Dynamic learning rate adjustment during training.
+  </Card>
+  <Card title="State Persistence" icon="floppy-disk">
+    Save and restore optimizer state for checkpointing.
+  </Card>
+</CardGroup>
+
+## Optimizers
+
+### Stochastic Gradient Descent (SGD)
+
+```typescript
+import { SGD } from 'deepbox/optim';
+import { Sequential, Linear, ReLU } from 'deepbox/nn';
+
+const model = new Sequential([
+  new Linear(10, 20),
+  new ReLU(),
+  new Linear(20, 1)
+]);
+
+// Basic SGD
+const optimizer = new SGD(model.parameters(), {
+  lr: 0.01,
+  momentum: 0.9,
+  dampening: 0,
+  weightDecay: 0,
+  nesterov: false
+});
+
+// Training step
+optimizer.zeroGrad();
+const loss = computeLoss();
+loss.backward();
+optimizer.step();
+```
+
+### Adam Optimizer
+
+```typescript
+import { Adam } from 'deepbox/optim';
+
+// Adam with default parameters
+const optimizer = new Adam(model.parameters(), {
+  lr: 0.001,
+  betas: [0.9, 0.999],
+  eps: 1e-8,
+  weightDecay: 0
+});
+
+// Training loop
+for (let epoch = 0; epoch < 100; epoch++) {
+  for (const batch of dataLoader) {
+    optimizer.zeroGrad();
+    
+    const output = model.forward(batch.input);
+    const loss = criterion(output, batch.target);
+    
+    loss.backward();
+    optimizer.step();
+  }
+}
+```
+
+### AdamW (Adam with Decoupled Weight Decay)
+
+```typescript
+import { AdamW } from 'deepbox/optim';
+
+// AdamW for better weight decay
+const optimizer = new AdamW(model.parameters(), {
+  lr: 0.001,
+  betas: [0.9, 0.999],
+  eps: 1e-8,
+  weightDecay: 0.01  // Decoupled weight decay
+});
+```
+
+### RMSprop
+
+```typescript
+import { RMSprop } from 'deepbox/optim';
+
+const optimizer = new RMSprop(model.parameters(), {
+  lr: 0.01,
+  alpha: 0.99,
+  eps: 1e-8,
+  weightDecay: 0,
+  momentum: 0
+});
+```
+
+### Adagrad
+
+```typescript
+import { Adagrad } from 'deepbox/optim';
+
+const optimizer = new Adagrad(model.parameters(), {
+  lr: 0.01,
+  lrDecay: 0,
+  weightDecay: 0,
+  eps: 1e-10
+});
+```
+
+### Adadelta
+
+```typescript
+import { AdaDelta } from 'deepbox/optim';
+
+const optimizer = new AdaDelta(model.parameters(), {
+  lr: 1.0,
+  rho: 0.9,
+  eps: 1e-6,
+  weightDecay: 0
+});
+```
+
+### Nadam
+
+```typescript
+import { Nadam } from 'deepbox/optim';
+
+// Nesterov-accelerated Adam
+const optimizer = new Nadam(model.parameters(), {
+  lr: 0.002,
+  betas: [0.9, 0.999],
+  eps: 1e-8,
+  weightDecay: 0
+});
+```
+
+## Parameter Groups
+
+Train different parts of the model with different hyperparameters:
+
+```typescript
+import { Adam } from 'deepbox/optim';
+
+const model = new MyModel();
+
+// Different learning rates for different layers
+const optimizer = new Adam([
+  {
+    params: model.backbone.parameters(),
+    lr: 0.0001  // Lower LR for pretrained backbone
+  },
+  {
+    params: model.head.parameters(),
+    lr: 0.001   // Higher LR for new head
+  }
+], {
+  lr: 0.001  // Default LR
+});
+```
+
+## Learning Rate Schedulers
+
+### Step LR
+
+```typescript
+import { SGD } from 'deepbox/optim';
+import { StepLR } from 'deepbox/optim';
+
+const optimizer = new SGD(model.parameters(), { lr: 0.1 });
+
+// Decay LR by gamma every stepSize epochs
+const scheduler = new StepLR(optimizer, {
+  stepSize: 30,
+  gamma: 0.1
+});
+
+// Training loop
+for (let epoch = 0; epoch < 100; epoch++) {
+  train(...);
+  scheduler.step();  // Update learning rate
+}
+```
+
+### Multi-Step LR
+
+```typescript
+import { MultiStepLR } from 'deepbox/optim';
+
+// Decay at specific epochs
+const scheduler = new MultiStepLR(optimizer, {
+  milestones: [30, 60, 90],
+  gamma: 0.1
+});
+```
+
+### Exponential LR
+
+```typescript
+import { ExponentialLR } from 'deepbox/optim';
+
+// Exponential decay
+const scheduler = new ExponentialLR(optimizer, {
+  gamma: 0.95  // LR *= 0.95 each epoch
+});
+```
+
+### Cosine Annealing
+
+```typescript
+import { CosineAnnealingLR } from 'deepbox/optim';
+
+// Cosine annealing schedule
+const scheduler = new CosineAnnealingLR(optimizer, {
+  tMax: 100,      // Period of cosine cycle
+  etaMin: 0.0001  // Minimum learning rate
+});
+```
+
+### Reduce LR on Plateau
+
+```typescript
+import { ReduceLROnPlateau } from 'deepbox/optim';
+
+// Reduce LR when metric plateaus
+const scheduler = new ReduceLROnPlateau(optimizer, {
+  mode: 'min',        // Minimize metric
+  factor: 0.1,        // Reduce by 10x
+  patience: 10,       // Wait 10 epochs
+  threshold: 0.0001,  // Minimum improvement
+  cooldown: 0,
+  minLr: 0.00001
+});
+
+// After each validation
+for (let epoch = 0; epoch < 100; epoch++) {
+  train(...);
+  const valLoss = validate(...);
+  scheduler.step(valLoss);  // Pass metric
+}
+```
+
+### One Cycle LR
+
+```typescript
+import { OneCycleLR } from 'deepbox/optim';
+
+// One cycle policy (for super-convergence)
+const scheduler = new OneCycleLR(optimizer, {
+  maxLr: 0.1,
+  totalSteps: 1000,
+  pctStart: 0.3,      // Warmup for 30% of steps
+  annealStrategy: 'cos',
+  divFactor: 25.0,    // Initial LR = maxLr / divFactor
+  finalDivFactor: 10000.0
+});
+
+// Call after each batch
+for (let step = 0; step < 1000; step++) {
+  trainBatch(...);
+  scheduler.step();
+}
+```
+
+### Warmup LR
+
+```typescript
+import { WarmupLR } from 'deepbox/optim';
+
+// Linear warmup
+const scheduler = new WarmupLR(optimizer, {
+  warmupSteps: 1000,
+  warmupFactor: 0.1  // Start at 10% of base LR
+});
+```
+
+### Linear LR
+
+```typescript
+import { LinearLR } from 'deepbox/optim';
+
+// Linear interpolation
+const scheduler = new LinearLR(optimizer, {
+  startFactor: 0.1,
+  endFactor: 1.0,
+  totalIters: 100
+});
+```
+
+## Complete Training Example
+
+```typescript
+import { Sequential, Linear, ReLU, Dropout, crossEntropyLoss } from 'deepbox/nn';
+import { Adam, CosineAnnealingLR } from 'deepbox/optim';
+import { GradTensor } from 'deepbox/ndarray';
+
+// Define model
+const model = new Sequential([
+  new Linear(784, 256),
+  new ReLU(),
+  new Dropout(0.2),
+  new Linear(256, 128),
+  new ReLU(),
+  new Dropout(0.2),
+  new Linear(128, 10)
+]);
+
+// Create optimizer
+const optimizer = new Adam(model.parameters(), {
+  lr: 0.001,
+  weightDecay: 1e-4
+});
+
+// Create scheduler
+const scheduler = new CosineAnnealingLR(optimizer, {
+  tMax: 100,
+  etaMin: 1e-6
+});
+
+// Training loop
+const numEpochs = 100;
+
+for (let epoch = 0; epoch < numEpochs; epoch++) {
+  let totalLoss = 0;
+  let numBatches = 0;
+  
+  // Training phase
+  model.train();
+  for (const { images, labels } of trainLoader) {
+    // Zero gradients
+    optimizer.zeroGrad();
+    
+    // Forward pass
+    const output = model.forward(images);
+    const loss = crossEntropyLoss(output, labels);
+    
+    // Backward pass
+    loss.backward();
+    
+    // Update weights
+    optimizer.step();
+    
+    totalLoss += loss.item();
+    numBatches++;
+  }
+  
+  // Update learning rate
+  scheduler.step();
+  
+  const avgLoss = totalLoss / numBatches;
+  console.log(`Epoch ${epoch}: Loss = ${avgLoss.toFixed(4)}, LR = ${scheduler.getLr()}`);
+  
+  // Validation phase
+  model.eval();
+  let correct = 0;
+  let total = 0;
+  
+  for (const { images, labels } of valLoader) {
+    const output = model.forward(images);
+    const predicted = output.argmax(1);
+    
+    total += labels.size;
+    correct += predicted.equal(labels).sum().item();
+  }
+  
+  const accuracy = correct / total;
+  console.log(`Validation Accuracy: ${(accuracy * 100).toFixed(2)}%`);
+}
+```
+
+## State Management
+
+### Save Optimizer State
+
+```typescript
+import { Adam } from 'deepbox/optim';
+
+const optimizer = new Adam(model.parameters(), { lr: 0.001 });
+
+// Train for a while...
+
+// Save state
+const state = optimizer.stateDict();
+const checkpoint = {
+  epoch: 50,
+  modelState: model.stateDict(),
+  optimizerState: state
+};
+
+// Save to disk
+await saveCheckpoint(checkpoint, 'checkpoint.json');
+```
+
+### Load Optimizer State
+
+```typescript
+// Load checkpoint
+const checkpoint = await loadCheckpoint('checkpoint.json');
+
+// Restore model
+model.loadStateDict(checkpoint.modelState);
+
+// Restore optimizer
+const optimizer = new Adam(model.parameters(), { lr: 0.001 });
+optimizer.loadStateDict(checkpoint.optimizerState);
+
+// Continue training from epoch 50
+for (let epoch = checkpoint.epoch; epoch < 100; epoch++) {
+  // ...
+}
+```
+
+## Optimizer Selection Guide
+
+<AccordionGroup>
+  <Accordion title="When to Use SGD">
+    Use SGD with momentum when:
+    - You have a large dataset
+    - You want better generalization
+    - You're training on a proven architecture
+    - You can afford careful LR tuning
+    
+    ```typescript
+    const optimizer = new SGD(model.parameters(), {
+      lr: 0.1,
+      momentum: 0.9,
+      nesterov: true
+    });
+    ```
+  </Accordion>
+
+  <Accordion title="When to Use Adam">
+    Use Adam when:
+    - You want fast convergence
+    - You're prototyping or experimenting
+    - You have sparse gradients
+    - Default hyperparameters work well
+    
+    ```typescript
+    const optimizer = new Adam(model.parameters(), {
+      lr: 0.001  // Usually works well
+    });
+    ```
+  </Accordion>
+
+  <Accordion title="When to Use AdamW">
+    Use AdamW when:
+    - You need weight decay (L2 regularization)
+    - Training transformers or large models
+    - Adam is overfitting
+    
+    ```typescript
+    const optimizer = new AdamW(model.parameters(), {
+      lr: 0.001,
+      weightDecay: 0.01  // Decoupled weight decay
+    });
+    ```
+  </Accordion>
+
+  <Accordion title="When to Use RMSprop">
+    Use RMSprop when:
+    - Training recurrent neural networks
+    - You have non-stationary objectives
+    - Adam is unstable
+    
+    ```typescript
+    const optimizer = new RMSprop(model.parameters(), {
+      lr: 0.001,
+      alpha: 0.99
+    });
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<Tip>
+  Start with Adam for initial experiments. It's robust and requires minimal tuning.
+</Tip>
+
+<Tip>
+  Use learning rate schedulers to improve convergence. Start with ReduceLROnPlateau or CosineAnnealingLR.
+</Tip>
+
+<Tip>
+  For fine-tuning, use smaller learning rates (1e-5 to 1e-4) and AdamW with weight decay.
+</Tip>
+
+<Warning>
+  Always call `optimizer.zeroGrad()` before each backward pass to clear previous gradients.
+</Warning>
+
+<Warning>
+  When using parameter groups, ensure all parameters are included in exactly one group.
+</Warning>
+
+## Common Patterns
+
+### Gradient Clipping
+
+```typescript
+import { Adam } from 'deepbox/optim';
+
+const optimizer = new Adam(model.parameters(), { lr: 0.001 });
+
+for (const batch of dataLoader) {
+  optimizer.zeroGrad();
+  const loss = computeLoss(batch);
+  loss.backward();
+  
+  // Clip gradients to prevent exploding gradients
+  for (const param of model.parameters()) {
+    if (param.grad) {
+      param.grad.clipByNorm(1.0);
+    }
+  }
+  
+  optimizer.step();
+}
+```
+
+### Learning Rate Warmup + Decay
+
+```typescript
+import { Adam, WarmupLR, CosineAnnealingLR } from 'deepbox/optim';
+
+const optimizer = new Adam(model.parameters(), { lr: 0.001 });
+
+// Warmup for first 1000 steps
+const warmup = new WarmupLR(optimizer, { warmupSteps: 1000 });
+
+// Then cosine decay
+const scheduler = new CosineAnnealingLR(optimizer, { tMax: 10000 });
+
+for (let step = 0; step < 11000; step++) {
+  trainStep(...);
+  
+  if (step < 1000) {
+    warmup.step();
+  } else {
+    scheduler.step();
+  }
+}
+```
+
+## Related Modules
+
+<CardGroup cols={3}>
+  <Card title="Neural Networks" icon="brain" href="/modules/nn">
+    Layers and models to optimize
+  </Card>
+  <Card title="NDArray" icon="grid" href="/modules/ndarray">
+    GradTensor and automatic differentiation
+  </Card>
+  <Card title="Metrics" icon="chart-line" href="/modules/metrics">
+    Track training progress
+  </Card>
+</CardGroup>
+
+## Learn More
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="book" href="/api/optim">
+    Complete API documentation
+  </Card>
+  <Card title="Training Guide" icon="graduation-cap" href="/tutorials/training">
+    Learn optimization techniques
+  </Card>
+</CardGroup>

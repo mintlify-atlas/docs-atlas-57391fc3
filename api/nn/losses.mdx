@@ -1,0 +1,670 @@
+---
+title: Loss Functions
+description: Training objectives for neural networks including MSE, MAE, cross entropy, and more
+---
+
+Loss functions measure how well a model's predictions match the target values. They guide the optimization process during training.
+
+## mseLoss
+
+Mean Squared Error loss function.
+
+### Signature
+
+```typescript
+function mseLoss(
+  predictions: Tensor,
+  targets: Tensor,
+  reduction?: "mean" | "sum" | "none"
+): Tensor
+
+function mseLoss(
+  predictions: GradTensor,
+  targets: GradTensor,
+  reduction?: "mean" | "sum" | "none"
+): GradTensor
+```
+
+**Parameters:**
+- `predictions` - Predicted values
+- `targets` - True target values
+- `reduction` - How to reduce the loss: 'mean', 'sum', or 'none' (default: 'mean')
+
+**Returns:** Scalar loss value (or tensor if reduction='none')
+
+### Formula
+
+```
+MSE = mean((y_pred - y_true)^2)
+```
+
+### Properties
+
+- Always non-negative
+- Penalizes large errors heavily (quadratic)
+- Differentiable everywhere
+- Common for regression tasks
+
+### Use Cases
+
+- Regression tasks
+- Continuous value prediction
+- Measuring distance between predictions and targets
+
+### Examples
+
+#### Basic Usage
+
+```typescript
+import { mseLoss } from 'deepbox/nn/losses';
+import { tensor } from 'deepbox/ndarray';
+
+const predictions = tensor([2.5, 0.0, 2.1, 7.8]);
+const targets = tensor([3.0, -0.5, 2.0, 8.0]);
+const loss = mseLoss(predictions, targets); // Scalar tensor
+console.log(loss); // ~0.0675
+```
+
+#### With Reduction Options
+
+```typescript
+// Mean reduction (default)
+const meanLoss = mseLoss(predictions, targets, "mean");
+
+// Sum reduction
+const sumLoss = mseLoss(predictions, targets, "sum");
+
+// No reduction (per-element loss)
+const elementLoss = mseLoss(predictions, targets, "none");
+// Returns tensor with same shape as input
+```
+
+#### Training Loop
+
+```typescript
+import { mseLoss } from 'deepbox/nn/losses';
+import { Linear } from 'deepbox/nn';
+import { parameter, tensor } from 'deepbox/ndarray';
+import { SGD } from 'deepbox/optim';
+
+const model = new Linear(10, 1);
+const optimizer = new SGD(model.parameters(), { lr: 0.01 });
+
+for (let epoch = 0; epoch < 100; epoch++) {
+  model.zeroGrad();
+  
+  const input = parameter(tensor(/* ... */));
+  const target = parameter(tensor(/* ... */));
+  
+  const predictions = model.forward(input);
+  const loss = mseLoss(predictions, target);
+  
+  loss.backward();
+  optimizer.step();
+}
+```
+
+---
+
+## maeLoss
+
+Mean Absolute Error (L1) loss function.
+
+### Signature
+
+```typescript
+function maeLoss(
+  predictions: Tensor,
+  targets: Tensor,
+  reduction?: "mean" | "sum" | "none"
+): Tensor
+```
+
+**Parameters:**
+- `predictions` - Predicted values
+- `targets` - True target values
+- `reduction` - How to reduce the loss (default: 'mean')
+
+**Returns:** Scalar loss value (or tensor if reduction='none')
+
+### Formula
+
+```
+MAE = mean(|y_pred - y_true|)
+```
+
+### Properties
+
+- Always non-negative
+- Linear penalty for errors
+- Less sensitive to outliers than MSE
+- More robust for noisy data
+
+### Use Cases
+
+- Regression with outliers
+- When outliers should have less influence
+- Robust regression
+
+### Example
+
+```typescript
+import { maeLoss } from 'deepbox/nn/losses';
+import { tensor } from 'deepbox/ndarray';
+
+const predictions = tensor([2.5, 0.0, 2.1, 7.8]);
+const targets = tensor([3.0, -0.5, 2.0, 8.0]);
+const loss = maeLoss(predictions, targets);
+console.log(loss); // ~0.225
+```
+
+---
+
+## crossEntropyLoss
+
+Cross Entropy Loss for multi-class classification.
+
+### Signature
+
+```typescript
+function crossEntropyLoss(
+  input: Tensor,
+  target: Tensor
+): number
+
+function crossEntropyLoss(
+  input: GradTensor,
+  target: AnyTensor
+): GradTensor
+```
+
+**Parameters:**
+- `input` - Predicted logits of shape `(n_samples, n_classes)`
+- `target` - True labels, either:
+  - Class indices of shape `(n_samples,)` - integers from 0 to n_classes-1
+  - Probabilities/One-hot of shape `(n_samples, n_classes)`
+
+**Returns:**
+- Scalar loss value (number for Tensor input)
+- GradTensor for differentiable computation
+
+### Formula
+
+```
+L = -mean(sum(target * log_softmax(input), dim=1))
+```
+
+Combines LogSoftmax and Negative Log Likelihood Loss.
+
+### Properties
+
+- Used for multi-class classification
+- Automatically applies log_softmax internally
+- Supports both hard labels (class indices) and soft labels (probabilities)
+- Numerically stable implementation
+
+### Use Cases
+
+- Multi-class classification (mutually exclusive classes)
+- Image classification
+- Text classification
+- Any classification with > 2 classes
+
+### Examples
+
+#### With Class Indices
+
+```typescript
+import { crossEntropyLoss } from 'deepbox/nn/losses';
+import { tensor } from 'deepbox/ndarray';
+
+// Logits from model (before softmax)
+const logits = tensor([
+  [2.0, 1.0, 0.1],  // Sample 1
+  [0.5, 2.5, 0.2]   // Sample 2
+]);
+
+// True class indices
+const targets = tensor([0, 1]);  // Class 0 for sample 1, class 1 for sample 2
+
+const loss = crossEntropyLoss(logits, targets);
+```
+
+#### With One-Hot Encoded Labels
+
+```typescript
+const logits = tensor([
+  [2.0, 1.0, 0.1],
+  [0.5, 2.5, 0.2]
+]);
+
+// One-hot encoded targets
+const targets = tensor([
+  [1.0, 0.0, 0.0],  // Class 0
+  [0.0, 1.0, 0.0]   // Class 1
+]);
+
+const loss = crossEntropyLoss(logits, targets);
+```
+
+#### Classification Model
+
+```typescript
+import { Sequential, Linear, ReLU } from 'deepbox/nn';
+import { crossEntropyLoss } from 'deepbox/nn/losses';
+import { parameter, tensor } from 'deepbox/ndarray';
+import { Adam } from 'deepbox/optim';
+
+const model = new Sequential(
+  new Linear(784, 256),
+  new ReLU(),
+  new Linear(256, 10)  // 10 classes, outputs logits
+);
+
+const optimizer = new Adam(model.parameters());
+
+for (let epoch = 0; epoch < 100; epoch++) {
+  model.zeroGrad();
+  
+  const input = parameter(tensor(/* ... */));  // (batch, 784)
+  const labels = tensor(/* ... */);             // (batch,) - class indices
+  
+  const logits = model.forward(input);          // (batch, 10)
+  const loss = crossEntropyLoss(logits, labels);
+  
+  loss.backward();
+  optimizer.step();
+}
+```
+
+---
+
+## binaryCrossEntropyLoss
+
+Binary Cross Entropy loss for binary classification with probability inputs.
+
+### Signature
+
+```typescript
+function binaryCrossEntropyLoss(
+  predictions: Tensor,
+  targets: Tensor,
+  reduction?: "mean" | "sum" | "none"
+): Tensor
+```
+
+**Parameters:**
+- `predictions` - Predicted probabilities (0 to 1) after sigmoid
+- `targets` - True binary labels (0 or 1)
+- `reduction` - How to reduce the loss (default: 'mean')
+
+**Returns:** Scalar loss value (or tensor if reduction='none')
+
+### Formula
+
+```
+BCE = -mean(y_true * log(y_pred) + (1 - y_true) * log(1 - y_pred))
+```
+
+### Properties
+
+- Requires predictions in range (0, 1) - use sigmoid activation
+- Targets should be 0 or 1
+- Numerically stable with epsilon clamping
+- For binary classification only
+
+### Use Cases
+
+- Binary classification
+- Multi-label classification (independent binary decisions)
+
+### Example
+
+```typescript
+import { binaryCrossEntropyLoss } from 'deepbox/nn/losses';
+import { tensor } from 'deepbox/ndarray';
+import { sigmoid } from 'deepbox/ndarray/ops';
+
+// Apply sigmoid to get probabilities
+const logits = tensor([2.0, -1.0, 0.5]);
+const predictions = sigmoid(logits);  // [0.88, 0.27, 0.62]
+const targets = tensor([1, 0, 1]);
+
+const loss = binaryCrossEntropyLoss(predictions, targets);
+```
+
+---
+
+## binaryCrossEntropyWithLogitsLoss
+
+Binary Cross Entropy with logits. Combines sigmoid and BCE for numerical stability.
+
+### Signature
+
+```typescript
+function binaryCrossEntropyWithLogitsLoss(
+  input: Tensor,
+  target: Tensor
+): number
+
+function binaryCrossEntropyWithLogitsLoss(
+  input: GradTensor,
+  target: AnyTensor
+): GradTensor
+```
+
+**Parameters:**
+- `input` - Predicted logits (before sigmoid)
+- `target` - True binary labels (0 or 1)
+
+**Returns:** Scalar loss value
+
+### Formula
+
+```
+Loss = max(x, 0) - x * z + log(1 + exp(-abs(x)))
+```
+Where `x` is input and `z` is target. This is numerically stable.
+
+### Properties
+
+- More numerically stable than sigmoid + BCE
+- Input should be logits (not probabilities)
+- Preferred over `binaryCrossEntropyLoss` for training
+
+### Example
+
+```typescript
+import { Sequential, Linear, Sigmoid } from 'deepbox/nn';
+import { binaryCrossEntropyWithLogitsLoss } from 'deepbox/nn/losses';
+import { parameter, tensor } from 'deepbox/ndarray';
+
+const model = new Sequential(
+  new Linear(10, 1)
+  // No sigmoid here - loss function handles it
+);
+
+const input = parameter(tensor(/* ... */));
+const target = tensor([1]);  // Binary label
+
+const logits = model.forward(input);
+const loss = binaryCrossEntropyWithLogitsLoss(logits, target);
+```
+
+---
+
+## rmseLoss
+
+Root Mean Squared Error loss function.
+
+### Signature
+
+```typescript
+function rmseLoss(
+  predictions: Tensor,
+  targets: Tensor
+): Tensor
+```
+
+**Parameters:**
+- `predictions` - Predicted values
+- `targets` - True target values
+
+**Returns:** Scalar loss value
+
+### Formula
+
+```
+RMSE = sqrt(mean((y_pred - y_true)^2))
+```
+
+### Properties
+
+- Square root of MSE
+- Error in same units as target
+- More interpretable than MSE
+- Common metric for regression
+
+### Example
+
+```typescript
+import { rmseLoss } from 'deepbox/nn/losses';
+import { tensor } from 'deepbox/ndarray';
+
+const predictions = tensor([2.5, 0.0, 2.1, 7.8]);
+const targets = tensor([3.0, -0.5, 2.0, 8.0]);
+const loss = rmseLoss(predictions, targets);
+```
+
+---
+
+## huberLoss
+
+Huber loss - combines MSE and MAE for robust regression.
+
+### Signature
+
+```typescript
+function huberLoss(
+  predictions: Tensor,
+  targets: Tensor,
+  delta?: number,
+  reduction?: "mean" | "sum" | "none"
+): Tensor
+```
+
+**Parameters:**
+- `predictions` - Predicted values
+- `targets` - True target values
+- `delta` - Threshold where loss transitions from quadratic to linear (default: 1.0)
+- `reduction` - How to reduce the loss (default: 'mean')
+
+**Returns:** Scalar loss value (or tensor if reduction='none')
+
+### Formula
+
+```
+Huber(a) = 0.5 * a^2                      if |a| <= delta
+         = delta * (|a| - 0.5 * delta)   otherwise
+where a = y_pred - y_true
+```
+
+### Properties
+
+- Quadratic for small errors (like MSE)
+- Linear for large errors (like MAE)
+- Robust to outliers
+- Controlled by delta parameter
+
+### Use Cases
+
+- Regression with outliers
+- When you want MSE benefits but MAE robustness
+- Robotics and control systems
+
+### Example
+
+```typescript
+import { huberLoss } from 'deepbox/nn/losses';
+import { tensor } from 'deepbox/ndarray';
+
+const predictions = tensor([1.0, 2.0, 10.0]);  // Last one is outlier
+const targets = tensor([1.2, 2.1, 2.5]);
+
+// With default delta=1.0
+const loss = huberLoss(predictions, targets);
+
+// With custom delta
+const loss2 = huberLoss(predictions, targets, 2.0);
+```
+
+---
+
+## Choosing a Loss Function
+
+### For Regression:
+
+1. **MSE** - Default choice, penalizes large errors heavily
+   ```typescript
+   const loss = mseLoss(predictions, targets);
+   ```
+
+2. **MAE** - When you have outliers
+   ```typescript
+   const loss = maeLoss(predictions, targets);
+   ```
+
+3. **Huber** - Best of both worlds
+   ```typescript
+   const loss = huberLoss(predictions, targets, 1.0);
+   ```
+
+4. **RMSE** - When you want interpretable error in target units
+   ```typescript
+   const loss = rmseLoss(predictions, targets);
+   ```
+
+### For Classification:
+
+1. **Cross Entropy** - Multi-class classification
+   ```typescript
+   const loss = crossEntropyLoss(logits, classIndices);
+   ```
+
+2. **Binary Cross Entropy** - Binary classification (probabilities)
+   ```typescript
+   const probs = sigmoid(logits);
+   const loss = binaryCrossEntropyLoss(probs, labels);
+   ```
+
+3. **BCE With Logits** - Binary classification (more stable)
+   ```typescript
+   const loss = binaryCrossEntropyWithLogitsLoss(logits, labels);
+   ```
+
+---
+
+## Complete Training Example
+
+```typescript
+import { Sequential, Linear, ReLU, Dropout } from 'deepbox/nn';
+import { mseLoss, crossEntropyLoss } from 'deepbox/nn/losses';
+import { parameter, tensor } from 'deepbox/ndarray';
+import { Adam } from 'deepbox/optim';
+
+// Regression Task
+const regressionModel = new Sequential(
+  new Linear(10, 64),
+  new ReLU(),
+  new Dropout(0.2),
+  new Linear(64, 1)
+);
+
+const regOptimizer = new Adam(regressionModel.parameters(), { lr: 0.001 });
+
+function trainRegression(epochs: number) {
+  for (let epoch = 0; epoch < epochs; epoch++) {
+    regressionModel.zeroGrad();
+    
+    const input = parameter(tensor(/* ... */));
+    const target = parameter(tensor(/* ... */));
+    
+    const predictions = regressionModel.forward(input);
+    const loss = mseLoss(predictions, target);
+    
+    loss.backward();
+    regOptimizer.step();
+    
+    console.log(`Epoch ${epoch}, Loss: ${loss.item()}`);
+  }
+}
+
+// Classification Task
+const classificationModel = new Sequential(
+  new Linear(784, 256),
+  new ReLU(),
+  new Dropout(0.5),
+  new Linear(256, 10)  // 10 classes
+);
+
+const classOptimizer = new Adam(classificationModel.parameters(), { lr: 0.001 });
+
+function trainClassification(epochs: number) {
+  for (let epoch = 0; epoch < epochs; epoch++) {
+    classificationModel.zeroGrad();
+    
+    const input = parameter(tensor(/* ... */));  // (batch, 784)
+    const labels = tensor(/* ... */);             // (batch,) class indices
+    
+    const logits = classificationModel.forward(input);
+    const loss = crossEntropyLoss(logits, labels);
+    
+    loss.backward();
+    classOptimizer.step();
+    
+    console.log(`Epoch ${epoch}, Loss: ${loss.item()}`);
+  }
+}
+```
+
+---
+
+## Custom Loss Functions
+
+You can create custom loss functions by combining operations:
+
+```typescript
+import { GradTensor } from 'deepbox/ndarray';
+
+// Custom focal loss for imbalanced classification
+function focalLoss(
+  predictions: GradTensor,
+  targets: GradTensor,
+  alpha: number = 0.25,
+  gamma: number = 2.0
+): GradTensor {
+  const bce = binaryCrossEntropyLoss(predictions, targets, 'none');
+  const pt = predictions.mul(targets).add(
+    predictions.neg().add(GradTensor.scalar(1)).mul(targets.neg().add(GradTensor.scalar(1)))
+  );
+  const focal = bce.mul(pt.pow(GradTensor.scalar(gamma)));
+  return focal.mul(GradTensor.scalar(alpha)).mean();
+}
+
+// Dice loss for segmentation
+function diceLoss(
+  predictions: GradTensor,
+  targets: GradTensor,
+  smooth: number = 1.0
+): GradTensor {
+  const intersection = predictions.mul(targets).sum();
+  const union = predictions.sum().add(targets.sum());
+  const dice = intersection.mul(GradTensor.scalar(2.0))
+    .add(GradTensor.scalar(smooth))
+    .div(union.add(GradTensor.scalar(smooth)));
+  return GradTensor.scalar(1.0).sub(dice);
+}
+```
+
+---
+
+## Loss Function Summary
+
+| Loss | Task | Properties | Best For |
+|------|------|------------|----------|
+| MSE | Regression | Quadratic, penalizes outliers | Standard regression |
+| MAE | Regression | Linear, robust | Noisy data |
+| Huber | Regression | Hybrid MSE/MAE | Robust regression |
+| RMSE | Regression | Interpretable units | Metrics, evaluation |
+| Cross Entropy | Multi-class | Combines softmax + NLL | Classification |
+| BCE | Binary | Requires probabilities | Binary classification |
+| BCE With Logits | Binary | Numerically stable | Binary classification |
+
+---
+
+## See Also
+
+- [Module](/api/nn/module) - Building neural networks
+- [Optimizers](/api/optim) - Training algorithms
+- [Activation Functions](/api/nn/activations) - Softmax for classification
+- [Linear Layer](/api/nn/layers) - Output layers

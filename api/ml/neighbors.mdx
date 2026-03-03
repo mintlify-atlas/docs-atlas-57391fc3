@@ -1,0 +1,189 @@
+---
+title: Nearest Neighbors
+description: K-nearest neighbors classifiers and regressors for Deepbox
+---
+
+## KNeighborsClassifier
+
+K-Nearest Neighbors Classifier. Classification based on k nearest neighbors using majority vote.
+
+Instance-based learning algorithm:
+1. Store all training data
+2. For each test sample, find k nearest training samples
+3. Predict class by majority vote (or weighted vote)
+
+**Time Complexity:**
+- Training: O(1) (just stores data)
+- Prediction: O(n * d) per sample where n=training samples, d=features
+
+### Constructor
+
+```typescript
+new KNeighborsClassifier(options?: {
+  nNeighbors?: number;
+  weights?: "uniform" | "distance";
+  metric?: "euclidean" | "manhattan";
+})
+```
+
+<ParamField path="options.nNeighbors" type="number" default="5">
+  Number of neighbors to use for prediction.
+</ParamField>
+
+<ParamField path="options.weights" type="string" default="uniform">
+  Weight function: 'uniform' (all neighbors weighted equally) or 'distance' (closer neighbors weighted more).
+</ParamField>
+
+<ParamField path="options.metric" type="string" default="euclidean">
+  Distance metric: 'euclidean' or 'manhattan'.
+</ParamField>
+
+### Methods
+
+#### fit
+
+```typescript
+fit(X: Tensor, y: Tensor): this
+```
+
+Fit the k-nearest neighbors classifier from the training set.
+
+<ParamField path="X" type="Tensor" required>
+  Training data of shape (n_samples, n_features)
+</ParamField>
+
+<ParamField path="y" type="Tensor" required>
+  Target class labels of shape (n_samples,)
+</ParamField>
+
+**Returns:** The fitted estimator
+
+**Throws:** `InvalidParameterError` if nNeighbors > n_samples
+
+#### predict
+
+```typescript
+predict(X: Tensor): Tensor
+```
+
+Predict class labels for samples in X.
+
+**Returns:** Predicted class labels of shape (n_samples,)
+
+#### predictProba
+
+```typescript
+predictProba(X: Tensor): Tensor
+```
+
+Predict class probabilities for samples in X.
+
+**Returns:** Class probability matrix of shape (n_samples, n_classes)
+
+#### score
+
+```typescript
+score(X: Tensor, y: Tensor): number
+```
+
+Return the mean accuracy on the given test data and labels.
+
+**Returns:** Accuracy score in range [0, 1]
+
+### Example
+
+```typescript
+import { KNeighborsClassifier } from 'deepbox/ml';
+import { tensor } from 'deepbox/ndarray';
+
+const X = tensor([[0, 0], [1, 1], [2, 2], [3, 3]]);
+const y = tensor([0, 0, 1, 1]);
+
+const knn = new KNeighborsClassifier({ nNeighbors: 3 });
+knn.fit(X, y);
+
+const predictions = knn.predict(tensor([[1.5, 1.5]]));
+```
+
+---
+
+## KNeighborsRegressor
+
+K-Nearest Neighbors Regressor. Predicts value as mean (or weighted mean) of k nearest training samples.
+
+### Constructor
+
+```typescript
+new KNeighborsRegressor(options?: {
+  nNeighbors?: number;
+  weights?: "uniform" | "distance";
+  metric?: "euclidean" | "manhattan";
+})
+```
+
+<ParamField path="options.nNeighbors" type="number" default="5">
+  Number of neighbors to use.
+</ParamField>
+
+<ParamField path="options.weights" type="string" default="uniform">
+  Weight function: 'uniform' or 'distance'.
+</ParamField>
+
+<ParamField path="options.metric" type="string" default="euclidean">
+  Distance metric: 'euclidean' or 'manhattan'.
+</ParamField>
+
+### Methods
+
+#### fit
+
+```typescript
+fit(X: Tensor, y: Tensor): this
+```
+
+Fit the k-nearest neighbors regressor from the training set.
+
+<ParamField path="X" type="Tensor" required>
+  Training data of shape (n_samples, n_features)
+</ParamField>
+
+<ParamField path="y" type="Tensor" required>
+  Target values of shape (n_samples,)
+</ParamField>
+
+**Returns:** The fitted estimator
+
+#### predict
+
+```typescript
+predict(X: Tensor): Tensor
+```
+
+Predict target values for samples in X.
+
+**Returns:** Predicted values of shape (n_samples,)
+
+#### score
+
+```typescript
+score(X: Tensor, y: Tensor): number
+```
+
+Return the R² score on the given test data and target values.
+
+**Returns:** R² score (best possible is 1.0, can be negative)
+
+### Example
+
+```typescript
+import { KNeighborsRegressor } from 'deepbox/ml';
+import { tensor } from 'deepbox/ndarray';
+
+const X = tensor([[0], [1], [2], [3]]);
+const y = tensor([0, 1, 4, 9]);
+
+const knn = new KNeighborsRegressor({ nNeighbors: 2 });
+knn.fit(X, y);
+
+const predictions = knn.predict(tensor([[1.5]]));
+```

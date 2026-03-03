@@ -1,0 +1,268 @@
+---
+title: 'Correlation & Covariance'
+description: 'Measures of association between variables'
+icon: 'diagram-project'
+---
+
+## Correlation Coefficients
+
+### pearsonr
+
+Pearson correlation coefficient.
+
+```typescript
+function pearsonr(
+  x: Tensor,
+  y: Tensor
+): [number, number]
+```
+
+<ParamField path="x" type="Tensor" required>
+  First tensor
+</ParamField>
+
+<ParamField path="y" type="Tensor" required>
+  Second tensor (must have same size as x)
+</ParamField>
+
+<ResponseField name="return" type="[number, number]">
+  Tuple of [correlation coefficient, two-tailed p-value]
+  - Correlation coefficient is in range [-1, 1]
+  - P-value tests the null hypothesis that the correlation is zero
+</ResponseField>
+
+Measures linear correlation between two variables.
+
+**Statistical Context:**
+- **r = 1:** Perfect positive linear relationship
+- **r = 0:** No linear relationship
+- **r = -1:** Perfect negative linear relationship
+
+Pearson's r measures the strength and direction of the linear relationship. It's computed as `r = cov(X,Y) / (std(X) * std(Y))`. The p-value is computed using the t-distribution with n-2 degrees of freedom under the null hypothesis that the population correlation is zero.
+
+**Assumptions:**
+- Linear relationship between variables
+- Both variables approximately normally distributed
+- No significant outliers
+- Homoscedasticity (constant variance)
+
+NaN inputs propagate to NaN correlation. Requires at least 2 paired samples.
+
+```typescript
+const x = tensor([1, 2, 3, 4, 5]);
+const y = tensor([2, 4, 6, 8, 10]);
+const [r, p] = pearsonr(x, y);  // r = 1.0 (perfect linear)
+```
+
+---
+
+### spearmanr
+
+Spearman's rank correlation coefficient.
+
+```typescript
+function spearmanr(
+  x: Tensor,
+  y: Tensor
+): [number, number]
+```
+
+<ParamField path="x" type="Tensor" required>
+  First tensor
+</ParamField>
+
+<ParamField path="y" type="Tensor" required>
+  Second tensor (must have same size as x)
+</ParamField>
+
+<ResponseField name="return" type="[number, number]">
+  Tuple of [correlation coefficient, p-value]
+  - ρ (rho) is in range [-1, 1]
+  - P-value tests the null hypothesis of no monotonic relationship
+</ResponseField>
+
+Non-parametric measure of monotonic relationship between two variables. Computed as Pearson correlation of rank values.
+
+**Statistical Context:**
+- **ρ = 1:** Perfect monotonic increasing relationship
+- **ρ = 0:** No monotonic relationship
+- **ρ = -1:** Perfect monotonic decreasing relationship
+
+Spearman's rank correlation measures monotonic relationships (whether linear or not). It's computed by ranking the data and then applying Pearson correlation to the ranks. More robust to outliers than Pearson.
+
+**Advantages over Pearson:**
+- Detects non-linear monotonic relationships
+- Robust to outliers
+- No assumption of normality
+- Works well with ordinal data
+
+Ties are assigned average ranks. Requires at least 2 paired samples.
+
+```typescript
+const x = tensor([1, 2, 3, 4, 5]);
+const y = tensor([2, 4, 6, 8, 10]);
+const [rho, p] = spearmanr(x, y);  // rho = 1.0 (perfect monotonic)
+```
+
+---
+
+### kendalltau
+
+Kendall's tau correlation coefficient.
+
+```typescript
+function kendalltau(
+  x: Tensor,
+  y: Tensor
+): [number, number]
+```
+
+<ParamField path="x" type="Tensor" required>
+  First tensor
+</ParamField>
+
+<ParamField path="y" type="Tensor" required>
+  Second tensor (must have same size as x)
+</ParamField>
+
+<ResponseField name="return" type="[number, number]">
+  Tuple of [tau coefficient, p-value]
+  - τ (tau) is in range [-1, 1]
+  - P-value uses normal approximation with tie-corrected variance
+</ResponseField>
+
+Non-parametric measure of ordinal association based on concordant/discordant pairs.
+
+**Statistical Context:**
+- **τ = 1:** All pairs concordant (perfect agreement)
+- **τ = 0:** Equal concordant and discordant pairs
+- **τ = -1:** All pairs discordant (perfect disagreement)
+
+Kendall's tau is based on the number of concordant pairs (both increase together) minus discordant pairs (one increases while the other decreases), normalized by total pairs. This implementation uses the tau-b variant with tie correction.
+
+**Advantages:**
+- More robust to outliers than Spearman
+- Better for small sample sizes
+- Has a direct interpretation (probability of concordance minus probability of discordance)
+- More appropriate when many tied ranks exist
+
+**Complexity:** O(n²) - suitable for moderate sample sizes (n < 10,000). For larger datasets, consider using Spearman's rho instead.
+
+Ties are excluded from concordant/discordant counts and reduce the denominator.
+
+```typescript
+const x = tensor([1, 2, 3, 4, 5]);
+const y = tensor([1, 3, 2, 4, 5]);
+const [tau, p] = kendalltau(x, y);  // Mostly concordant
+```
+
+---
+
+## Covariance and Correlation Matrices
+
+### corrcoef
+
+Computes the Pearson correlation coefficient matrix.
+
+```typescript
+function corrcoef(
+  x: Tensor,
+  y?: Tensor
+): Tensor
+```
+
+<ParamField path="x" type="Tensor" required>
+  Input tensor (1D or 2D). If 2D, each column is treated as a variable.
+</ParamField>
+
+<ParamField path="y" type="Tensor">
+  Optional second tensor. If provided, computes correlation between x and y.
+</ParamField>
+
+<ResponseField name="return" type="Tensor">
+  Correlation matrix (symmetric with 1s on diagonal)
+  - For two 1D tensors: 2×2 matrix
+  - For 2D tensor: n×n matrix where n is number of variables (columns)
+</ResponseField>
+
+For two variables, returns 2×2 correlation matrix. For a 2D tensor, treats each column as a variable and computes pairwise correlations.
+
+**Statistical Context:**
+The correlation matrix shows all pairwise Pearson correlations. The diagonal is always 1 (each variable perfectly correlates with itself). The matrix is symmetric (corr(X,Y) = corr(Y,X)).
+
+**Use Cases:**
+- Identifying multicollinearity in regression analysis
+- Feature selection in machine learning
+- Understanding relationships between multiple variables
+- Exploratory data analysis
+
+```typescript
+const x = tensor([1, 2, 3, 4, 5]);
+const y = tensor([2, 4, 5, 4, 5]);
+corrcoef(x, y);  // [[1.0, 0.8], [0.8, 1.0]]
+
+const data = tensor([[1, 2], [3, 4], [5, 6]]);
+corrcoef(data);  // 2×2 correlation matrix for 2 variables
+```
+
+---
+
+### cov
+
+Computes the covariance matrix.
+
+```typescript
+function cov(
+  x: Tensor,
+  y?: Tensor,
+  ddof?: number
+): Tensor
+```
+
+<ParamField path="x" type="Tensor" required>
+  Input tensor (1D or 2D). If 2D, each column is treated as a variable.
+</ParamField>
+
+<ParamField path="y" type="Tensor">
+  Optional second tensor. If provided, computes covariance between x and y.
+</ParamField>
+
+<ParamField path="ddof" type="number" default="1">
+  Delta degrees of freedom. Use 0 for population covariance, 1 for sample covariance (default).
+</ParamField>
+
+<ResponseField name="return" type="Tensor">
+  Covariance matrix (symmetric)
+  - For two 1D tensors: 2×2 matrix with variances on diagonal and covariances off-diagonal
+  - For 2D tensor: n×n matrix where n is number of variables (columns)
+</ResponseField>
+
+Covariance measures how two variables change together.
+
+**Statistical Context:**
+- **Positive covariance:** Variables tend to increase together
+- **Negative covariance:** As one increases, the other tends to decrease
+- **Near-zero covariance:** No linear relationship
+
+Covariance is unbounded and depends on the scale of the variables, making it difficult to interpret. The diagonal contains variances. For standardized measure, use correlation instead.
+
+**Relationship to Correlation:**
+```
+corr(X,Y) = cov(X,Y) / (std(X) * std(Y))
+```
+
+**Use Cases:**
+- Portfolio theory (covariance of asset returns)
+- Principal Component Analysis (PCA)
+- Multivariate statistical analysis
+- Linear discriminant analysis
+
+```typescript
+const x = tensor([1, 2, 3, 4, 5]);
+const y = tensor([2, 4, 5, 4, 5]);
+cov(x, y);  // 2×2 covariance matrix
+
+const data = tensor([[1, 2], [3, 4], [5, 6]]);
+cov(data);  // 2×2 covariance matrix for 2 variables
+cov(data, undefined, 0);  // Population covariance
+```

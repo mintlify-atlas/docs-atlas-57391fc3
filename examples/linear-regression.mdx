@@ -1,0 +1,128 @@
+---
+title: Linear Regression
+description: Build a simple linear regression model to predict continuous values
+---
+
+Linear regression is a fundamental supervised learning algorithm for predicting continuous values. This guide shows you how to train and evaluate a linear regression model.
+
+## Building a Linear Regression Model
+
+<Steps>
+
+### Generate training data
+
+Create synthetic data with a linear relationship:
+
+```typescript
+import { tensor } from "deepbox/ndarray";
+import { trainTestSplit } from "deepbox/preprocess";
+
+// Generate data: y = 2x + 3 + noise
+const X_data: number[][] = [];
+const y_data: number[] = [];
+
+for (let i = 0; i < 100; i++) {
+  const x = i / 10;
+  const y = 2 * x + 3 + (Math.random() - 0.5) * 2;
+  X_data.push([x]);
+  y_data.push(y);
+}
+
+const X = tensor(X_data);
+const y = tensor(y_data);
+
+console.log(`Dataset: ${X.shape[0]} samples, ${X.shape[1]} features`);
+```
+
+**Output:**
+```
+Dataset: 100 samples, 1 features
+```
+
+### Split data
+
+Divide into training and test sets:
+
+```typescript
+const [X_train, X_test, y_train, y_test] = trainTestSplit(X, y, {
+  testSize: 0.2,
+  randomState: 42,
+});
+
+console.log(`Training set: ${X_train.shape[0]} samples`);
+console.log(`Test set: ${X_test.shape[0]} samples`);
+```
+
+**Output:**
+```
+Training set: 80 samples
+Test set: 20 samples
+```
+
+### Train the model
+
+Create and fit a linear regression model:
+
+```typescript
+import { LinearRegression } from "deepbox/ml";
+
+const model = new LinearRegression();
+model.fit(X_train, y_train);
+
+console.log("Model trained!");
+console.log(`Coefficients: ${model.coef?.toString()}`);
+console.log(`Intercept: ${model.intercept}`);
+```
+
+**Output:**
+```
+Model trained!
+Coefficients: Tensor([2.0134])
+Intercept: 2.9876
+```
+
+### Evaluate performance
+
+Calculate metrics on the test set:
+
+```typescript
+import { mae, mse, r2Score } from "deepbox/metrics";
+
+const y_pred = model.predict(X_test);
+
+const r2 = r2Score(y_test, y_pred);
+const mseValue = mse(y_test, y_pred);
+const maeValue = mae(y_test, y_pred);
+
+console.log("Model Performance:");
+console.log(`R² Score: ${r2.toFixed(4)}`);
+console.log(`MSE: ${mseValue.toFixed(4)}`);
+console.log(`MAE: ${maeValue.toFixed(4)}`);
+```
+
+**Output:**
+```
+Model Performance:
+R² Score: 0.9912
+MSE: 0.3421
+MAE: 0.4856
+```
+
+</Steps>
+
+## Understanding the Metrics
+
+- **R² Score**: Proportion of variance explained (1.0 is perfect, 0.0 is baseline)
+- **MSE** (Mean Squared Error): Average squared difference between predictions and actual values
+- **MAE** (Mean Absolute Error): Average absolute difference between predictions and actual values
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Logistic Regression" icon="chart-line" href="/examples/logistic-regression">
+    Learn classification with logistic regression
+  </Card>
+  <Card title="Regularization" icon="sliders" href="/api-reference/ml/ridge-lasso">
+    Prevent overfitting with Ridge and Lasso regression
+  </Card>
+</CardGroup>

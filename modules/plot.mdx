@@ -1,0 +1,626 @@
+---
+title: Plotting Module
+description: Data visualization with matplotlib-style plotting for charts and graphs
+icon: chart-line
+---
+
+The Plotting module provides matplotlib-style visualization capabilities for creating publication-quality charts and graphs. It offers a familiar API for data scientists coming from Python while being fully native to TypeScript.
+
+## Overview
+
+The plot module offers:
+
+- **Basic Plots**: Line, scatter, bar, histogram
+- **Statistical Plots**: Box plots, violin plots, heatmaps
+- **ML Visualizations**: Confusion matrices, ROC curves, learning curves
+- **Customization**: Colors, labels, legends, and styling
+- **Output Formats**: SVG and PNG rendering
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Matplotlib-like API" icon="python">
+    Familiar pyplot-style interface for easy adoption.
+  </Card>
+  <Card title="ML-Focused" icon="brain">
+    Built-in functions for ML visualizations.
+  </Card>
+  <Card title="Vector Graphics" icon="vector-square">
+    High-quality SVG output for publications.
+  </Card>
+  <Card title="Tensor Native" icon="cube">
+    Works directly with Deepbox tensors.
+  </Card>
+</CardGroup>
+
+## Getting Started
+
+### Basic Line Plot
+
+```typescript
+import { plot, show } from 'deepbox/plot';
+import { tensor, linspace } from 'deepbox/ndarray';
+
+// Create data
+const x = linspace(0, 10, 100);
+const y = x.sin();
+
+// Create plot
+plot(x, y, { color: 'blue', label: 'sin(x)' });
+
+// Display
+await show();
+
+// Or save to file
+import { saveFig } from 'deepbox/plot';
+await saveFig('plot.svg');
+```
+
+### Figure and Axes
+
+```typescript
+import { figure, gca, subplot } from 'deepbox/plot';
+
+// Create figure
+const fig = figure({ width: 800, height: 600 });
+
+// Get current axes
+const ax = gca();
+ax.plot(x, y);
+ax.setTitle('My Plot');
+ax.setXLabel('X Axis');
+ax.setYLabel('Y Axis');
+
+// Create subplots
+const ax1 = subplot(2, 1, 1);  // 2 rows, 1 col, plot 1
+const ax2 = subplot(2, 1, 2);  // 2 rows, 1 col, plot 2
+```
+
+## Basic Plot Types
+
+### Line Plots
+
+```typescript
+import { plot, legend } from 'deepbox/plot';
+import { tensor } from 'deepbox/ndarray';
+
+const x = tensor([1, 2, 3, 4, 5]);
+const y1 = tensor([1, 4, 9, 16, 25]);
+const y2 = tensor([1, 2, 3, 4, 5]);
+
+// Multiple lines
+plot(x, y1, { color: 'blue', label: 'Quadratic', linewidth: 2 });
+plot(x, y2, { color: 'red', label: 'Linear', linestyle: 'dashed' });
+
+// Show legend
+legend({ location: 'upper left' });
+```
+
+### Scatter Plots
+
+```typescript
+import { scatter } from 'deepbox/plot';
+
+const x = tensor([1, 2, 3, 4, 5]);
+const y = tensor([2, 4, 3, 5, 6]);
+
+scatter(x, y, {
+  color: 'red',
+  size: 10,
+  alpha: 0.6,
+  label: 'Data Points'
+});
+```
+
+### Bar Charts
+
+```typescript
+import { bar, barh } from 'deepbox/plot';
+
+const categories = tensor([0, 1, 2, 3, 4]);
+const values = tensor([23, 45, 56, 78, 32]);
+
+// Vertical bars
+bar(categories, values, {
+  color: 'steelblue',
+  label: 'Sales'
+});
+
+// Horizontal bars
+barh(categories, values, {
+  color: 'coral'
+});
+```
+
+### Histograms
+
+```typescript
+import { hist } from 'deepbox/plot';
+import { randn } from 'deepbox/random';
+
+// Generate random data
+const data = randn([1000]);
+
+// Create histogram
+hist(data, 30, {  // 30 bins
+  color: 'skyblue',
+  alpha: 0.7,
+  label: 'Distribution'
+});
+```
+
+## Statistical Plots
+
+### Box Plots
+
+```typescript
+import { boxplot } from 'deepbox/plot';
+import { tensor } from 'deepbox/ndarray';
+
+const data = tensor([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15]);
+
+boxplot(data, {
+  color: 'lightblue',
+  label: 'Measurements'
+});
+```
+
+### Violin Plots
+
+```typescript
+import { violinplot } from 'deepbox/plot';
+
+const data = tensor([...]);  // Your data
+
+violinplot(data, {
+  color: 'mediumpurple',
+  alpha: 0.7
+});
+```
+
+### Heatmaps
+
+```typescript
+import { heatmap } from 'deepbox/plot';
+import { tensor } from 'deepbox/ndarray';
+
+const matrix = tensor([
+  [1, 2, 3],
+  [4, 5, 6],
+  [7, 8, 9]
+]);
+
+heatmap(matrix, {
+  colormap: 'viridis',
+  vmin: 0,
+  vmax: 10
+});
+```
+
+### Pie Charts
+
+```typescript
+import { pie } from 'deepbox/plot';
+
+const sizes = tensor([30, 25, 20, 15, 10]);
+const labels = ['A', 'B', 'C', 'D', 'E'];
+
+pie(sizes, labels, {
+  colors: ['red', 'blue', 'green', 'yellow', 'purple']
+});
+```
+
+## Advanced Visualizations
+
+### Contour Plots
+
+```typescript
+import { contour, contourf } from 'deepbox/plot';
+import { tensor } from 'deepbox/ndarray';
+
+// Create meshgrid
+const x = linspace(-5, 5, 50);
+const y = linspace(-5, 5, 50);
+
+// Compute Z values
+const Z = tensor([...]);  // Shape: [50, 50]
+
+// Contour lines
+contour(x, y, Z, {
+  levels: 10,
+  colors: 'black'
+});
+
+// Filled contours
+contourf(x, y, Z, {
+  levels: 20,
+  colormap: 'RdYlBu'
+});
+```
+
+### Image Display
+
+```typescript
+import { imshow } from 'deepbox/plot';
+
+const image = tensor([...]);  // Shape: [H, W] or [H, W, C]
+
+imshow(image, {
+  colormap: 'gray',
+  vmin: 0,
+  vmax: 255
+});
+```
+
+## Machine Learning Visualizations
+
+### Confusion Matrix
+
+```typescript
+import { plotConfusionMatrix } from 'deepbox/plot';
+import { confusionMatrix } from 'deepbox/metrics';
+import { tensor } from 'deepbox/ndarray';
+
+const yTrue = tensor([0, 1, 2, 0, 1, 2]);
+const yPred = tensor([0, 2, 1, 0, 0, 2]);
+
+const cm = confusionMatrix(yTrue, yPred);
+const labels = ['Class A', 'Class B', 'Class C'];
+
+plotConfusionMatrix(cm, labels, {
+  colormap: 'Blues'
+});
+```
+
+### ROC Curve
+
+```typescript
+import { plotRocCurve } from 'deepbox/plot';
+import { rocCurve, rocAucScore } from 'deepbox/metrics';
+
+const yTrue = tensor([0, 0, 1, 1]);
+const yScore = tensor([0.1, 0.4, 0.35, 0.8]);
+
+const { fpr, tpr } = rocCurve(yTrue, yScore);
+const auc = rocAucScore(yTrue, yScore);
+
+plotRocCurve(fpr, tpr, auc, {
+  color: 'darkorange',
+  linewidth: 2
+});
+```
+
+### Precision-Recall Curve
+
+```typescript
+import { plotPrecisionRecallCurve } from 'deepbox/plot';
+import { precisionRecallCurve, averagePrecisionScore } from 'deepbox/metrics';
+
+const yTrue = tensor([0, 0, 1, 1]);
+const yScore = tensor([0.1, 0.4, 0.35, 0.8]);
+
+const { precision, recall } = precisionRecallCurve(yTrue, yScore);
+const ap = averagePrecisionScore(yTrue, yScore);
+
+plotPrecisionRecallCurve(precision, recall, ap);
+```
+
+### Learning Curves
+
+```typescript
+import { plotLearningCurve } from 'deepbox/plot';
+import { tensor } from 'deepbox/ndarray';
+
+const trainSizes = tensor([100, 200, 300, 400, 500]);
+const trainScores = tensor([0.7, 0.8, 0.85, 0.88, 0.90]);
+const valScores = tensor([0.65, 0.75, 0.78, 0.80, 0.81]);
+
+plotLearningCurve(trainSizes, trainScores, valScores, {
+  colors: ['blue', 'red']
+});
+```
+
+### Validation Curves
+
+```typescript
+import { plotValidationCurve } from 'deepbox/plot';
+
+const paramRange = tensor([0.001, 0.01, 0.1, 1.0, 10.0]);
+const trainScores = tensor([0.6, 0.8, 0.9, 0.92, 0.85]);
+const valScores = tensor([0.55, 0.75, 0.82, 0.80, 0.70]);
+
+plotValidationCurve(paramRange, trainScores, valScores);
+```
+
+### Decision Boundaries
+
+```typescript
+import { plotDecisionBoundary } from 'deepbox/plot';
+import { tensor } from 'deepbox/ndarray';
+import { LogisticRegression } from 'deepbox/ml';
+
+// 2D feature data
+const X = tensor([[1, 2], [2, 3], [3, 1], [4, 2]]);
+const y = tensor([0, 0, 1, 1]);
+
+// Train model
+const model = new LogisticRegression();
+model.fit(X, y);
+
+// Visualize decision boundary
+plotDecisionBoundary(X, y, model, {
+  colormap: 'RdYlBu',
+  alpha: 0.3
+});
+```
+
+## Customization
+
+### Axes Configuration
+
+```typescript
+import { gca } from 'deepbox/plot';
+
+const ax = gca();
+
+// Labels and title
+ax.setTitle('My Plot Title');
+ax.setXLabel('X Axis Label');
+ax.setYLabel('Y Axis Label');
+
+// Limits
+ax.setXLim(0, 10);
+ax.setYLim(-1, 1);
+
+// Grid
+ax.grid(true);
+
+// Ticks
+ax.setXTicks([0, 2, 4, 6, 8, 10]);
+ax.setYTicks([-1, -0.5, 0, 0.5, 1], ['-1', '-0.5', '0', '0.5', '1']);
+```
+
+### Styling
+
+```typescript
+import { plot, gca } from 'deepbox/plot';
+
+// Line styles
+plot(x, y1, { 
+  color: '#1f77b4',
+  linewidth: 2,
+  linestyle: 'solid',  // 'solid', 'dashed', 'dotted', 'dashdot'
+  alpha: 0.8
+});
+
+// Marker styles
+import { scatter } from 'deepbox/plot';
+scatter(x, y, {
+  color: 'red',
+  size: 8,
+  marker: 'o',  // 'o', 's', '^', 'v', 'd', etc.
+  alpha: 0.6
+});
+
+// Background color
+const ax = gca();
+ax.setBackgroundColor('#f0f0f0');
+```
+
+### Legends
+
+```typescript
+import { legend } from 'deepbox/plot';
+
+legend({
+  location: 'upper right',  // 'upper left', 'lower right', etc.
+  frameon: true,
+  shadow: true,
+  fontsize: 10
+});
+```
+
+## Multiple Plots
+
+### Subplots
+
+```typescript
+import { figure, subplot } from 'deepbox/plot';
+import { tensor, linspace } from 'deepbox/ndarray';
+
+figure({ width: 1200, height: 800 });
+
+const x = linspace(0, 10, 100);
+
+// First subplot
+subplot(2, 2, 1);
+plot(x, x.sin(), { color: 'blue', label: 'sin(x)' });
+
+// Second subplot
+subplot(2, 2, 2);
+plot(x, x.cos(), { color: 'red', label: 'cos(x)' });
+
+// Third subplot
+subplot(2, 2, 3);
+plot(x, x.square(), { color: 'green', label: 'x^2' });
+
+// Fourth subplot
+subplot(2, 2, 4);
+plot(x, x.exp(), { color: 'purple', label: 'exp(x)' });
+```
+
+## Saving Figures
+
+### Save as SVG
+
+```typescript
+import { saveFig } from 'deepbox/plot';
+
+// Save as SVG (vector graphics)
+await saveFig('output.svg');
+```
+
+### Save as PNG
+
+```typescript
+// Save as PNG (raster graphics)
+await saveFig('output.png', { format: 'png' });
+```
+
+## Complete Example
+
+```typescript
+import { 
+  figure, 
+  plot, 
+  scatter, 
+  hist,
+  legend,
+  gca,
+  saveFig 
+} from 'deepbox/plot';
+import { tensor, linspace } from 'deepbox/ndarray';
+import { normal } from 'deepbox/random';
+
+// Create figure
+figure({ width: 1200, height: 800 });
+
+// Subplot 1: Line plot
+subplot(2, 2, 1);
+const x = linspace(0, 10, 100);
+const y = x.sin();
+plot(x, y, { color: 'blue', label: 'sin(x)' });
+plot(x, x.cos(), { color: 'red', label: 'cos(x)' });
+legend({ location: 'upper right' });
+gca().setTitle('Trigonometric Functions');
+
+// Subplot 2: Scatter plot
+subplot(2, 2, 2);
+const xScatter = normal(0, 1, [100]);
+const yScatter = xScatter.mul(2).add(normal(0, 0.5, [100]));
+scatter(xScatter, yScatter, {
+  color: 'green',
+  alpha: 0.5,
+  size: 6
+});
+gca().setTitle('Scatter Plot');
+
+// Subplot 3: Histogram
+subplot(2, 2, 3);
+const data = normal(0, 1, [1000]);
+hist(data, 30, { color: 'purple', alpha: 0.7 });
+gca().setTitle('Distribution');
+
+// Subplot 4: Bar chart
+subplot(2, 2, 4);
+const categories = tensor([0, 1, 2, 3, 4]);
+const values = tensor([23, 45, 56, 78, 32]);
+bar(categories, values, { color: 'orange' });
+gca().setTitle('Bar Chart');
+
+// Save figure
+await saveFig('dashboard.svg');
+```
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="Exploratory Data Analysis">
+    Visualize data distributions and relationships:
+    
+    ```typescript
+    import { scatter, hist } from 'deepbox/plot';
+    import { DataFrame } from 'deepbox/dataframe';
+    
+    const df = new DataFrame({...});
+    
+    // Scatter plot of features
+    scatter(
+      df.get('feature1').toTensor(),
+      df.get('feature2').toTensor()
+    );
+    
+    // Distribution of target
+    hist(df.get('target').toTensor(), 50);
+    ```
+  </Accordion>
+
+  <Accordion title="Model Performance">
+    Visualize model evaluation metrics:
+    
+    ```typescript
+    import { plotConfusionMatrix, plotRocCurve } from 'deepbox/plot';
+    import { confusionMatrix, rocCurve, rocAucScore } from 'deepbox/metrics';
+    
+    // Confusion matrix
+    const cm = confusionMatrix(yTrue, yPred);
+    plotConfusionMatrix(cm, classNames);
+    
+    // ROC curve
+    const { fpr, tpr } = rocCurve(yTrue, yProba);
+    const auc = rocAucScore(yTrue, yProba);
+    plotRocCurve(fpr, tpr, auc);
+    ```
+  </Accordion>
+
+  <Accordion title="Training Progress">
+    Track training and validation metrics:
+    
+    ```typescript
+    import { plot, legend, gca } from 'deepbox/plot';
+    
+    const epochs = tensor(Array.from({ length: 100 }, (_, i) => i));
+    
+    plot(epochs, trainLoss, { color: 'blue', label: 'Train Loss' });
+    plot(epochs, valLoss, { color: 'red', label: 'Val Loss' });
+    
+    legend();
+    gca().setTitle('Training Progress');
+    gca().setXLabel('Epoch');
+    gca().setYLabel('Loss');
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<Tip>
+  Use meaningful labels and titles to make plots self-explanatory.
+</Tip>
+
+<Tip>
+  Choose appropriate color schemes. Use sequential colormaps for continuous data, diverging for data with a meaningful center.
+</Tip>
+
+<Tip>
+  Save figures as SVG for publications and presentations (vector graphics scale without quality loss).
+</Tip>
+
+<Warning>
+  Avoid using too many colors in a single plot. Stick to 3-5 distinct colors for clarity.
+</Warning>
+
+## Related Modules
+
+<CardGroup cols={3}>
+  <Card title="Metrics" icon="bullseye" href="/modules/metrics">
+    Compute metrics to visualize
+  </Card>
+  <Card title="DataFrame" icon="table" href="/modules/dataframe">
+    Data manipulation before plotting
+  </Card>
+  <Card title="Statistics" icon="chart-simple" href="/modules/stats">
+    Statistical analysis for plots
+  </Card>
+</CardGroup>
+
+## Learn More
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="book" href="/api/plot">
+    Complete API documentation
+  </Card>
+  <Card title="Gallery" icon="images" href="/examples/plotting">
+    Plot examples and recipes
+  </Card>
+</CardGroup>

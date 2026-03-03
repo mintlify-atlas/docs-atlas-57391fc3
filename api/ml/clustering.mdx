@@ -1,0 +1,232 @@
+---
+title: Clustering
+description: KMeans and DBSCAN clustering algorithms for Deepbox
+---
+
+## KMeans
+
+K-Means clustering algorithm.
+
+Partitions n samples into k clusters by minimizing the within-cluster sum of squared distances to cluster centroids.
+
+**Algorithm:** Lloyd's algorithm (iterative refinement)
+1. Initialize k centroids (random or k-means++)
+2. Assign each point to nearest centroid
+3. Update centroids as mean of assigned points
+4. Repeat until convergence or max iterations
+
+**Time Complexity:** O(n * k * i * d) where n=samples, k=clusters, i=iterations, d=features
+
+### Constructor
+
+```typescript
+new KMeans(options?: {
+  nClusters?: number;
+  maxIter?: number;
+  tol?: number;
+  init?: "random" | "kmeans++";
+  randomState?: number;
+})
+```
+
+<ParamField path="options.nClusters" type="number" default="8">
+  Number of clusters to form.
+</ParamField>
+
+<ParamField path="options.maxIter" type="number" default="300">
+  Maximum number of iterations of the k-means algorithm.
+</ParamField>
+
+<ParamField path="options.tol" type="number" default="1e-4">
+  Tolerance for convergence. Algorithm stops when change in inertia is below this threshold.
+</ParamField>
+
+<ParamField path="options.init" type="string" default="kmeans++">
+  Initialization method: 'random' or 'kmeans++'. K-means++ gives better initialization.
+</ParamField>
+
+<ParamField path="options.randomState" type="number">
+  Random seed for reproducibility.
+</ParamField>
+
+### Methods
+
+#### fit
+
+```typescript
+fit(X: Tensor, y?: Tensor): this
+```
+
+Fit K-Means clustering on training data.
+
+<ParamField path="X" type="Tensor" required>
+  Training data of shape (n_samples, n_features)
+</ParamField>
+
+<ParamField path="y" type="Tensor">
+  Ignored (exists for compatibility)
+</ParamField>
+
+**Returns:** The fitted estimator
+
+#### predict
+
+```typescript
+predict(X: Tensor): Tensor
+```
+
+Predict cluster labels for samples.
+
+<ParamField path="X" type="Tensor" required>
+  Samples of shape (n_samples, n_features)
+</ParamField>
+
+**Returns:** Cluster labels of shape (n_samples,)
+
+#### fitPredict
+
+```typescript
+fitPredict(X: Tensor, y?: Tensor): Tensor
+```
+
+Fit and predict in one step.
+
+**Returns:** Cluster labels for training data
+
+### Properties
+
+<ResponseField name="clusterCenters" type="Tensor">
+  Coordinates of cluster centers of shape (n_clusters, n_features)
+</ResponseField>
+
+<ResponseField name="labels" type="Tensor">
+  Labels of each point from training data
+</ResponseField>
+
+<ResponseField name="inertia" type="number">
+  Sum of squared distances of samples to their closest cluster center
+</ResponseField>
+
+<ResponseField name="nIter" type="number">
+  Number of iterations run
+</ResponseField>
+
+### Example
+
+```typescript
+import { KMeans } from 'deepbox/ml';
+import { tensor } from 'deepbox/ndarray';
+
+const X = tensor([[1, 2], [1.5, 1.8], [5, 8], [8, 8], [1, 0.6], [9, 11]]);
+const kmeans = new KMeans({ nClusters: 2, randomState: 42 });
+kmeans.fit(X);
+
+const labels = kmeans.predict(X);
+console.log('Cluster labels:', labels);
+console.log('Centroids:', kmeans.clusterCenters);
+```
+
+---
+
+## DBSCAN
+
+DBSCAN (Density-Based Spatial Clustering of Applications with Noise).
+
+Clusters points based on density. Points in high-density regions are grouped together, while points in low-density regions are marked as noise.
+
+**Algorithm:**
+1. For each point, find all neighbors within eps distance
+2. If a point has at least minSamples neighbors, it's a core point
+3. Core points and their neighbors form clusters
+4. Points not reachable from any core point are noise (label = -1)
+
+**Advantages:**
+- No need to specify number of clusters
+- Can find arbitrarily shaped clusters
+- Robust to outliers
+
+### Constructor
+
+```typescript
+new DBSCAN(options?: {
+  eps?: number;
+  minSamples?: number;
+  metric?: "euclidean" | "manhattan";
+})
+```
+
+<ParamField path="options.eps" type="number" default="0.5">
+  Maximum distance between two samples for one to be considered in the neighborhood of the other.
+</ParamField>
+
+<ParamField path="options.minSamples" type="number" default="5">
+  Number of samples in a neighborhood for a point to be considered a core point.
+</ParamField>
+
+<ParamField path="options.metric" type="string" default="euclidean">
+  Distance metric: 'euclidean' or 'manhattan'.
+</ParamField>
+
+### Methods
+
+#### fit
+
+```typescript
+fit(X: Tensor, y?: Tensor): this
+```
+
+Perform DBSCAN clustering on data X.
+
+<ParamField path="X" type="Tensor" required>
+  Training data of shape (n_samples, n_features)
+</ParamField>
+
+**Returns:** The fitted estimator
+
+#### predict
+
+```typescript
+predict(X: Tensor): Tensor
+```
+
+**Throws:** `NotImplementedError` — DBSCAN is a transductive clustering algorithm and does not support prediction on new data. Use `fitPredict()` instead.
+
+#### fitPredict
+
+```typescript
+fitPredict(X: Tensor, y?: Tensor): Tensor
+```
+
+Fit DBSCAN and return cluster labels.
+
+<ParamField path="X" type="Tensor" required>
+  Training data of shape (n_samples, n_features)
+</ParamField>
+
+**Returns:** Cluster labels of shape (n_samples,). Noise points are labeled -1.
+
+### Properties
+
+<ResponseField name="labels" type="Tensor">
+  Cluster labels assigned during fitting. Noise points are labeled -1.
+</ResponseField>
+
+<ResponseField name="nClusters" type="number">
+  Number of clusters found (excluding noise).
+</ResponseField>
+
+<ResponseField name="coreIndices" type="number[]">
+  Indices of core samples. Core samples are points with at least minSamples neighbors within eps.
+</ResponseField>
+
+### Example
+
+```typescript
+import { DBSCAN } from 'deepbox/ml';
+import { tensor } from 'deepbox/ndarray';
+
+const X = tensor([[1, 2], [2, 2], [2, 3], [8, 7], [8, 8], [25, 80]]);
+const dbscan = new DBSCAN({ eps: 3, minSamples: 2 });
+const labels = dbscan.fitPredict(X);
+// labels: [0, 0, 0, 1, 1, -1]  (-1 = noise)
+```

@@ -1,0 +1,469 @@
+---
+title: Convolutional Layers
+description: 1D and 2D convolutional layers and pooling operations
+---
+
+Convolutional layers are the building blocks of CNNs, used for processing grid-like data such as images and sequences.
+
+## Conv1d
+
+1D Convolutional Layer. Applies a 1D convolution over an input signal composed of several input planes.
+
+### Constructor
+
+```typescript
+class Conv1d extends Module
+
+constructor(
+  inChannels: number,
+  outChannels: number,
+  kernelSize: number,
+  options?: {
+    stride?: number;
+    padding?: number;
+    bias?: boolean;
+  }
+)
+```
+
+**Parameters:**
+- `inChannels` - Number of input channels
+- `outChannels` - Number of output channels (filters)
+- `kernelSize` - Size of the convolving kernel
+- `options.stride` - Stride of the convolution (default: 1)
+- `options.padding` - Zero-padding added to input (default: 0)
+- `options.bias` - If true, adds learnable bias (default: true)
+
+**Throws:**
+- `InvalidParameterError` - If parameters are invalid
+
+### Shape
+
+**Input:** `(batch, in_channels, length)`
+
+**Output:** `(batch, out_channels, length_out)`
+
+Where: `length_out = floor((length + 2 * padding - kernel_size) / stride) + 1`
+
+### Properties
+
+- `weight: GradTensor` - Convolution kernels of shape `(out_channels, in_channels, kernel_size)`
+
+### Example
+
+```typescript
+import { Conv1d } from 'deepbox/nn';
+import { tensor } from 'deepbox/ndarray';
+
+// Text or audio processing
+const conv = new Conv1d(16, 33, 3, { padding: 1 });
+// Input: (batch=2, channels=16, length=50)
+const input = tensor(/* ... */);
+const output = conv.forward(input); // (batch=2, channels=33, length=50)
+```
+
+---
+
+## Conv2d
+
+2D Convolutional Layer. Applies a 2D convolution over an input signal composed of several input planes.
+
+### Constructor
+
+```typescript
+class Conv2d extends Module
+
+constructor(
+  inChannels: number,
+  outChannels: number,
+  kernelSize: number | [number, number],
+  options?: {
+    stride?: number | [number, number];
+    padding?: number | [number, number];
+    bias?: boolean;
+  }
+)
+```
+
+**Parameters:**
+- `inChannels` - Number of input channels
+- `outChannels` - Number of output channels (filters)
+- `kernelSize` - Size of the convolving kernel (single number or [height, width])
+- `options.stride` - Stride of the convolution (default: 1)
+- `options.padding` - Zero-padding added to input (default: 0)
+- `options.bias` - If true, adds learnable bias (default: true)
+
+**Throws:**
+- `InvalidParameterError` - If parameters are invalid
+
+### Shape
+
+**Input:** `(batch, in_channels, height, width)`
+
+**Output:** `(batch, out_channels, height_out, width_out)`
+
+Where:
+```
+height_out = floor((height + 2 * padding[0] - kernel_size[0]) / stride[0]) + 1
+width_out = floor((width + 2 * padding[1] - kernel_size[1]) / stride[1]) + 1
+```
+
+### Properties
+
+- `weight: GradTensor` - Convolution kernels of shape `(out_channels, in_channels, kernel_height, kernel_width)`
+
+### Examples
+
+#### Basic Image Processing
+
+```typescript
+import { Conv2d } from 'deepbox/nn';
+import { tensor } from 'deepbox/ndarray';
+
+// RGB to 64 feature maps, 3x3 kernel
+const conv = new Conv2d(3, 64, 3, { padding: 1 });
+
+// Input: (batch=1, channels=3, height=224, width=224)
+const image = tensor(/* ... */);
+const features = conv.forward(image);
+// Output: (batch=1, channels=64, height=224, width=224)
+```
+
+#### Non-square Kernels
+
+```typescript
+// 5x3 kernel with different strides
+const conv = new Conv2d(64, 128, [5, 3], {
+  stride: [2, 1],
+  padding: [2, 1]
+});
+```
+
+#### CNN Architecture
+
+```typescript
+import { Sequential, Conv2d, ReLU, MaxPool2d, Linear } from 'deepbox/nn';
+
+const cnn = new Sequential(
+  // First conv block
+  new Conv2d(3, 32, 3, { padding: 1 }),
+  new ReLU(),
+  new MaxPool2d(2),
+  
+  // Second conv block
+  new Conv2d(32, 64, 3, { padding: 1 }),
+  new ReLU(),
+  new MaxPool2d(2),
+  
+  // Third conv block
+  new Conv2d(64, 128, 3, { padding: 1 }),
+  new ReLU(),
+  new MaxPool2d(2)
+);
+```
+
+---
+
+## MaxPool2d
+
+2D Max Pooling Layer. Applies a 2D max pooling over an input signal.
+
+### Constructor
+
+```typescript
+class MaxPool2d extends Module
+
+constructor(
+  kernelSize: number | [number, number],
+  options?: {
+    stride?: number | [number, number];
+    padding?: number | [number, number];
+  }
+)
+```
+
+**Parameters:**
+- `kernelSize` - Size of the pooling window
+- `options.stride` - Stride of the pooling (default: same as kernel_size)
+- `options.padding` - Zero-padding added to input (default: 0)
+
+**Throws:**
+- `InvalidParameterError` - If parameters are invalid
+
+### Shape
+
+**Input:** `(batch, channels, height, width)`
+
+**Output:** `(batch, channels, height_out, width_out)`
+
+Where:
+```
+height_out = floor((height + 2 * padding[0] - kernel_size[0]) / stride[0]) + 1
+width_out = floor((width + 2 * padding[1] - kernel_size[1]) / stride[1]) + 1
+```
+
+### Properties
+
+- Downsamples by taking maximum value in each window
+- Reduces spatial dimensions
+- Provides translation invariance
+- No learnable parameters
+
+### Examples
+
+#### Basic Pooling
+
+```typescript
+import { MaxPool2d } from 'deepbox/nn';
+import { tensor } from 'deepbox/ndarray';
+
+// 2x2 pooling (reduces size by half)
+const pool = new MaxPool2d(2);
+
+// Input: (batch=1, channels=64, height=56, width=56)
+const features = tensor(/* ... */);
+const pooled = pool.forward(features);
+// Output: (batch=1, channels=64, height=28, width=28)
+```
+
+#### Non-square Pooling
+
+```typescript
+// 3x2 pooling window
+const pool = new MaxPool2d([3, 2], { stride: [2, 2] });
+```
+
+#### With Overlapping Windows
+
+```typescript
+// 3x3 window with stride 2 (overlapping)
+const pool = new MaxPool2d(3, { stride: 2, padding: 1 });
+```
+
+---
+
+## AvgPool2d
+
+2D Average Pooling Layer. Applies a 2D average pooling over an input signal.
+
+### Constructor
+
+```typescript
+class AvgPool2d extends Module
+
+constructor(
+  kernelSize: number | [number, number],
+  options?: {
+    stride?: number | [number, number];
+    padding?: number | [number, number];
+  }
+)
+```
+
+**Parameters:**
+- `kernelSize` - Size of the pooling window
+- `options.stride` - Stride of the pooling (default: same as kernel_size)
+- `options.padding` - Zero-padding added to input (default: 0)
+
+**Throws:**
+- `InvalidParameterError` - If parameters are invalid
+
+### Shape
+
+**Input:** `(batch, channels, height, width)`
+
+**Output:** `(batch, channels, height_out, width_out)`
+
+### Properties
+
+- Downsamples by taking average value in each window
+- Smoother than max pooling
+- Preserves more information
+- No learnable parameters
+
+### Example
+
+```typescript
+import { AvgPool2d } from 'deepbox/nn';
+import { tensor } from 'deepbox/ndarray';
+
+// 2x2 average pooling
+const pool = new AvgPool2d(2);
+
+// Input: (batch=1, channels=64, height=56, width=56)
+const features = tensor(/* ... */);
+const pooled = pool.forward(features);
+// Output: (batch=1, channels=64, height=28, width=28)
+```
+
+---
+
+## Complete CNN Example
+
+### Image Classifier
+
+```typescript
+import {
+  Module,
+  Conv2d,
+  MaxPool2d,
+  ReLU,
+  Linear,
+  Dropout,
+  Sequential
+} from 'deepbox/nn';
+import type { Tensor } from 'deepbox/ndarray';
+import { reshape } from 'deepbox/ndarray';
+
+class CNN extends Module {
+  private features: Sequential;
+  private classifier: Sequential;
+
+  constructor() {
+    super();
+
+    // Feature extraction layers
+    this.features = new Sequential(
+      new Conv2d(3, 32, 3, { padding: 1 }),   // 224x224 -> 224x224
+      new ReLU(),
+      new MaxPool2d(2),                        // 224x224 -> 112x112
+      
+      new Conv2d(32, 64, 3, { padding: 1 }),  // 112x112 -> 112x112
+      new ReLU(),
+      new MaxPool2d(2),                        // 112x112 -> 56x56
+      
+      new Conv2d(64, 128, 3, { padding: 1 }), // 56x56 -> 56x56
+      new ReLU(),
+      new MaxPool2d(2),                        // 56x56 -> 28x28
+      
+      new Conv2d(128, 256, 3, { padding: 1 }),// 28x28 -> 28x28
+      new ReLU(),
+      new MaxPool2d(2)                         // 28x28 -> 14x14
+    );
+
+    // Classification layers
+    this.classifier = new Sequential(
+      new Linear(256 * 14 * 14, 512),
+      new ReLU(),
+      new Dropout(0.5),
+      new Linear(512, 10)  // 10 classes
+    );
+
+    this.registerModule('features', this.features);
+    this.registerModule('classifier', this.classifier);
+  }
+
+  forward(x: Tensor): Tensor {
+    // Extract features
+    let out = this.features.forward(x);
+    
+    // Flatten: (batch, 256, 14, 14) -> (batch, 256*14*14)
+    const batch = out.shape[0] ?? 0;
+    out = reshape(out, [batch, -1]);
+    
+    // Classify
+    out = this.classifier.forward(out);
+    return out;
+  }
+}
+
+const model = new CNN();
+const image = tensor(/* 224x224 RGB image */);
+const predictions = model.forward(image);
+```
+
+### ResNet-style Block
+
+```typescript
+import { Module, Conv2d, BatchNorm2d, ReLU } from 'deepbox/nn';
+import { add, type Tensor } from 'deepbox/ndarray';
+
+class ResidualBlock extends Module {
+  private conv1: Conv2d;
+  private bn1: BatchNorm2d;
+  private relu: ReLU;
+  private conv2: Conv2d;
+  private bn2: BatchNorm2d;
+
+  constructor(channels: number) {
+    super();
+    
+    this.conv1 = new Conv2d(channels, channels, 3, { padding: 1 });
+    this.bn1 = new BatchNorm2d(channels);
+    this.relu = new ReLU();
+    this.conv2 = new Conv2d(channels, channels, 3, { padding: 1 });
+    this.bn2 = new BatchNorm2d(channels);
+
+    this.registerModule('conv1', this.conv1);
+    this.registerModule('bn1', this.bn1);
+    this.registerModule('relu', this.relu);
+    this.registerModule('conv2', this.conv2);
+    this.registerModule('bn2', this.bn2);
+  }
+
+  forward(x: Tensor): Tensor {
+    const identity = x;
+
+    let out = this.conv1.forward(x);
+    out = this.bn1.forward(out);
+    out = this.relu.forward(out);
+    out = this.conv2.forward(out);
+    out = this.bn2.forward(out);
+
+    // Skip connection
+    out = add(out, identity);
+    out = this.relu.forward(out);
+
+    return out;
+  }
+}
+```
+
+## Common Patterns
+
+### Padding Calculations
+
+```typescript
+// Same padding (output size = input size / stride)
+const sameConv = new Conv2d(64, 64, 3, {
+  stride: 1,
+  padding: 1  // (kernel_size - 1) / 2
+});
+
+// Valid padding (no padding)
+const validConv = new Conv2d(64, 64, 3, { padding: 0 });
+```
+
+### Downsampling
+
+```typescript
+// Using stride
+const strideConv = new Conv2d(64, 128, 3, {
+  stride: 2,
+  padding: 1
+});
+
+// Using pooling
+const pool = new MaxPool2d(2, { stride: 2 });
+```
+
+### Channel Expansion
+
+```typescript
+// 1x1 convolutions for channel manipulation
+const expand = new Conv2d(64, 256, 1);  // Expand channels
+const reduce = new Conv2d(256, 64, 1);  // Reduce channels
+```
+
+## Performance Tips
+
+1. **Use Padding:** Preserve spatial dimensions with `padding: (kernel_size - 1) / 2`
+2. **Batch Processing:** Process multiple images together for efficiency
+3. **Channel Order:** Standard format is `(batch, channels, height, width)`
+4. **Memory:** Convolutions can use significant memory for large images
+
+## See Also
+
+- [Activation Functions](/api/nn/activations) - ReLU, etc.
+- [Normalization](/api/nn/normalization) - BatchNorm for CNNs
+- [Module](/api/nn/module) - Base class

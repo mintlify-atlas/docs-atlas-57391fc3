@@ -1,0 +1,516 @@
+---
+title: Attention Layers
+description: Multi-head attention and transformer encoder layers
+---
+
+Attention mechanisms allow models to focus on relevant parts of the input, forming the core of Transformer architectures.
+
+## MultiheadAttention
+
+Multi-Head Attention mechanism. The core building block of Transformers.
+
+### Constructor
+
+```typescript
+class MultiheadAttention extends Module
+
+constructor(
+  embedDim: number,
+  numHeads: number,
+  options?: {
+    bias?: boolean;
+    dropout?: number;
+  }
+)
+```
+
+**Parameters:**
+- `embedDim` - Total dimension of the model (must be divisible by numHeads)
+- `numHeads` - Number of parallel attention heads
+- `options.bias` - Whether to add bias to projections (default: true)
+- `options.dropout` - Dropout probability for attention weights (default: 0.0)
+
+**Throws:**
+- `InvalidParameterError` - If embedDim is not divisible by numHeads
+
+### Mathematical Formulation
+
+```
+Attention(Q, K, V) = softmax(Q * K^T / sqrt(d_k)) * V
+MultiHead(Q, K, V) = Concat(head_1, ..., head_h) * W_O
+where head_i = Attention(Q * W_Q^i, K * W_K^i, V * W_V^i)
+```
+
+Where:
+- `Q` (Query), `K` (Key), `V` (Value) are input projections
+- `d_k` is the dimension of each head (`embed_dim / num_heads`)
+- `W_Q`, `W_K`, `W_V`, `W_O` are learnable weight matrices
+
+### Shape
+
+**Input:**
+- Query: `(batch, seq_len_q, embed_dim)` or `(seq_len_q, embed_dim)`
+- Key: `(batch, seq_len_k, embed_dim)` or `(seq_len_k, embed_dim)`
+- Value: `(batch, seq_len_v, embed_dim)` or `(seq_len_v, embed_dim)`
+
+**Output:** `(batch, seq_len_q, embed_dim)` or `(seq_len_q, embed_dim)`
+
+### Properties
+
+- `embedDim: number` - Model dimension
+- `numHeads: number` - Number of attention heads
+- `headDim: number` - Dimension per head (embedDim / numHeads)
+
+### Methods
+
+#### forward
+
+```typescript
+forward(
+  query: AnyTensor,
+  key?: AnyTensor,
+  value?: AnyTensor
+): GradTensor
+```
+
+Computes multi-head attention.
+
+**Parameters:**
+- `query` - Query tensor
+- `key` - Key tensor (defaults to query for self-attention)
+- `value` - Value tensor (defaults to query for self-attention)
+
+**Returns:** Output tensor with attention applied
+
+**Throws:**
+- `ShapeError` - If input shapes are incompatible
+- `DTypeError` - If inputs have unsupported dtypes
+
+### Examples
+
+#### Self-Attention
+
+```typescript
+import { MultiheadAttention } from 'deepbox/nn';
+import { tensor } from 'deepbox/ndarray';
+
+const mha = new MultiheadAttention(512, 8);
+
+// Self-attention: Q = K = V
+const x = tensor(/* (batch=2, seq_len=10, embed_dim=512) */);
+const output = mha.forward(x, x, x);
+// Output: (batch=2, seq_len=10, embed_dim=512)
+
+// Or simply:
+const output2 = mha.forward(x); // Key and Value default to query
+```
+
+#### Cross-Attention
+
+```typescript
+import { MultiheadAttention } from 'deepbox/nn';
+import { tensor } from 'deepbox/ndarray';
+
+const mha = new MultiheadAttention(512, 8);
+
+// Encoder-decoder attention
+const query = tensor(/* decoder states: (batch, dec_len, 512) */);
+const key = tensor(/* encoder states: (batch, enc_len, 512) */);
+const value = tensor(/* encoder states: (batch, enc_len, 512) */);
+
+const output = mha.forward(query, key, value);
+// Output: (batch, dec_len, 512)
+```
+
+#### With Dropout
+
+```typescript
+const mha = new MultiheadAttention(512, 8, { dropout: 0.1 });
+mha.train(); // Dropout active in training mode
+
+const output = mha.forward(x);
+
+mha.eval(); // Dropout disabled in eval mode
+```
+
+---
+
+## TransformerEncoderLayer
+
+A single layer of the Transformer encoder.
+
+Consists of:
+1. Multi-head self-attention
+2. Add & Norm (residual connection + layer normalization)
+3. Feed-forward network (FFN)
+4. Add & Norm
+
+### Constructor
+
+```typescript
+class TransformerEncoderLayer extends Module
+
+constructor(
+  dModel: number,
+  nHead: number,
+  dFF?: number,
+  options?: {
+    dropout?: number;
+    eps?: number;
+  }
+)
+
+// Or with object syntax:
+constructor(options: {
+  dModel: number;
+  nHead: number;
+  dimFeedforward?: number;
+  dFF?: number;
+  dropout?: number;
+  eps?: number;
+})
+```
+
+**Parameters:**
+- `dModel` - Model dimension (embedding dimension)
+- `nHead` - Number of attention heads
+- `dFF` / `dimFeedforward` - Dimension of feedforward network (default: 2048)
+- `options.dropout` - Dropout probability (default: 0.1)
+- `options.eps` - Layer norm epsilon (default: 1e-5)
+
+**Throws:**
+- `InvalidParameterError` - If dModel is not divisible by nHead
+
+### Architecture
+
+```
+Input
+  ↓
+Multi-Head Self-Attention
+  ↓
+Dropout + Residual Connection
+  ↓
+Layer Normalization
+  ↓
+Feed-Forward Network (Linear -> ReLU -> Dropout -> Linear)
+  ↓
+Dropout + Residual Connection
+  ↓
+Layer Normalization
+  ↓
+Output
+```
+
+### Shape
+
+**Input:** `(batch, seq_len, d_model)` or `(seq_len, d_model)`
+
+**Output:** Same shape as input
+
+### Methods
+
+#### forward
+
+```typescript
+forward(src: AnyTensor): GradTensor
+```
+
+Processes source sequence through the encoder layer.
+
+**Parameters:**
+- `src` - Source sequence tensor
+
+**Returns:** Encoded sequence tensor
+
+**Throws:**
+- `ShapeError` - If input shape is invalid
+- `DTypeError` - If input has unsupported dtype
+
+### Examples
+
+#### Single Encoder Layer
+
+```typescript
+import { TransformerEncoderLayer } from 'deepbox/nn';
+import { tensor } from 'deepbox/ndarray';
+
+const layer = new TransformerEncoderLayer(512, 8, 2048, {
+  dropout: 0.1
+});
+
+const x = tensor(/* (batch=2, seq_len=10, d_model=512) */);
+const output = layer.forward(x);
+// Output: (batch=2, seq_len=10, d_model=512)
+```
+
+#### Stacked Encoder Layers
+
+```typescript
+import { Module, TransformerEncoderLayer } from 'deepbox/nn';
+import type { Tensor } from 'deepbox/ndarray';
+
+class TransformerEncoder extends Module {
+  private layers: TransformerEncoderLayer[];
+
+  constructor(numLayers: number, dModel: number, nHead: number, dFF: number) {
+    super();
+    this.layers = [];
+    
+    for (let i = 0; i < numLayers; i++) {
+      const layer = new TransformerEncoderLayer(dModel, nHead, dFF);
+      this.layers.push(layer);
+      this.registerModule(`layer_${i}`, layer);
+    }
+  }
+
+  forward(x: Tensor): Tensor {
+    let output = x;
+    for (const layer of this.layers) {
+      output = layer.forward(output);
+    }
+    return output;
+  }
+}
+
+const encoder = new TransformerEncoder(6, 512, 8, 2048);
+```
+
+#### Complete Transformer Model
+
+```typescript
+import { Module, TransformerEncoderLayer, Linear, Dropout } from 'deepbox/nn';
+import { add, type Tensor } from 'deepbox/ndarray';
+
+class PositionalEncoding extends Module {
+  // Simplified - add sinusoidal positional encodings
+  forward(x: Tensor): Tensor {
+    // Implementation of positional encoding
+    return x; // Placeholder
+  }
+}
+
+class Transformer extends Module {
+  private embedding: Linear;
+  private posEncoding: PositionalEncoding;
+  private encoderLayers: TransformerEncoderLayer[];
+  private dropout: Dropout;
+  private output: Linear;
+
+  constructor(
+    vocabSize: number,
+    dModel: number,
+    nHead: number,
+    numLayers: number,
+    dFF: number,
+    numClasses: number
+  ) {
+    super();
+
+    this.embedding = new Linear(vocabSize, dModel);
+    this.posEncoding = new PositionalEncoding();
+    this.dropout = new Dropout(0.1);
+    
+    this.encoderLayers = [];
+    for (let i = 0; i < numLayers; i++) {
+      const layer = new TransformerEncoderLayer(dModel, nHead, dFF);
+      this.encoderLayers.push(layer);
+      this.registerModule(`encoder_${i}`, layer);
+    }
+    
+    this.output = new Linear(dModel, numClasses);
+
+    this.registerModule('embedding', this.embedding);
+    this.registerModule('posEncoding', this.posEncoding);
+    this.registerModule('dropout', this.dropout);
+    this.registerModule('output', this.output);
+  }
+
+  forward(x: Tensor): Tensor {
+    // Embed tokens
+    let out = this.embedding.forward(x);
+    
+    // Add positional encoding
+    out = this.posEncoding.forward(out);
+    out = this.dropout.forward(out);
+    
+    // Pass through encoder layers
+    for (const layer of this.encoderLayers) {
+      out = layer.forward(out);
+    }
+    
+    // Output projection
+    return this.output.forward(out);
+  }
+}
+
+const model = new Transformer(
+  10000,  // vocab_size
+  512,    // d_model
+  8,      // n_head
+  6,      // num_layers
+  2048,   // d_ff
+  2       // num_classes
+);
+```
+
+---
+
+## Understanding Attention
+
+### Attention Mechanism
+
+Attention computes a weighted sum of values based on similarity between queries and keys:
+
+```typescript
+// Simplified attention calculation
+const scores = query.matmul(key.transpose());  // (seq_q, seq_k)
+const weights = softmax(scores / sqrt(d_k));    // Normalize
+const output = weights.matmul(value);           // Weighted sum
+```
+
+### Multi-Head Attention Benefits
+
+1. **Multiple Representations**: Different heads can attend to different aspects
+2. **Parallel Processing**: Heads computed independently
+3. **Richer Patterns**: Captures various relationships in the data
+4. **Better Gradients**: Helps with optimization
+
+### Self-Attention vs Cross-Attention
+
+**Self-Attention** (Q = K = V):
+- Each position attends to all positions in the same sequence
+- Used in encoder layers
+- Captures relationships within the input
+
+**Cross-Attention** (Q ≠ K = V):
+- Query from one sequence, keys/values from another
+- Used in decoder layers (encoder-decoder attention)
+- Connects different sequences (e.g., source to target in translation)
+
+---
+
+## Common Patterns
+
+### Vision Transformer (ViT) Encoder
+
+```typescript
+import { Module, TransformerEncoderLayer, Linear } from 'deepbox/nn';
+import type { Tensor } from 'deepbox/ndarray';
+
+class ViTEncoder extends Module {
+  private patchEmbed: Linear;
+  private encoders: TransformerEncoderLayer[];
+  private norm: LayerNorm;
+
+  constructor(patchSize: number, embedDim: number, depth: number, numHeads: number) {
+    super();
+    
+    const patchDim = patchSize * patchSize * 3; // RGB
+    this.patchEmbed = new Linear(patchDim, embedDim);
+    
+    this.encoders = [];
+    for (let i = 0; i < depth; i++) {
+      const layer = new TransformerEncoderLayer(embedDim, numHeads);
+      this.encoders.push(layer);
+      this.registerModule(`encoder_${i}`, layer);
+    }
+    
+    this.norm = new LayerNorm(embedDim);
+    
+    this.registerModule('patchEmbed', this.patchEmbed);
+    this.registerModule('norm', this.norm);
+  }
+
+  forward(x: Tensor): Tensor {
+    // x: (batch, num_patches, patch_dim)
+    let out = this.patchEmbed.forward(x);
+    
+    for (const encoder of this.encoders) {
+      out = encoder.forward(out);
+    }
+    
+    return this.norm.forward(out);
+  }
+}
+```
+
+### Masked Self-Attention (for Decoders)
+
+```typescript
+// Note: Deepbox doesn't have built-in masking yet
+// This is a conceptual example
+
+function createCausalMask(seqLen: number): Tensor {
+  // Create lower triangular mask
+  // Prevents attending to future positions
+  const mask = tensor(/* create mask */);
+  return mask;
+}
+
+// In decoder:
+const mask = createCausalMask(seqLen);
+const output = mha.forward(query, key, value, mask);
+```
+
+---
+
+## Performance Considerations
+
+1. **Memory Usage**: Attention is O(n²) in sequence length
+2. **Batch Size**: Larger batches improve efficiency
+3. **Number of Heads**: More heads = more parameters but richer representations
+4. **Feed-Forward Size**: Usually 4x the model dimension
+5. **Dropout**: Essential for regularization in transformers
+
+---
+
+## Configuration Examples
+
+### BERT-style Encoder
+
+```typescript
+const bertLayer = new TransformerEncoderLayer({
+  dModel: 768,
+  nHead: 12,
+  dimFeedforward: 3072,  // 4 * 768
+  dropout: 0.1
+});
+```
+
+### GPT-style Decoder (Encoder Layer as Building Block)
+
+```typescript
+const gptLayer = new TransformerEncoderLayer({
+  dModel: 1024,
+  nHead: 16,
+  dimFeedforward: 4096,  // 4 * 1024
+  dropout: 0.1
+});
+```
+
+### Small Transformer (for Testing)
+
+```typescript
+const smallLayer = new TransformerEncoderLayer({
+  dModel: 128,
+  nHead: 4,
+  dimFeedforward: 512,
+  dropout: 0.1
+});
+```
+
+---
+
+## See Also
+
+- [Recurrent Layers](/api/nn/recurrent) - RNN, LSTM, GRU alternatives
+- [Normalization](/api/nn/normalization) - LayerNorm used in transformers
+- [Linear Layer](/api/nn/layers) - For projections
+- [Activation Functions](/api/nn/activations) - GELU commonly used with transformers
+
+### References
+
+- [Attention Is All You Need (Vaswani et al., 2017)](https://arxiv.org/abs/1706.03762)
+- [BERT (Devlin et al., 2018)](https://arxiv.org/abs/1810.04805)
+- [GPT (Radford et al., 2018)](https://openai.com/research/language-unsupervised)
+- [Vision Transformer (Dosovitskiy et al., 2020)](https://arxiv.org/abs/2010.11929)

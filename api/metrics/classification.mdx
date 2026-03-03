@@ -1,0 +1,482 @@
+---
+title: Classification Metrics
+description: Metrics for evaluating classification models
+---
+
+## Overview
+
+Classification metrics evaluate the performance of classification models by comparing predicted labels to true labels.
+
+## Functions
+
+### accuracy
+
+Calculates the accuracy classification score.
+
+```ts
+function accuracy(yTrue: Tensor, yPred: Tensor): number
+```
+
+<ParamField path="yTrue" type="Tensor" required>
+  Ground truth (correct) target values
+</ParamField>
+
+<ParamField path="yPred" type="Tensor" required>
+  Estimated targets as returned by a classifier
+</ParamField>
+
+<ResponseField name="Returns" type="number">
+  Accuracy score in range [0, 1], where 1 is perfect accuracy
+</ResponseField>
+
+Accuracy is the fraction of predictions that match the true labels. Time complexity is O(n) where n is the number of samples.
+
+**Example:**
+
+```ts
+import { accuracy, tensor } from 'deepbox/core';
+
+const yTrue = tensor([0, 1, 1, 0, 1]);
+const yPred = tensor([0, 1, 0, 0, 1]);
+const acc = accuracy(yTrue, yPred); // 0.8 (4 out of 5 correct)
+```
+
+### precision
+
+Calculates the precision classification score.
+
+```ts
+function precision(yTrue: Tensor, yPred: Tensor): number
+function precision(
+  yTrue: Tensor,
+  yPred: Tensor,
+  average: "binary" | "micro" | "macro" | "weighted"
+): number
+function precision(yTrue: Tensor, yPred: Tensor, average: null): number[]
+```
+
+<ParamField path="yTrue" type="Tensor" required>
+  Ground truth (correct) target values
+</ParamField>
+
+<ParamField path="yPred" type="Tensor" required>
+  Estimated targets as returned by a classifier
+</ParamField>
+
+<ParamField path="average" type="string | null">
+  Averaging strategy:
+  - `'binary'`: Calculate metrics for positive class only (default)
+  - `'micro'`: Calculate metrics globally by counting total TP, FP, FN
+  - `'macro'`: Calculate metrics for each class, return unweighted mean
+  - `'weighted'`: Calculate metrics for each class, return weighted mean by support
+  - `null`: Return array of scores for each class
+</ParamField>
+
+<ResponseField name="Returns" type="number | number[]">
+  Precision score(s) in range [0, 1]
+</ResponseField>
+
+Precision is the ratio of true positives to all positive predictions. Formula: precision = TP / (TP + FP)
+
+**Example:**
+
+```ts
+import { precision, tensor } from 'deepbox/core';
+
+const yTrue = tensor([0, 1, 1, 0, 1]);
+const yPred = tensor([0, 1, 0, 0, 1]);
+const prec = precision(yTrue, yPred); // 1.0 (2 TP, 0 FP)
+```
+
+### recall
+
+Calculates the recall classification score (sensitivity, true positive rate).
+
+```ts
+function recall(yTrue: Tensor, yPred: Tensor): number
+function recall(
+  yTrue: Tensor,
+  yPred: Tensor,
+  average: "binary" | "micro" | "macro" | "weighted"
+): number
+function recall(yTrue: Tensor, yPred: Tensor, average: null): number[]
+```
+
+<ParamField path="yTrue" type="Tensor" required>
+  Ground truth (correct) target values
+</ParamField>
+
+<ParamField path="yPred" type="Tensor" required>
+  Estimated targets as returned by a classifier
+</ParamField>
+
+<ParamField path="average" type="string | null">
+  Averaging strategy (see precision for options)
+</ParamField>
+
+<ResponseField name="Returns" type="number | number[]">
+  Recall score(s) in range [0, 1]
+</ResponseField>
+
+Recall is the ratio of true positives to all actual positive samples. Formula: recall = TP / (TP + FN)
+
+**Example:**
+
+```ts
+import { recall, tensor } from 'deepbox/core';
+
+const yTrue = tensor([0, 1, 1, 0, 1]);
+const yPred = tensor([0, 1, 0, 0, 1]);
+const rec = recall(yTrue, yPred); // 0.667 (2 out of 3 positives found)
+```
+
+### f1Score
+
+Calculates the F1 score (harmonic mean of precision and recall).
+
+```ts
+function f1Score(yTrue: Tensor, yPred: Tensor): number
+function f1Score(
+  yTrue: Tensor,
+  yPred: Tensor,
+  average: "binary" | "micro" | "macro" | "weighted"
+): number
+function f1Score(yTrue: Tensor, yPred: Tensor, average: null): number[]
+```
+
+<ParamField path="yTrue" type="Tensor" required>
+  Ground truth (correct) target values
+</ParamField>
+
+<ParamField path="yPred" type="Tensor" required>
+  Estimated targets as returned by a classifier
+</ParamField>
+
+<ParamField path="average" type="string | null">
+  Averaging strategy (see precision for options)
+</ParamField>
+
+<ResponseField name="Returns" type="number | number[]">
+  F1 score(s) in range [0, 1]
+</ResponseField>
+
+Formula: F1 = 2 * (precision * recall) / (precision + recall)
+
+**Example:**
+
+```ts
+import { f1Score, tensor } from 'deepbox/core';
+
+const yTrue = tensor([0, 1, 1, 0, 1]);
+const yPred = tensor([0, 1, 0, 0, 1]);
+const f1 = f1Score(yTrue, yPred); // 0.8
+```
+
+### fbetaScore
+
+Calculates the F-beta score.
+
+```ts
+function fbetaScore(yTrue: Tensor, yPred: Tensor, beta: number): number
+function fbetaScore(
+  yTrue: Tensor,
+  yPred: Tensor,
+  beta: number,
+  average: "binary" | "micro" | "macro" | "weighted"
+): number
+function fbetaScore(yTrue: Tensor, yPred: Tensor, beta: number, average: null): number[]
+```
+
+<ParamField path="yTrue" type="Tensor" required>
+  Ground truth (correct) target values
+</ParamField>
+
+<ParamField path="yPred" type="Tensor" required>
+  Estimated targets as returned by a classifier
+</ParamField>
+
+<ParamField path="beta" type="number" required>
+  Weight of recall vs precision (beta > 1 favors recall, beta < 1 favors precision)
+</ParamField>
+
+<ParamField path="average" type="string | null">
+  Averaging strategy (see precision for options)
+</ParamField>
+
+<ResponseField name="Returns" type="number | number[]">
+  F-beta score(s) in range [0, 1]
+</ResponseField>
+
+**Example:**
+
+```ts
+import { fbetaScore, tensor } from 'deepbox/core';
+
+const yTrue = tensor([0, 1, 1, 0, 1]);
+const yPred = tensor([0, 1, 0, 0, 1]);
+const fb2 = fbetaScore(yTrue, yPred, 2); // Favors recall
+```
+
+### confusionMatrix
+
+Computes the confusion matrix to evaluate classification accuracy.
+
+```ts
+function confusionMatrix(yTrue: Tensor, yPred: Tensor): Tensor
+```
+
+<ParamField path="yTrue" type="Tensor" required>
+  Ground truth (correct) target values
+</ParamField>
+
+<ParamField path="yPred" type="Tensor" required>
+  Estimated targets as returned by a classifier
+</ParamField>
+
+<ResponseField name="Returns" type="Tensor">
+  Confusion matrix as a 2D tensor of shape [n_classes, n_classes]
+</ResponseField>
+
+**Example:**
+
+```ts
+import { confusionMatrix, tensor } from 'deepbox/core';
+
+const yTrue = tensor([0, 1, 1, 0, 1]);
+const yPred = tensor([0, 1, 0, 0, 1]);
+const cm = confusionMatrix(yTrue, yPred);
+// [[2, 0],
+//  [1, 2]]
+```
+
+### classificationReport
+
+Generates a text classification report showing main classification metrics.
+
+```ts
+function classificationReport(yTrue: Tensor, yPred: Tensor): string
+```
+
+<ParamField path="yTrue" type="Tensor" required>
+  Ground truth (correct) binary target values (0 or 1)
+</ParamField>
+
+<ParamField path="yPred" type="Tensor" required>
+  Estimated binary targets as returned by a classifier (0 or 1)
+</ParamField>
+
+<ResponseField name="Returns" type="string">
+  Formatted string report with per-class and aggregate classification metrics
+</ResponseField>
+
+**Example:**
+
+```ts
+import { classificationReport, tensor } from 'deepbox/core';
+
+const yTrue = tensor([0, 1, 1, 0, 1]);
+const yPred = tensor([0, 1, 0, 0, 1]);
+console.log(classificationReport(yTrue, yPred));
+```
+
+### rocCurve
+
+Computes Receiver Operating Characteristic (ROC) curve for binary classification.
+
+```ts
+function rocCurve(yTrue: Tensor, yScore: Tensor): [Tensor, Tensor, Tensor]
+```
+
+<ParamField path="yTrue" type="Tensor" required>
+  Ground truth binary labels (must be 0 or 1)
+</ParamField>
+
+<ParamField path="yScore" type="Tensor" required>
+  Target scores (higher score = more likely positive class)
+</ParamField>
+
+<ResponseField name="Returns" type="[Tensor, Tensor, Tensor]">
+  Tuple of [fpr, tpr, thresholds] tensors
+</ResponseField>
+
+### rocAucScore
+
+Area Under ROC Curve (AUC-ROC).
+
+```ts
+function rocAucScore(yTrue: Tensor, yScore: Tensor): number
+```
+
+<ParamField path="yTrue" type="Tensor" required>
+  Ground truth binary labels (must be 0 or 1)
+</ParamField>
+
+<ParamField path="yScore" type="Tensor" required>
+  Target scores (higher score = more likely positive class)
+</ParamField>
+
+<ResponseField name="Returns" type="number">
+  AUC score in range [0, 1], or 0.5 if ROC curve cannot be computed
+</ResponseField>
+
+**Example:**
+
+```ts
+import { rocAucScore, tensor } from 'deepbox/metrics';
+
+const yTrue = tensor([0, 0, 1, 1]);
+const yScore = tensor([0.1, 0.4, 0.35, 0.8]);
+const auc = rocAucScore(yTrue, yScore); // ~0.75
+```
+
+### precisionRecallCurve
+
+Computes precision-recall pairs for different probability thresholds.
+
+```ts
+function precisionRecallCurve(yTrue: Tensor, yScore: Tensor): [Tensor, Tensor, Tensor]
+```
+
+<ParamField path="yTrue" type="Tensor" required>
+  Ground truth binary labels (0 or 1)
+</ParamField>
+
+<ParamField path="yScore" type="Tensor" required>
+  Target scores (higher score = more likely positive class)
+</ParamField>
+
+<ResponseField name="Returns" type="[Tensor, Tensor, Tensor]">
+  Tuple of [precision, recall, thresholds] tensors
+</ResponseField>
+
+### averagePrecisionScore
+
+Computes the average precision (AP) from prediction scores.
+
+```ts
+function averagePrecisionScore(yTrue: Tensor, yScore: Tensor): number
+```
+
+<ParamField path="yTrue" type="Tensor" required>
+  Ground truth binary labels (0 or 1)
+</ParamField>
+
+<ParamField path="yScore" type="Tensor" required>
+  Target scores (higher score = more likely positive class)
+</ParamField>
+
+<ResponseField name="Returns" type="number">
+  Average precision score in range [0, 1]
+</ResponseField>
+
+### logLoss
+
+Log loss (logistic loss, cross-entropy loss).
+
+```ts
+function logLoss(yTrue: Tensor, yPred: Tensor): number
+```
+
+<ParamField path="yTrue" type="Tensor" required>
+  Ground truth binary labels (0 or 1)
+</ParamField>
+
+<ParamField path="yPred" type="Tensor" required>
+  Predicted probabilities (must be in range [0, 1])
+</ParamField>
+
+<ResponseField name="Returns" type="number">
+  Log loss value (lower is better, 0 is perfect)
+</ResponseField>
+
+### hammingLoss
+
+Computes the fraction of labels that are incorrectly predicted.
+
+```ts
+function hammingLoss(yTrue: Tensor, yPred: Tensor): number
+```
+
+<ParamField path="yTrue" type="Tensor" required>
+  Ground truth target values
+</ParamField>
+
+<ParamField path="yPred" type="Tensor" required>
+  Estimated targets as returned by a classifier
+</ParamField>
+
+<ResponseField name="Returns" type="number">
+  Hamming loss in range [0, 1]
+</ResponseField>
+
+**Example:**
+
+```ts
+import { hammingLoss, tensor } from 'deepbox/metrics';
+
+const yTrue = tensor([0, 1, 1, 0, 1]);
+const yPred = tensor([0, 1, 0, 0, 1]);
+const loss = hammingLoss(yTrue, yPred); // 0.2
+```
+
+### jaccardScore
+
+Computes the Jaccard similarity coefficient (Intersection over Union).
+
+```ts
+function jaccardScore(yTrue: Tensor, yPred: Tensor): number
+```
+
+<ParamField path="yTrue" type="Tensor" required>
+  Ground truth binary labels (0 or 1)
+</ParamField>
+
+<ParamField path="yPred" type="Tensor" required>
+  Predicted binary labels (0 or 1)
+</ParamField>
+
+<ResponseField name="Returns" type="number">
+  Jaccard score in range [0, 1]
+</ResponseField>
+
+Formula: jaccard = TP / (TP + FP + FN)
+
+### matthewsCorrcoef
+
+Matthews correlation coefficient (MCC).
+
+```ts
+function matthewsCorrcoef(yTrue: Tensor, yPred: Tensor): number
+```
+
+<ParamField path="yTrue" type="Tensor" required>
+  Ground truth binary labels (0 or 1)
+</ParamField>
+
+<ParamField path="yPred" type="Tensor" required>
+  Predicted binary labels (0 or 1)
+</ParamField>
+
+<ResponseField name="Returns" type="number">
+  MCC score in range [-1, 1]
+</ResponseField>
+
+### cohenKappaScore
+
+Computes Cohen's kappa, a statistic that measures inter-annotator agreement.
+
+```ts
+function cohenKappaScore(yTrue: Tensor, yPred: Tensor): number
+```
+
+<ParamField path="yTrue" type="Tensor" required>
+  Ground truth labels
+</ParamField>
+
+<ParamField path="yPred" type="Tensor" required>
+  Predicted labels
+</ParamField>
+
+<ResponseField name="Returns" type="number">
+  Kappa score in range [-1, 1]
+</ResponseField>

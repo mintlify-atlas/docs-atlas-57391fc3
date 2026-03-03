@@ -1,0 +1,505 @@
+---
+title: Neural Networks Module
+description: Deep learning layers, models, and loss functions with automatic differentiation
+icon: brain
+---
+
+The Neural Networks (nn) module provides building blocks for constructing deep learning models. It includes layers, activation functions, loss functions, and a modular architecture for building custom neural networks with automatic differentiation.
+
+## Overview
+
+The nn module offers everything needed to build and train neural networks:
+
+- **Core Layers**: Linear (Dense), Convolutional, Recurrent (LSTM, GRU)
+- **Activation Functions**: ReLU, Sigmoid, Tanh, Softmax, and variants
+- **Normalization**: BatchNorm, LayerNorm
+- **Regularization**: Dropout
+- **Attention**: Multi-head Attention, Transformer layers
+- **Loss Functions**: Cross-entropy, MSE, MAE, and more
+- **Module System**: Base class for custom layers and models
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="PyTorch-like API" icon="fire">
+    Familiar Module-based architecture with forward hooks.
+  </Card>
+  <Card title="Automatic Differentiation" icon="chart-line">
+    Built-in gradient computation with GradTensor.
+  </Card>
+  <Card title="Modular Design" icon="cubes">
+    Compose layers into complex architectures.
+  </Card>
+  <Card title="Modern Architectures" icon="microchip">
+    Transformers, attention, and recurrent networks.
+  </Card>
+</CardGroup>
+
+## Building Neural Networks
+
+### Basic Module
+
+All neural network components inherit from the `Module` base class:
+
+```typescript
+import { Module } from 'deepbox/nn';
+import { GradTensor, parameter } from 'deepbox/ndarray';
+
+class CustomLayer extends Module {
+  weight: GradTensor;
+  bias: GradTensor;
+  
+  constructor(inFeatures: number, outFeatures: number) {
+    super();
+    this.weight = parameter([inFeatures, outFeatures]);
+    this.bias = parameter([outFeatures]);
+  }
+  
+  forward(x: GradTensor): GradTensor {
+    return x.matmul(this.weight).add(this.bias);
+  }
+}
+```
+
+### Sequential Model
+
+```typescript
+import { Sequential, Linear, ReLU, Softmax } from 'deepbox/nn';
+
+// Build a simple feedforward network
+const model = new Sequential([
+  new Linear(784, 128),
+  new ReLU(),
+  new Linear(128, 64),
+  new ReLU(),
+  new Linear(64, 10),
+  new Softmax()
+]);
+
+// Forward pass
+const output = model.forward(input);
+```
+
+## Core Layers
+
+### Linear (Dense) Layer
+
+```typescript
+import { Linear } from 'deepbox/nn';
+import { GradTensor } from 'deepbox/ndarray';
+
+const layer = new Linear(10, 5);  // 10 inputs, 5 outputs
+
+const x = new GradTensor([[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]);
+const output = layer.forward(x);  // Shape: [1, 5]
+```
+
+### Convolutional Layers
+
+```typescript
+import { Conv1d, Conv2d, MaxPool2d, AvgPool2d } from 'deepbox/nn';
+
+// 1D Convolution (for sequences)
+const conv1d = new Conv1d({
+  inChannels: 3,
+  outChannels: 16,
+  kernelSize: 3,
+  stride: 1,
+  padding: 1
+});
+
+// 2D Convolution (for images)
+const conv2d = new Conv2d({
+  inChannels: 3,
+  outChannels: 32,
+  kernelSize: 3,
+  stride: 1,
+  padding: 1
+});
+
+// Max Pooling
+const maxpool = new MaxPool2d({
+  kernelSize: 2,
+  stride: 2
+});
+
+// Average Pooling
+const avgpool = new AvgPool2d({ kernelSize: 2 });
+```
+
+### Recurrent Layers
+
+```typescript
+import { LSTM, GRU, RNN } from 'deepbox/nn';
+
+// LSTM for sequence modeling
+const lstm = new LSTM({
+  inputSize: 10,
+  hiddenSize: 20,
+  numLayers: 2,
+  dropout: 0.2
+});
+
+const { output, hidden, cell } = lstm.forward(sequenceInput);
+
+// GRU (simpler than LSTM)
+const gru = new GRU({
+  inputSize: 10,
+  hiddenSize: 20
+});
+
+// Basic RNN
+const rnn = new RNN({
+  inputSize: 10,
+  hiddenSize: 20
+});
+```
+
+## Activation Functions
+
+```typescript
+import { 
+  ReLU, 
+  LeakyReLU, 
+  ELU, 
+  GELU,
+  Sigmoid, 
+  Tanh,
+  Softmax,
+  LogSoftmax 
+} from 'deepbox/nn';
+
+// ReLU family
+const relu = new ReLU();
+const leakyRelu = new LeakyReLU(0.01);
+const elu = new ELU(1.0);
+const gelu = new GELU();
+
+// Sigmoid and Tanh
+const sigmoid = new Sigmoid();
+const tanh = new Tanh();
+
+// For classification
+const softmax = new Softmax();
+const logSoftmax = new LogSoftmax();
+
+// Usage
+const activated = relu.forward(x);
+```
+
+## Normalization Layers
+
+```typescript
+import { BatchNorm1d, LayerNorm } from 'deepbox/nn';
+
+// Batch Normalization
+const batchNorm = new BatchNorm1d({
+  numFeatures: 64,
+  eps: 1e-5,
+  momentum: 0.1
+});
+
+// Layer Normalization (better for RNNs)
+const layerNorm = new LayerNorm({
+  normalizedShape: [64],
+  eps: 1e-5
+});
+
+// Training mode
+batchNorm.train();
+const normedTrain = batchNorm.forward(x);
+
+// Evaluation mode
+batchNorm.eval();
+const normedEval = batchNorm.forward(x);
+```
+
+## Regularization
+
+```typescript
+import { Dropout } from 'deepbox/nn';
+
+const dropout = new Dropout(0.5);  // Drop 50% of neurons
+
+// During training
+dropout.train();
+const dropped = dropout.forward(x);
+
+// During inference (no dropout)
+dropout.eval();
+const unchanged = dropout.forward(x);
+```
+
+## Attention Mechanisms
+
+### Multi-head Attention
+
+```typescript
+import { MultiheadAttention } from 'deepbox/nn';
+
+const attention = new MultiheadAttention({
+  embedDim: 512,
+  numHeads: 8,
+  dropout: 0.1
+});
+
+const { output, attentionWeights } = attention.forward({
+  query: q,
+  key: k,
+  value: v
+});
+```
+
+### Transformer Encoder Layer
+
+```typescript
+import { TransformerEncoderLayer } from 'deepbox/nn';
+
+const encoder = new TransformerEncoderLayer({
+  dModel: 512,
+  nHead: 8,
+  dimFeedforward: 2048,
+  dropout: 0.1
+});
+
+const encoded = encoder.forward(x);
+```
+
+## Loss Functions
+
+```typescript
+import { 
+  mseLoss, 
+  maeLoss,
+  crossEntropyLoss,
+  binaryCrossEntropyLoss,
+  huberLoss 
+} from 'deepbox/nn';
+import { GradTensor } from 'deepbox/ndarray';
+
+// Mean Squared Error (regression)
+const predictions = new GradTensor([2.5, 3.0, 4.5]);
+const targets = new GradTensor([2.0, 3.5, 4.0]);
+const mseLoss_ = mseLoss(predictions, targets);
+
+// Cross-Entropy (classification)
+const logits = new GradTensor([[2.0, 1.0, 0.1]]);
+const labels = new GradTensor([0]);  // Class 0
+const ceLoss = crossEntropyLoss(logits, labels);
+
+// Binary Cross-Entropy
+const bce = binaryCrossEntropyLoss(predictions, targets);
+
+// Mean Absolute Error
+const mae = maeLoss(predictions, targets);
+
+// Huber Loss (robust to outliers)
+const huber = huberLoss(predictions, targets, { delta: 1.0 });
+```
+
+## Complete Example: Image Classification
+
+```typescript
+import { 
+  Sequential, 
+  Conv2d, 
+  MaxPool2d, 
+  Linear, 
+  ReLU, 
+  Softmax,
+  Dropout,
+  crossEntropyLoss 
+} from 'deepbox/nn';
+import { GradTensor } from 'deepbox/ndarray';
+import { Adam } from 'deepbox/optim';
+
+// Define CNN architecture
+class CNN extends Sequential {
+  constructor() {
+    super([
+      // Conv block 1
+      new Conv2d({ inChannels: 3, outChannels: 32, kernelSize: 3, padding: 1 }),
+      new ReLU(),
+      new MaxPool2d({ kernelSize: 2 }),
+      
+      // Conv block 2
+      new Conv2d({ inChannels: 32, outChannels: 64, kernelSize: 3, padding: 1 }),
+      new ReLU(),
+      new MaxPool2d({ kernelSize: 2 }),
+      
+      // Fully connected
+      new Linear(64 * 8 * 8, 128),
+      new ReLU(),
+      new Dropout(0.5),
+      new Linear(128, 10),
+      new Softmax()
+    ]);
+  }
+}
+
+const model = new CNN();
+const optimizer = new Adam(model.parameters(), { lr: 0.001 });
+
+// Training loop
+for (let epoch = 0; epoch < 10; epoch++) {
+  for (const { images, labels } of trainLoader) {
+    optimizer.zeroGrad();
+    
+    const output = model.forward(images);
+    const loss = crossEntropyLoss(output, labels);
+    
+    loss.backward();
+    optimizer.step();
+  }
+}
+```
+
+## Module Methods
+
+### Parameter Management
+
+```typescript
+import { Module } from 'deepbox/nn';
+
+const model = new Sequential([...]);
+
+// Get all parameters
+const params = model.parameters();
+
+// Count parameters
+let totalParams = 0;
+for (const param of params) {
+  totalParams += param.size;
+}
+
+// Get named parameters
+const namedParams = model.namedParameters();
+```
+
+### Training vs Evaluation Mode
+
+```typescript
+// Training mode (dropout, batchnorm active)
+model.train();
+
+// Evaluation mode (no dropout, batchnorm uses running stats)
+model.eval();
+```
+
+### Hooks
+
+```typescript
+import { Module, type ForwardHook } from 'deepbox/nn';
+
+const hook: ForwardHook = (module, input, output) => {
+  console.log('Layer output shape:', output.shape);
+};
+
+// Register forward hook
+const handle = layer.registerForwardHook(hook);
+
+// Remove hook later
+handle.remove();
+```
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="Image Classification">
+    Build CNNs for image recognition:
+    
+    ```typescript
+    import { Sequential, Conv2d, MaxPool2d, Linear, ReLU } from 'deepbox/nn';
+    
+    const model = new Sequential([
+      new Conv2d({ inChannels: 3, outChannels: 16, kernelSize: 3 }),
+      new ReLU(),
+      new MaxPool2d({ kernelSize: 2 }),
+      new Linear(16 * 14 * 14, 10)
+    ]);
+    ```
+  </Accordion>
+
+  <Accordion title="Sequence Modeling">
+    Use LSTMs for time series or text:
+    
+    ```typescript
+    import { LSTM, Linear } from 'deepbox/nn';
+    
+    class SequenceModel extends Module {
+      lstm = new LSTM({ inputSize: 50, hiddenSize: 100 });
+      fc = new Linear(100, 1);
+      
+      forward(x: GradTensor): GradTensor {
+        const { output } = this.lstm.forward(x);
+        return this.fc.forward(output);
+      }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Transformer for NLP">
+    Build transformer models:
+    
+    ```typescript
+    import { TransformerEncoderLayer, Linear } from 'deepbox/nn';
+    
+    class Transformer extends Module {
+      encoder = new TransformerEncoderLayer({
+        dModel: 512,
+        nHead: 8,
+        dimFeedforward: 2048
+      });
+      classifier = new Linear(512, 2);
+      
+      forward(x: GradTensor): GradTensor {
+        const encoded = this.encoder.forward(x);
+        return this.classifier.forward(encoded);
+      }
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<Tip>
+  Initialize weights properly. Most layers use Xavier/He initialization by default.
+</Tip>
+
+<Tip>
+  Use BatchNorm or LayerNorm to stabilize training and enable higher learning rates.
+</Tip>
+
+<Tip>
+  Add Dropout for regularization, especially before fully connected layers.
+</Tip>
+
+<Warning>
+  Always call `model.train()` before training and `model.eval()` before evaluation to ensure proper behavior of Dropout and BatchNorm.
+</Warning>
+
+## Related Modules
+
+<CardGroup cols={3}>
+  <Card title="Optimization" icon="arrows-rotate" href="/modules/optim">
+    Optimizers and learning rate schedulers
+  </Card>
+  <Card title="NDArray" icon="grid" href="/modules/ndarray">
+    Tensor operations and gradients
+  </Card>
+  <Card title="Machine Learning" icon="robot" href="/modules/ml">
+    Classical ML algorithms
+  </Card>
+</CardGroup>
+
+## Learn More
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="book" href="/api/nn">
+    Complete API documentation
+  </Card>
+  <Card title="Tutorial" icon="graduation-cap" href="/tutorials/neural-networks">
+    Build your first neural network
+  </Card>
+</CardGroup>

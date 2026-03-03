@@ -1,0 +1,447 @@
+---
+title: Encoders
+description: Categorical feature encoding transformers
+---
+
+Encoders transform categorical features (strings, labels) into numeric representations suitable for machine learning.
+
+## LabelEncoder
+
+Encode target labels with values between 0 and n_classes-1.
+
+**Time Complexity:**
+- fit: O(n) where n is number of samples
+- transform: O(n) with O(1) lookup per sample
+
+**Space Complexity:** O(k) where k is number of unique classes
+
+```typescript
+import { LabelEncoder } from 'deepbox/preprocess';
+import { tensor } from 'deepbox/ndarray';
+
+const y = tensor(['cat', 'dog', 'cat', 'bird']);
+const encoder = new LabelEncoder();
+encoder.fit(y);
+const yEncoded = encoder.transform(y);  // [1, 2, 1, 0]
+const yDecoded = encoder.inverseTransform(yEncoded); // ['cat', 'dog', 'cat', 'bird']
+```
+
+### Methods
+
+<ResponseField name="fit" type="(y: Tensor | Array) => this">
+  Learn unique classes from labels.
+  
+  **Parameters:**
+  - `y` - Target labels (1D tensor or array of strings/numbers)
+  
+  **Returns:** self for method chaining
+</ResponseField>
+
+<ResponseField name="transform" type="(y: Tensor | Array) => Tensor">
+  Transform labels to normalized encoding [0, n_classes-1].
+  
+  **Returns:** Integer tensor with encoded labels
+  
+  **Throws:** InvalidParameterError if label not seen during fit
+</ResponseField>
+
+<ResponseField name="fitTransform" type="(y: Tensor | Array) => Tensor">
+  Fit to data and transform in one step.
+</ResponseField>
+
+<ResponseField name="inverseTransform" type="(y: Tensor | Array) => Tensor">
+  Transform integer labels back to original encoding.
+</ResponseField>
+
+### Attributes
+
+After fitting:
+- `classes_` - Unique classes in sorted order
+- `classToIndex_` - Map from class to integer index
+
+---
+
+## OneHotEncoder
+
+Encode categorical features as one-hot numeric array.
+
+**Time Complexity:**
+- fit: O(n*m) where n=samples, m=features
+- transform: O(n*m*k) where k=avg categories per feature
+
+**Space Complexity:**
+- Dense: O(n * Σk_i) where k_i is unique categories for feature i
+- Sparse: O(nnz) number of non-zero elements
+
+```typescript
+import { OneHotEncoder } from 'deepbox/preprocess';
+import { tensor } from 'deepbox/ndarray';
+
+const X = tensor([['red', 'S'], ['blue', 'M'], ['red', 'L']]);
+const encoder = new OneHotEncoder({ sparse: false });
+encoder.fit(X);
+const encoded = encoder.transform(X);
+// Result: [[1,0,1,0,0], [0,1,0,1,0], [1,0,0,0,1]]
+```
+
+### Constructor
+
+```typescript
+new OneHotEncoder(options?: {
+  sparse?: boolean;                     // Return CSRMatrix if true (default: false)
+  sparseOutput?: boolean;               // Alias for sparse
+  handleUnknown?: 'error' | 'ignore';   // How to handle unknown categories (default: 'error')
+  drop?: 'first' | 'if_binary' | null;  // Drop policy to avoid collinearity
+  categories?: 'auto' | Category[][];   // Explicit categories per feature
+})
+```
+
+### Methods
+
+<ResponseField name="fit" type="(X: Tensor | Array[][]) => this">
+  Learn unique categories for each feature.
+  
+  **Parameters:**
+  - `X` - Training data (2D tensor or array)
+  
+  **Returns:** self for method chaining
+</ResponseField>
+
+<ResponseField name="transform" type="(X: Tensor | Array[][]) => Tensor | CSRMatrix">
+  Transform categorical features to one-hot encoding.
+  
+  **Returns:** Binary matrix (dense Tensor or sparse CSRMatrix)
+  
+  - `sparse=false`: Returns dense Tensor
+  - `sparse=true`: Returns CSRMatrix for memory efficiency
+</ResponseField>
+
+<ResponseField name="fitTransform" type="(X: Tensor | Array[][]) => Tensor | CSRMatrix">
+  Fit and transform in one step.
+</ResponseField>
+
+<ResponseField name="inverseTransform" type="(X: Tensor | CSRMatrix) => Tensor">
+  Transform one-hot encoding back to original categories.
+</ResponseField>
+
+### Attributes
+
+After fitting:
+- `categories_` - Unique categories for each feature
+- `dropIndices_` - Index of dropped category per feature (if drop is set)
+
+---
+
+## OrdinalEncoder
+
+Encode categorical features as integer array.
+
+**Time Complexity:**
+- fit: O(n*m*log(k)) where n=samples, m=features, k=avg categories
+- transform: O(n*m) with O(1) map lookup
+
+**Space Complexity:** O(m*k) where m=features, k=avg categories per feature
+
+```typescript
+import { OrdinalEncoder } from 'deepbox/preprocess';
+
+const X = tensor([['low', 'red'], ['high', 'blue'], ['medium', 'red']]);
+const encoder = new OrdinalEncoder();
+encoder.fit(X);
+const encoded = encoder.transform(X);
+// Result: [[1, 1], [0, 0], [2, 1]] (alphabetically sorted)
+```
+
+### Constructor
+
+```typescript
+new OrdinalEncoder(options?: {
+  handleUnknown?: 'error' | 'useEncodedValue';  // How to handle unknown categories
+  unknownValue?: number;                        // Value for unknown (default: -1)
+  categories?: 'auto' | Category[][];           // Explicit categories per feature
+})
+```
+
+### Methods
+
+<ResponseField name="fit" type="(X: Tensor | Array[][]) => this">
+  Learn unique categories and their ordering for each feature.
+</ResponseField>
+
+<ResponseField name="transform" type="(X: Tensor | Array[][]) => Tensor">
+  Transform categorical features to ordinal integers [0, n_categories-1].
+</ResponseField>
+
+<ResponseField name="fitTransform" type="(X: Tensor | Array[][]) => Tensor">
+  Fit and transform in one step.
+</ResponseField>
+
+<ResponseField name="inverseTransform" type="(X: Tensor | Array[][]) => Tensor">
+  Transform ordinal integers back to original categories.
+</ResponseField>
+
+### Attributes
+
+After fitting:
+- `categories_` - Sorted unique categories for each feature
+- `categoryToIndex_` - Map from category to index for each feature
+
+---
+
+## LabelBinarizer
+
+Binarize labels in a one-vs-all fashion.
+
+**Time Complexity:**
+- fit: O(n) where n is number of samples
+- transform: O(n*k) where k is number of classes
+
+**Space Complexity:** O(n*k) for the output matrix
+
+```typescript
+import { LabelBinarizer } from 'deepbox/preprocess';
+
+const y = tensor([0, 1, 2, 0, 1]);
+const binarizer = new LabelBinarizer();
+const yBin = binarizer.fitTransform(y);
+// Result shape: [5, 3] with one-hot encoding
+```
+
+### Constructor
+
+```typescript
+new LabelBinarizer(options?: {
+  posLabel?: number;       // Value for positive class (default: 1)
+  negLabel?: number;       // Value for negative class (default: 0)
+  sparse?: boolean;        // Return CSRMatrix if true (default: false)
+  sparseOutput?: boolean;  // Alias for sparse
+})
+```
+
+### Methods
+
+<ResponseField name="fit" type="(y: Tensor | Array) => this">
+  Learn unique classes from labels.
+</ResponseField>
+
+<ResponseField name="transform" type="(y: Tensor | Array) => Tensor | CSRMatrix">
+  Transform labels to binary matrix.
+  
+  Each label is converted to a binary vector with:
+  - `posLabel` (default 1) at the class position
+  - `negLabel` (default 0) elsewhere
+</ResponseField>
+
+<ResponseField name="fitTransform" type="(y: Tensor | Array) => Tensor | CSRMatrix">
+  Fit and transform in one step.
+</ResponseField>
+
+<ResponseField name="inverseTransform" type="(Y: Tensor | CSRMatrix) => Tensor">
+  Transform binary matrix back to labels.
+  
+  Finds the column with maximum value for each row.
+</ResponseField>
+
+### Attributes
+
+After fitting:
+- `classes_` - Unique classes in sorted order
+
+---
+
+## MultiLabelBinarizer
+
+Transform multi-label classification data to binary format.
+
+Handles cases where each sample can belong to multiple classes simultaneously.
+
+**Time Complexity:**
+- fit: O(n*k) where n=samples, k=avg labels per sample
+- transform: O(n*k*c) where c=total unique classes
+
+**Space Complexity:** O(n*c) for the output matrix
+
+```typescript
+import { MultiLabelBinarizer } from 'deepbox/preprocess';
+
+const y = [['sci-fi', 'action'], ['comedy'], ['action', 'drama']];
+const binarizer = new MultiLabelBinarizer();
+const yBin = binarizer.fitTransform(y);
+// Each row can have multiple 1s
+```
+
+### Constructor
+
+```typescript
+new MultiLabelBinarizer(options?: {
+  sparse?: boolean;             // Return CSRMatrix if true (default: false)
+  sparseOutput?: boolean;       // Alias for sparse
+  classes?: Category[];         // Explicit class ordering
+})
+```
+
+### Methods
+
+<ResponseField name="fit" type="(y: Category[][]) => this">
+  Learn all unique classes across all samples.
+  
+  **Parameters:**
+  - `y` - Array of label sets (each element is an array of labels)
+</ResponseField>
+
+<ResponseField name="transform" type="(y: Category[][]) => Tensor | CSRMatrix">
+  Transform label sets to binary matrix.
+  
+  Each row can have multiple 1s (one per active label).
+</ResponseField>
+
+<ResponseField name="fitTransform" type="(y: Category[][]) => Tensor | CSRMatrix">
+  Fit and transform in one step.
+</ResponseField>
+
+<ResponseField name="inverseTransform" type="(Y: Tensor | CSRMatrix) => Category[][]">
+  Transform binary matrix back to label sets.
+  
+  Finds all active (1) columns for each row.
+  
+  **Returns:** Array of label sets (one per sample)
+</ResponseField>
+
+### Attributes
+
+After fitting:
+- `classes_` - All unique classes in sorted order
+
+---
+
+## Type Definitions
+
+```typescript
+// Category values can be strings, numbers, or bigints
+type Category = string | number | bigint;
+
+// Encoder input types
+type EncoderInput1D = Tensor | readonly (string | number | bigint | boolean)[];
+type EncoderInput2D = Tensor | readonly (readonly (string | number | bigint)[])[];
+```
+
+---
+
+## Examples
+
+### Text Label Encoding
+
+```typescript
+import { LabelEncoder } from 'deepbox/preprocess';
+import { tensor } from 'deepbox/ndarray';
+
+const labels = tensor(['positive', 'negative', 'neutral', 'positive', 'negative']);
+const encoder = new LabelEncoder();
+const encoded = encoder.fitTransform(labels);
+// [2, 0, 1, 2, 0] (alphabetically sorted)
+
+const decoded = encoder.inverseTransform(encoded);
+// ['positive', 'negative', 'neutral', 'positive', 'negative']
+```
+
+### Multi-Feature One-Hot Encoding
+
+```typescript
+import { OneHotEncoder } from 'deepbox/preprocess';
+import { tensor } from 'deepbox/ndarray';
+
+const features = tensor([
+  ['red', 'small'],
+  ['blue', 'large'],
+  ['red', 'medium'],
+  ['green', 'small']
+]);
+
+const encoder = new OneHotEncoder({ sparse: false });
+const encoded = encoder.fitTransform(features);
+// Shape: [4, 5] - one column per unique value across all features
+
+const original = encoder.inverseTransform(encoded);
+// Returns original categorical data
+```
+
+### Multi-Label Classification
+
+```typescript
+import { MultiLabelBinarizer } from 'deepbox/preprocess';
+
+const movieGenres = [
+  ['action', 'sci-fi'],
+  ['comedy', 'romance'],
+  ['action', 'thriller'],
+  ['sci-fi']
+];
+
+const binarizer = new MultiLabelBinarizer();
+const encoded = binarizer.fitTransform(movieGenres);
+// Shape: [4, 5] - columns for: action, comedy, romance, sci-fi, thriller
+// Each row can have multiple 1s
+
+const decoded = binarizer.inverseTransform(encoded);
+// Returns original label sets
+```
+
+### Ordinal Encoding with Unknown Handling
+
+```typescript
+import { OrdinalEncoder } from 'deepbox/preprocess';
+import { tensor } from 'deepbox/ndarray';
+
+const sizes = tensor([['S'], ['M'], ['L'], ['XL']]);
+const encoder = new OrdinalEncoder({
+  handleUnknown: 'useEncodedValue',
+  unknownValue: -1
+});
+encoder.fit(sizes);
+
+const testSizes = tensor([['M'], ['XXL'], ['S']]);
+const encoded = encoder.transform(testSizes);
+// [1, -1, 0] - 'XXL' is encoded as -1 (unknown)
+```
+
+### Sparse Encoding for Memory Efficiency
+
+```typescript
+import { OneHotEncoder } from 'deepbox/preprocess';
+import { tensor } from 'deepbox/ndarray';
+
+// High cardinality categorical data
+const userIds = tensor([["user_1"], ["user_2"], ["user_3"]]);
+
+const encoder = new OneHotEncoder({ sparse: true });
+const encoded = encoder.fitTransform(userIds);
+// Returns CSRMatrix instead of dense tensor
+// Much more memory efficient for high cardinality features
+```
+
+---
+
+## When to Use Each Encoder
+
+<CardGroup cols={2}>
+  <Card title="LabelEncoder" icon="tag">
+    **Use for:** Target labels in classification.
+    Creates simple integer mapping [0, n_classes-1].
+  </Card>
+  <Card title="OneHotEncoder" icon="grid">
+    **Use for:** Categorical features with no ordinal relationship.
+    Creates binary columns (can return sparse matrices).
+  </Card>
+  <Card title="OrdinalEncoder" icon="list-ol">
+    **Use for:** Categorical features with ordinal relationship (e.g., low/medium/high).
+    Maintains single column per feature.
+  </Card>
+  <Card title="LabelBinarizer" icon="binary">
+    **Use for:** Single-label classification targets.
+    Creates binary matrix representation.
+  </Card>
+  <Card title="MultiLabelBinarizer" icon="layer-group">
+    **Use for:** Multi-label classification (samples can have multiple labels).
+    Each row can have multiple active columns.
+  </Card>
+</CardGroup>

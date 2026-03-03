@@ -1,0 +1,282 @@
+---
+title: Regression Metrics
+description: Metrics for evaluating regression models
+---
+
+## Overview
+
+Regression metrics evaluate the performance of regression models by comparing predicted values to true values.
+
+## Functions
+
+### mse
+
+Calculate Mean Squared Error (MSE).
+
+```ts
+function mse(yTrue: Tensor, yPred: Tensor): number
+```
+
+<ParamField path="yTrue" type="Tensor" required>
+  Ground truth (correct) target values
+</ParamField>
+
+<ParamField path="yPred" type="Tensor" required>
+  Estimated target values
+</ParamField>
+
+<ResponseField name="Returns" type="number">
+  MSE value (always non-negative, 0 is perfect)
+</ResponseField>
+
+Measures the average squared difference between predictions and actual values. Formula: MSE = (1/n) * Σ(y_true - y_pred)²
+
+**Example:**
+
+```ts
+import { mse, tensor } from 'deepbox/metrics';
+
+const yTrue = tensor([3, -0.5, 2, 7]);
+const yPred = tensor([2.5, 0.0, 2, 8]);
+const error = mse(yTrue, yPred);  // 0.375
+```
+
+### rmse
+
+Calculate Root Mean Squared Error (RMSE).
+
+```ts
+function rmse(yTrue: Tensor, yPred: Tensor): number
+```
+
+<ParamField path="yTrue" type="Tensor" required>
+  Ground truth (correct) target values
+</ParamField>
+
+<ParamField path="yPred" type="Tensor" required>
+  Estimated target values
+</ParamField>
+
+<ResponseField name="Returns" type="number">
+  RMSE value (always non-negative, 0 is perfect)
+</ResponseField>
+
+Square root of MSE, expressed in the same units as the target variable.
+
+**Example:**
+
+```ts
+import { rmse, tensor } from 'deepbox/metrics';
+
+const yTrue = tensor([3, -0.5, 2, 7]);
+const yPred = tensor([2.5, 0.0, 2, 8]);
+const error = rmse(yTrue, yPred);  // √0.375 ≈ 0.612
+```
+
+### mae
+
+Calculate Mean Absolute Error (MAE).
+
+```ts
+function mae(yTrue: Tensor, yPred: Tensor): number
+```
+
+<ParamField path="yTrue" type="Tensor" required>
+  Ground truth (correct) target values
+</ParamField>
+
+<ParamField path="yPred" type="Tensor" required>
+  Estimated target values
+</ParamField>
+
+<ResponseField name="Returns" type="number">
+  MAE value (always non-negative, 0 is perfect)
+</ResponseField>
+
+Measures the average absolute difference between predictions and actual values. Formula: MAE = (1/n) * Σ|y_true - y_pred|
+
+**Example:**
+
+```ts
+import { mae, tensor } from 'deepbox/metrics';
+
+const yTrue = tensor([3, -0.5, 2, 7]);
+const yPred = tensor([2.5, 0.0, 2, 8]);
+const error = mae(yTrue, yPred);  // 0.5
+```
+
+### r2Score
+
+Calculate R² (coefficient of determination) score.
+
+```ts
+function r2Score(yTrue: Tensor, yPred: Tensor): number
+```
+
+<ParamField path="yTrue" type="Tensor" required>
+  Ground truth (correct) target values
+</ParamField>
+
+<ParamField path="yPred" type="Tensor" required>
+  Estimated target values
+</ParamField>
+
+<ResponseField name="Returns" type="number">
+  R² score (1 is perfect, 0 is baseline, negative is worse than baseline)
+</ResponseField>
+
+Represents the proportion of variance in the target variable that is explained by the model.
+
+**Example:**
+
+```ts
+import { r2Score, tensor } from 'deepbox/metrics';
+
+const yTrue = tensor([3, -0.5, 2, 7]);
+const yPred = tensor([2.5, 0.0, 2, 8]);
+const score = r2Score(yTrue, yPred);  // Close to 1 for good fit
+```
+
+### adjustedR2Score
+
+Calculate Adjusted R² score.
+
+```ts
+function adjustedR2Score(yTrue: Tensor, yPred: Tensor, nFeatures: number): number
+```
+
+<ParamField path="yTrue" type="Tensor" required>
+  Ground truth (correct) target values
+</ParamField>
+
+<ParamField path="yPred" type="Tensor" required>
+  Estimated target values
+</ParamField>
+
+<ParamField path="nFeatures" type="number" required>
+  Number of features (predictors) used in the model
+</ParamField>
+
+<ResponseField name="Returns" type="number">
+  Adjusted R² score
+</ResponseField>
+
+R² adjusted for the number of features in the model. Formula: Adjusted R² = 1 - ((1 - R²) * (n - 1)) / (n - p - 1)
+
+**Example:**
+
+```ts
+import { adjustedR2Score, tensor } from 'deepbox/metrics';
+
+const yTrue = tensor([3, -0.5, 2, 7]);
+const yPred = tensor([2.5, 0.0, 2, 8]);
+const score = adjustedR2Score(yTrue, yPred, 2);  // Adjusted for 2 features
+```
+
+### mape
+
+Calculate Mean Absolute Percentage Error (MAPE).
+
+```ts
+function mape(yTrue: Tensor, yPred: Tensor): number
+```
+
+<ParamField path="yTrue" type="Tensor" required>
+  Ground truth (correct) target values
+</ParamField>
+
+<ParamField path="yPred" type="Tensor" required>
+  Estimated target values
+</ParamField>
+
+<ResponseField name="Returns" type="number">
+  MAPE value as percentage (0 is perfect, lower is better)
+</ResponseField>
+
+Measures the average absolute percentage difference between predictions and actual values. Zero values in yTrue are skipped.
+
+**Example:**
+
+```ts
+import { mape, tensor } from 'deepbox/metrics';
+
+const yTrue = tensor([3, -0.5, 2, 7]);
+const yPred = tensor([2.5, 0.0, 2, 8]);
+const error = mape(yTrue, yPred);  // Percentage error
+```
+
+### medianAbsoluteError
+
+Calculate Median Absolute Error (MedAE).
+
+```ts
+function medianAbsoluteError(yTrue: Tensor, yPred: Tensor): number
+```
+
+<ParamField path="yTrue" type="Tensor" required>
+  Ground truth (correct) target values
+</ParamField>
+
+<ParamField path="yPred" type="Tensor" required>
+  Estimated target values
+</ParamField>
+
+<ResponseField name="Returns" type="number">
+  Median absolute error (always non-negative, 0 is perfect)
+</ResponseField>
+
+Measures the median of absolute differences. More robust to outliers than MAE or MSE.
+
+### maxError
+
+Calculate maximum residual error.
+
+```ts
+function maxError(yTrue: Tensor, yPred: Tensor): number
+```
+
+<ParamField path="yTrue" type="Tensor" required>
+  Ground truth (correct) target values
+</ParamField>
+
+<ParamField path="yPred" type="Tensor" required>
+  Estimated target values
+</ParamField>
+
+<ResponseField name="Returns" type="number">
+  Maximum absolute error (always non-negative, 0 is perfect)
+</ResponseField>
+
+Returns the maximum absolute difference between predictions and actual values.
+
+**Example:**
+
+```ts
+import { maxError, tensor } from 'deepbox/metrics';
+
+const yTrue = tensor([3, -0.5, 2, 7]);
+const yPred = tensor([2.5, 0.0, 2, 8]);
+const error = maxError(yTrue, yPred);  // 1.0 (worst prediction)
+```
+
+### explainedVarianceScore
+
+Calculate explained variance score.
+
+```ts
+function explainedVarianceScore(yTrue: Tensor, yPred: Tensor): number
+```
+
+<ParamField path="yTrue" type="Tensor" required>
+  Ground truth (correct) target values
+</ParamField>
+
+<ParamField path="yPred" type="Tensor" required>
+  Estimated target values
+</ParamField>
+
+<ResponseField name="Returns" type="number">
+  Explained variance score (1.0 is perfect, lower is worse)
+</ResponseField>
+
+Measures the proportion of variance in the target variable that is explained by the model. Similar to R² but uses variance instead of sum of squares.

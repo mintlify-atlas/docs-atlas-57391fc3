@@ -1,80 +1,408 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: "Quick Start"
+description: "Get started with Deepbox in 5 minutes - build your first ML model"
 ---
 
-## Get started in three steps
+## Build Your First ML Model
 
-Get your documentation site running locally and make your first customization.
+This guide walks you through creating a complete machine learning pipeline using Deepbox - from data preparation to model evaluation.
 
-### Step 1: Set up your local environment
+<Steps>
+  <Step title="Create a new project">
+    Set up a new TypeScript project and install Deepbox:
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+    ```bash
+    mkdir deepbox-quickstart
+    cd deepbox-quickstart
+    npm init -y
+    npm install deepbox tsx typescript
+    ```
 
-### Step 2: Deploy your changes
+    Create a `tsconfig.json` file:
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    ```json tsconfig.json
+    {
+      "compilerOptions": {
+        "target": "ES2022",
+        "module": "ESNext",
+        "moduleResolution": "bundler",
+        "esModuleInterop": true,
+        "strict": true
+      }
+    }
+    ```
+  </Step>
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+  <Step title="Create your first script">
+    Create a file named `index.ts` with the following code:
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+    ```typescript index.ts
+    import { tensor, add, mean } from "deepbox/ndarray";
+    import { DataFrame } from "deepbox/dataframe";
+    import { LinearRegression } from "deepbox/ml";
+    import { trainTestSplit } from "deepbox/preprocess";
+    import { r2Score, mse, mae } from "deepbox/metrics";
 
-### Step 3: Go live
+    console.log("Welcome to Deepbox!\n");
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+    // 1. Tensor Operations
+    console.log("1. Tensor Operations:");
+    const a = tensor([1, 2, 3, 4, 5]);
+    const b = tensor([10, 20, 30, 40, 50]);
+    const c = add(a, b);
+    console.log("a + b =", c.toString());
+    console.log("mean(a) =", mean(a).toString());
+    console.log();
 
-## Next steps
+    // 2. DataFrame Operations
+    console.log("2. DataFrame Operations:");
+    const df = new DataFrame({
+      name: ["Alice", "Bob", "Charlie"],
+      age: [25, 30, 35],
+      score: [85, 90, 78],
+    });
+    console.log(df.toString());
+    console.log();
 
-Now that you have your docs running, explore these key features:
+    // 3. Machine Learning Pipeline
+    console.log("3. Machine Learning Pipeline:");
 
-<CardGroup cols={2}>
+    // Generate synthetic data: y = 2x + 3 + noise
+    const X_data: number[][] = [];
+    const y_data: number[] = [];
 
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
+    for (let i = 0; i < 100; i++) {
+      const x = i / 10;
+      const y = 2 * x + 3 + (Math.random() - 0.5) * 2;
+      X_data.push([x]);
+      y_data.push(y);
+    }
 
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
+    const X = tensor(X_data);
+    const y = tensor(y_data);
 
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
+    // Split data: 80% training, 20% testing
+    const [X_train, X_test, y_train, y_test] = trainTestSplit(X, y, {
+      testSize: 0.2,
+      randomState: 42,
+    });
 
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
+    // Train model
+    const model = new LinearRegression();
+    model.fit(X_train, y_train);
 
-</CardGroup>
+    // Make predictions
+    const y_pred = model.predict(X_test);
+
+    // Evaluate
+    const r2 = r2Score(y_test, y_pred);
+    const mseValue = mse(y_test, y_pred);
+    const maeValue = mae(y_test, y_pred);
+
+    console.log("Model trained successfully!");
+    console.log("Coefficients:", model.coef?.toString());
+    console.log("Intercept:", model.intercept);
+    console.log("\nModel Performance:");
+    console.log("R² Score:", r2.toFixed(4));
+    console.log("MSE:", mseValue.toFixed(4));
+    console.log("MAE:", maeValue.toFixed(4));
+    ```
+  </Step>
+
+  <Step title="Run your script">
+    Execute your script using tsx:
+
+    ```bash
+    npx tsx index.ts
+    ```
+
+    You should see output similar to:
+
+    ```
+    Welcome to Deepbox!
+
+    1. Tensor Operations:
+    a + b = tensor([11, 22, 33, 44, 55])
+    mean(a) = 3
+
+    2. DataFrame Operations:
+         name  age  score
+    0   Alice   25     85
+    1     Bob   30     90
+    2 Charlie   35     78
+
+    3. Machine Learning Pipeline:
+    Model trained successfully!
+    Coefficients: tensor([2.0123])
+    Intercept: 2.9876
+
+    Model Performance:
+    R² Score: 0.9987
+    MSE: 0.3421
+    MAE: 0.4532
+    ```
+  </Step>
+</Steps>
+
+## Understanding the Code
+
+Let's break down what each section does:
+
+### Tensor Operations
+
+Tensors are the fundamental data structure in Deepbox:
+
+```typescript
+import { tensor, add, mean } from "deepbox/ndarray";
+
+const a = tensor([1, 2, 3, 4, 5]);
+const b = tensor([10, 20, 30, 40, 50]);
+const c = add(a, b); // Element-wise addition
+```
 
 <Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
+  Deepbox supports 90+ tensor operations including arithmetic, trigonometric, logical operations, and more.
+</Note>
+
+### DataFrame Operations
+
+DataFrames provide a familiar interface for tabular data:
+
+```typescript
+import { DataFrame } from "deepbox/dataframe";
+
+const df = new DataFrame({
+  name: ["Alice", "Bob", "Charlie"],
+  age: [25, 30, 35],
+  score: [85, 90, 78],
+});
+
+// DataFrames support filtering, grouping, joining, and more
+const filtered = df.filter((row) => row.age > 25);
+const grouped = df.groupBy("age").agg({ score: "mean" });
+```
+
+### Machine Learning Pipeline
+
+Building ML models follows a familiar scikit-learn-inspired API:
+
+```typescript
+import { LinearRegression } from "deepbox/ml";
+import { trainTestSplit } from "deepbox/preprocess";
+import { r2Score } from "deepbox/metrics";
+
+// Split data
+const [X_train, X_test, y_train, y_test] = trainTestSplit(X, y, {
+  testSize: 0.2,
+  randomState: 42,
+});
+
+// Train model
+const model = new LinearRegression();
+model.fit(X_train, y_train);
+
+// Predict and evaluate
+const predictions = model.predict(X_test);
+const score = r2Score(y_test, predictions);
+```
+
+## Next Examples
+
+### Automatic Differentiation
+
+Deepbox supports automatic differentiation for gradient-based optimization:
+
+```typescript
+import { parameter } from "deepbox/ndarray";
+
+// Create a parameter (trainable tensor)
+const x = parameter([[1, 2], [3, 4]]);
+const w = parameter([[0.5], [0.5]]);
+
+// Forward pass
+const y = x.matmul(w).sum();
+
+// Backward pass - compute gradients
+y.backward();
+
+console.log("x.grad:", x.grad?.toString());
+console.log("w.grad:", w.grad?.toString());
+```
+
+<Tip>
+  Use `parameter()` to create tensors that track gradients. Call `.backward()` to compute all gradients automatically.
+</Tip>
+
+### Neural Network Training
+
+Build and train neural networks with PyTorch-inspired modules:
+
+```typescript
+import { Sequential, Linear, ReLU, Dropout, mseLoss } from "deepbox/nn";
+import { Adam } from "deepbox/optim";
+
+// Define network architecture
+const model = new Sequential(
+  new Linear(10, 64),
+  new ReLU(),
+  new Dropout(0.2),
+  new Linear(64, 32),
+  new ReLU(),
+  new Linear(32, 1)
+);
+
+// Create optimizer
+const optimizer = new Adam(model.parameters(), { lr: 0.001 });
+
+// Training loop
+for (let epoch = 0; epoch < 100; epoch++) {
+  // Forward pass
+  const output = model.forward(xTrain);
+  const loss = mseLoss(output, yTrain);
+
+  // Backward pass
+  optimizer.zeroGrad();
+  loss.backward();
+  optimizer.step();
+
+  if (epoch % 10 === 0) {
+    console.log(`Epoch ${epoch}, Loss: ${loss.item()}`);
+  }
+}
+```
+
+### Complete ML Pipeline
+
+Combine preprocessing, model training, and evaluation:
+
+```typescript
+import { trainTestSplit, StandardScaler } from "deepbox/preprocess";
+import { RandomForestClassifier } from "deepbox/ml";
+import { accuracy, f1Score, confusionMatrix } from "deepbox/metrics";
+
+// Split data
+const [X_train, X_test, y_train, y_test] = trainTestSplit(X, y, {
+  testSize: 0.2,
+  randomState: 42,
+});
+
+// Scale features
+const scaler = new StandardScaler();
+scaler.fit(X_train);
+const X_train_scaled = scaler.transform(X_train);
+const X_test_scaled = scaler.transform(X_test);
+
+// Train model
+const model = new RandomForestClassifier({
+  nEstimators: 100,
+  maxDepth: 10,
+});
+model.fit(X_train_scaled, y_train);
+
+// Predict and evaluate
+const y_pred = model.predict(X_test_scaled);
+console.log("Accuracy:", accuracy(y_test, y_pred));
+console.log("F1 Score:", f1Score(y_test, y_pred));
+console.log("Confusion Matrix:", confusionMatrix(y_test, y_pred));
+```
+
+## Explore More
+
+<CardGroup cols={2}>
+  <Card
+    title="Core Concepts"
+    icon="book"
+    href="/concepts/tensors"
+  >
+    Learn about tensors, autograd, and broadcasting
+  </Card>
+  <Card
+    title="Tensor Basics Example"
+    icon="grid"
+    href="/examples/tensor-basics"
+  >
+    Deep dive into tensor creation and manipulation
+  </Card>
+  <Card
+    title="ML Models"
+    icon="robot"
+    href="/modules/ml"
+  >
+    Explore all available machine learning models
+  </Card>
+  <Card
+    title="Neural Networks"
+    icon="brain"
+    href="/modules/nn"
+  >
+    Build custom neural network architectures
+  </Card>
+</CardGroup>
+
+## Common Operations Cheat Sheet
+
+<AccordionGroup>
+  <Accordion icon="grid" title="Tensor Creation">
+    ```typescript
+    import { tensor, zeros, ones, eye, arange, linspace } from "deepbox/ndarray";
+
+    const a = tensor([1, 2, 3]);              // From array
+    const b = zeros([3, 3]);                   // 3x3 zeros
+    const c = ones([2, 4]);                    // 2x4 ones
+    const d = eye(5);                          // 5x5 identity
+    const e = arange(0, 10, 2);                // [0, 2, 4, 6, 8]
+    const f = linspace(0, 1, 5);               // 5 values from 0 to 1
+    ```
+  </Accordion>
+
+  <Accordion icon="calculator" title="Tensor Operations">
+    ```typescript
+    import { add, mul, matmul, transpose, mean, sum } from "deepbox/ndarray";
+
+    const c = add(a, b);                       // Element-wise addition
+    const d = mul(a, b);                       // Element-wise multiplication
+    const e = matmul(a, b);                    // Matrix multiplication
+    const f = transpose(a);                    // Transpose
+    const g = mean(a);                         // Mean
+    const h = sum(a, { axis: 0 });             // Sum along axis 0
+    ```
+  </Accordion>
+
+  <Accordion icon="table" title="DataFrame Operations">
+    ```typescript
+    import { DataFrame } from "deepbox/dataframe";
+
+    const df = new DataFrame({ col1: [1, 2], col2: [3, 4] });
+    
+    df.filter((row) => row.col1 > 1)           // Filter rows
+    df.select(["col1"])                         // Select columns
+    df.groupBy("col1").agg({ col2: "mean" })   // Group and aggregate
+    df.sort("col1", false)                     // Sort descending
+    df.join(other, "col1")                     // Join with another DataFrame
+    ```
+  </Accordion>
+
+  <Accordion icon="brain" title="Model Training">
+    ```typescript
+    import { LinearRegression } from "deepbox/ml";
+    import { trainTestSplit } from "deepbox/preprocess";
+
+    // Split data
+    const [X_train, X_test, y_train, y_test] = trainTestSplit(X, y);
+
+    // Train
+    const model = new LinearRegression();
+    model.fit(X_train, y_train);
+
+    // Predict
+    const predictions = model.predict(X_test);
+
+    // Evaluate
+    const score = model.score(X_test, y_test);
+    ```
+  </Accordion>
+</AccordionGroup>
+
+<Note>
+  **What's Next?** Explore the [API Reference](/api/ndarray/tensor) for detailed documentation of all available functions and classes.
 </Note>

@@ -1,0 +1,561 @@
+---
+title: Metrics Module
+description: Model evaluation metrics for classification, regression, and clustering
+icon: bullseye
+---
+
+The Metrics module provides comprehensive evaluation metrics for assessing machine learning model performance. It includes metrics for classification, regression, and clustering tasks.
+
+## Overview
+
+The metrics module offers evaluation functions for:
+
+- **Classification**: Accuracy, precision, recall, F1-score, ROC-AUC
+- **Regression**: MSE, MAE, R², RMSE, MAPE
+- **Clustering**: Silhouette score, adjusted rand index, mutual information
+- **Visualization**: Confusion matrix, ROC curve, precision-recall curve
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Comprehensive Metrics" icon="chart-bar">
+    All standard ML evaluation metrics in one place.
+  </Card>
+  <Card title="Scikit-learn Compatible" icon="python">
+    Familiar API matching scikit-learn conventions.
+  </Card>
+  <Card title="Multi-class Support" icon="layer-group">
+    Handles binary, multi-class, and multi-label problems.
+  </Card>
+  <Card title="Detailed Reports" icon="file-lines">
+    Generate comprehensive classification reports.
+  </Card>
+</CardGroup>
+
+## Classification Metrics
+
+### Accuracy
+
+```typescript
+import { accuracy } from 'deepbox/metrics';
+import { tensor } from 'deepbox/ndarray';
+
+const yTrue = tensor([0, 1, 1, 0, 1, 0]);
+const yPred = tensor([0, 1, 0, 0, 1, 1]);
+
+const acc = accuracy(yTrue, yPred);
+console.log(acc);  // 0.6667 (4/6 correct)
+```
+
+### Precision, Recall, F1-Score
+
+```typescript
+import { precision, recall, f1Score } from 'deepbox/metrics';
+
+const yTrue = tensor([0, 1, 1, 0, 1, 0]);
+const yPred = tensor([0, 1, 0, 0, 1, 1]);
+
+// Binary classification
+const prec = precision(yTrue, yPred);
+const rec = recall(yTrue, yPred);
+const f1 = f1Score(yTrue, yPred);
+
+console.log(`Precision: ${prec.toFixed(3)}`);
+console.log(`Recall: ${rec.toFixed(3)}`);
+console.log(`F1-Score: ${f1.toFixed(3)}`);
+
+// Multi-class with averaging
+const yTrueMulti = tensor([0, 1, 2, 0, 1, 2]);
+const yPredMulti = tensor([0, 2, 1, 0, 1, 2]);
+
+const precMacro = precision(yTrueMulti, yPredMulti, { average: 'macro' });
+const precWeighted = precision(yTrueMulti, yPredMulti, { average: 'weighted' });
+```
+
+### Confusion Matrix
+
+```typescript
+import { confusionMatrix } from 'deepbox/metrics';
+
+const yTrue = tensor([0, 1, 2, 0, 1, 2]);
+const yPred = tensor([0, 2, 1, 0, 0, 2]);
+
+const cm = confusionMatrix(yTrue, yPred);
+console.log(cm);
+// [[2, 0, 0],
+//  [1, 0, 1],
+//  [0, 1, 1]]
+
+// Visualize confusion matrix
+import { plotConfusionMatrix } from 'deepbox/plot';
+plotConfusionMatrix(cm, ['Class 0', 'Class 1', 'Class 2']);
+```
+
+### Classification Report
+
+```typescript
+import { classificationReport } from 'deepbox/metrics';
+
+const yTrue = tensor([0, 1, 2, 0, 1, 2]);
+const yPred = tensor([0, 2, 1, 0, 0, 2]);
+
+const report = classificationReport(yTrue, yPred, {
+  labels: [0, 1, 2],
+  targetNames: ['Class 0', 'Class 1', 'Class 2']
+});
+
+console.log(report);
+// Prints precision, recall, f1-score, and support for each class
+```
+
+### ROC Curve and AUC
+
+```typescript
+import { rocCurve, rocAucScore } from 'deepbox/metrics';
+import { tensor } from 'deepbox/ndarray';
+
+const yTrue = tensor([0, 0, 1, 1]);
+const yScore = tensor([0.1, 0.4, 0.35, 0.8]);
+
+// ROC curve
+const { fpr, tpr, thresholds } = rocCurve(yTrue, yScore);
+
+// AUC score
+const auc = rocAucScore(yTrue, yScore);
+console.log(`AUC: ${auc.toFixed(3)}`);
+
+// Visualize ROC curve
+import { plotRocCurve } from 'deepbox/plot';
+plotRocCurve(fpr, tpr, auc);
+```
+
+### Precision-Recall Curve
+
+```typescript
+import { precisionRecallCurve, averagePrecisionScore } from 'deepbox/metrics';
+
+const yTrue = tensor([0, 0, 1, 1]);
+const yScore = tensor([0.1, 0.4, 0.35, 0.8]);
+
+const { precision, recall, thresholds } = precisionRecallCurve(yTrue, yScore);
+const ap = averagePrecisionScore(yTrue, yScore);
+
+console.log(`Average Precision: ${ap.toFixed(3)}`);
+
+// Visualize
+import { plotPrecisionRecallCurve } from 'deepbox/plot';
+plotPrecisionRecallCurve(precision, recall, ap);
+```
+
+### Additional Classification Metrics
+
+```typescript
+import { 
+  balancedAccuracyScore,
+  cohenKappaScore,
+  matthewsCorrcoef,
+  hammingLoss,
+  jaccardScore,
+  logLoss
+} from 'deepbox/metrics';
+
+// Balanced accuracy (good for imbalanced datasets)
+const balAcc = balancedAccuracyScore(yTrue, yPred);
+
+// Cohen's kappa (inter-rater agreement)
+const kappa = cohenKappaScore(yTrue, yPred);
+
+// Matthews correlation coefficient
+const mcc = matthewsCorrcoef(yTrue, yPred);
+
+// Hamming loss (fraction of wrong labels)
+const hLoss = hammingLoss(yTrue, yPred);
+
+// Jaccard similarity
+const jaccard = jaccardScore(yTrue, yPred);
+
+// Log loss (requires probability predictions)
+const yProba = tensor([[0.9, 0.1], [0.2, 0.8], ...]);
+const logloss = logLoss(yTrue, yProba);
+```
+
+## Regression Metrics
+
+### Mean Squared Error (MSE)
+
+```typescript
+import { mse } from 'deepbox/metrics';
+import { tensor } from 'deepbox/ndarray';
+
+const yTrue = tensor([3, -0.5, 2, 7]);
+const yPred = tensor([2.5, 0.0, 2, 8]);
+
+const mseValue = mse(yTrue, yPred);
+console.log(`MSE: ${mseValue.toFixed(4)}`);
+```
+
+### Root Mean Squared Error (RMSE)
+
+```typescript
+import { rmse } from 'deepbox/metrics';
+
+const rmseValue = rmse(yTrue, yPred);
+console.log(`RMSE: ${rmseValue.toFixed(4)}`);
+```
+
+### Mean Absolute Error (MAE)
+
+```typescript
+import { mae } from 'deepbox/metrics';
+
+const maeValue = mae(yTrue, yPred);
+console.log(`MAE: ${maeValue.toFixed(4)}`);
+```
+
+### R² Score (Coefficient of Determination)
+
+```typescript
+import { r2Score } from 'deepbox/metrics';
+
+const yTrue = tensor([3, -0.5, 2, 7]);
+const yPred = tensor([2.5, 0.0, 2, 8]);
+
+const r2 = r2Score(yTrue, yPred);
+console.log(`R²: ${r2.toFixed(4)}`);
+
+// Perfect prediction: r2 = 1.0
+// Model as good as mean: r2 = 0.0
+// Worse than mean: r2 < 0.0
+```
+
+### Additional Regression Metrics
+
+```typescript
+import { 
+  adjustedR2Score,
+  explainedVarianceScore,
+  maxError,
+  medianAbsoluteError,
+  mape
+} from 'deepbox/metrics';
+
+const yTrue = tensor([3, -0.5, 2, 7]);
+const yPred = tensor([2.5, 0.0, 2, 8]);
+
+// Adjusted R² (accounts for number of features)
+const adjR2 = adjustedR2Score(yTrue, yPred, 5);  // 5 features
+
+// Explained variance
+const explVar = explainedVarianceScore(yTrue, yPred);
+
+// Maximum absolute error
+const maxErr = maxError(yTrue, yPred);
+
+// Median absolute error (robust to outliers)
+const medAE = medianAbsoluteError(yTrue, yPred);
+
+// Mean absolute percentage error
+const mapeValue = mape(yTrue, yPred);
+```
+
+## Clustering Metrics
+
+### Silhouette Score
+
+```typescript
+import { silhouetteScore, silhouetteSamples } from 'deepbox/metrics';
+import { tensor } from 'deepbox/ndarray';
+
+const X = tensor([
+  [1, 2], [1.5, 1.8], [5, 8], [8, 8], [1, 0.6], [9, 11]
+]);
+const labels = tensor([0, 0, 1, 1, 0, 1]);
+
+// Overall silhouette score (-1 to 1, higher is better)
+const score = silhouetteScore(X, labels);
+console.log(`Silhouette Score: ${score.toFixed(3)}`);
+
+// Per-sample silhouette scores
+const sampleScores = silhouetteSamples(X, labels);
+```
+
+### Adjusted Rand Index
+
+```typescript
+import { adjustedRandScore } from 'deepbox/metrics';
+
+const labelsTrue = tensor([0, 0, 1, 1, 2, 2]);
+const labelsPred = tensor([0, 0, 1, 1, 1, 2]);
+
+// Measure similarity between two clusterings (1.0 = perfect match)
+const ari = adjustedRandScore(labelsTrue, labelsPred);
+```
+
+### Mutual Information
+
+```typescript
+import { 
+  adjustedMutualInfoScore,
+  normalizedMutualInfoScore
+} from 'deepbox/metrics';
+
+const labelsTrue = tensor([0, 0, 1, 1, 2, 2]);
+const labelsPred = tensor([0, 0, 1, 1, 1, 2]);
+
+// Adjusted mutual information
+const ami = adjustedMutualInfoScore(labelsTrue, labelsPred);
+
+// Normalized mutual information
+const nmi = normalizedMutualInfoScore(labelsTrue, labelsPred);
+```
+
+### Additional Clustering Metrics
+
+```typescript
+import { 
+  homogeneityScore,
+  completenessScore,
+  vMeasureScore,
+  fowlkesMallowsScore,
+  calinskiHarabaszScore,
+  daviesBouldinScore
+} from 'deepbox/metrics';
+
+const labelsTrue = tensor([0, 0, 1, 1, 2, 2]);
+const labelsPred = tensor([0, 0, 1, 1, 1, 2]);
+
+// Homogeneity: each cluster contains only members of a single class
+const homogeneity = homogeneityScore(labelsTrue, labelsPred);
+
+// Completeness: all members of a class are in the same cluster
+const completeness = completenessScore(labelsTrue, labelsPred);
+
+// V-measure: harmonic mean of homogeneity and completeness
+const vMeasure = vMeasureScore(labelsTrue, labelsPred);
+
+// Fowlkes-Mallows score
+const fmi = fowlkesMallowsScore(labelsTrue, labelsPred);
+
+// Calinski-Harabasz index (requires data)
+const ch = calinskiHarabaszScore(X, labelsPred);
+
+// Davies-Bouldin index (lower is better)
+const db = daviesBouldinScore(X, labelsPred);
+```
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="Model Selection">
+    Compare multiple models using metrics:
+    
+    ```typescript
+    import { accuracy, f1Score } from 'deepbox/metrics';
+    import { LogisticRegression, RandomForestClassifier } from 'deepbox/ml';
+    
+    const models = [
+      new LogisticRegression(),
+      new RandomForestClassifier({ nEstimators: 100 })
+    ];
+    
+    for (const model of models) {
+      model.fit(XTrain, yTrain);
+      const yPred = model.predict(XTest);
+      
+      const acc = accuracy(yTest, yPred);
+      const f1 = f1Score(yTest, yPred);
+      
+      console.log(`${model.constructor.name}:`);
+      console.log(`  Accuracy: ${(acc * 100).toFixed(2)}%`);
+      console.log(`  F1-Score: ${f1.toFixed(3)}`);
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Threshold Tuning">
+    Find optimal classification threshold:
+    
+    ```typescript
+    import { precisionRecallCurve, f1Score } from 'deepbox/metrics';
+    
+    const yTrue = tensor([0, 0, 1, 1, 1]);
+    const yScore = tensor([0.1, 0.4, 0.35, 0.8, 0.9]);
+    
+    const { precision, recall, thresholds } = precisionRecallCurve(yTrue, yScore);
+    
+    // Find threshold that maximizes F1-score
+    let bestF1 = 0;
+    let bestThreshold = 0.5;
+    
+    for (let i = 0; i < thresholds.size; i++) {
+      const yPred = yScore.greater(thresholds.at(i));
+      const f1 = f1Score(yTrue, yPred);
+      
+      if (f1 > bestF1) {
+        bestF1 = f1;
+        bestThreshold = thresholds.at(i);
+      }
+    }
+    
+    console.log(`Best threshold: ${bestThreshold}`);
+    ```
+  </Accordion>
+
+  <Accordion title="Clustering Evaluation">
+    Evaluate clustering quality:
+    
+    ```typescript
+    import { KMeans } from 'deepbox/ml';
+    import { silhouetteScore } from 'deepbox/metrics';
+    
+    const X = tensor([...]);  // Your data
+    
+    // Try different numbers of clusters
+    const scores = [];
+    
+    for (let k = 2; k <= 10; k++) {
+      const kmeans = new KMeans({ nClusters: k });
+      kmeans.fit(X);
+      
+      const labels = kmeans.labels();
+      const score = silhouetteScore(X, labels);
+      
+      scores.push({ k, score });
+    }
+    
+    // Find optimal k
+    const best = scores.reduce((a, b) => a.score > b.score ? a : b);
+    console.log(`Optimal k: ${best.k}`);
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Complete Evaluation Example
+
+```typescript
+import { 
+  accuracy, 
+  precision, 
+  recall, 
+  f1Score,
+  confusionMatrix,
+  classificationReport,
+  rocAucScore
+} from 'deepbox/metrics';
+import { RandomForestClassifier } from 'deepbox/ml';
+import { trainTestSplit } from 'deepbox/preprocess';
+import { tensor } from 'deepbox/ndarray';
+
+// Load data
+const X = tensor([...]);
+const y = tensor([...]);
+
+// Split data
+const { XTrain, XTest, yTrain, yTest } = trainTestSplit(X, y, {
+  testSize: 0.2,
+  randomState: 42
+});
+
+// Train model
+const model = new RandomForestClassifier({ nEstimators: 100 });
+model.fit(XTrain, yTrain);
+
+// Predictions
+const yPred = model.predict(XTest);
+const yProba = model.predictProba(XTest);
+
+// Compute metrics
+const acc = accuracy(yTest, yPred);
+const prec = precision(yTest, yPred, { average: 'weighted' });
+const rec = recall(yTest, yPred, { average: 'weighted' });
+const f1 = f1Score(yTest, yPred, { average: 'weighted' });
+const auc = rocAucScore(yTest, yProba.slice([null, 1]));
+
+console.log('=== Model Evaluation ===');
+console.log(`Accuracy:  ${(acc * 100).toFixed(2)}%`);
+console.log(`Precision: ${prec.toFixed(3)}`);
+console.log(`Recall:    ${rec.toFixed(3)}`);
+console.log(`F1-Score:  ${f1.toFixed(3)}`);
+console.log(`ROC-AUC:   ${auc.toFixed(3)}`);
+
+// Confusion matrix
+const cm = confusionMatrix(yTest, yPred);
+console.log('\nConfusion Matrix:');
+console.log(cm);
+
+// Detailed report
+const report = classificationReport(yTest, yPred);
+console.log('\n' + report);
+```
+
+## Metric Selection Guide
+
+<AccordionGroup>
+  <Accordion title="Imbalanced Classification">
+    For imbalanced datasets, use:
+    - **Balanced Accuracy**: Accounts for class imbalance
+    - **F1-Score**: Harmonic mean of precision and recall
+    - **ROC-AUC**: Threshold-independent metric
+    - **Precision-Recall AUC**: Better for severe imbalance
+    
+    Avoid accuracy alone as it can be misleading.
+  </Accordion>
+
+  <Accordion title="Multi-class Problems">
+    For multi-class classification:
+    - Use `average='macro'` for equal class importance
+    - Use `average='weighted'` to account for class imbalance
+    - Use `average='micro'` for global performance
+  </Accordion>
+
+  <Accordion title="Regression Tasks">
+    Choose metrics based on your needs:
+    - **MSE/RMSE**: Penalizes large errors heavily
+    - **MAE**: Equal weight to all errors
+    - **R²**: Proportion of variance explained
+    - **MAPE**: Percentage-based, scale-independent
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<Tip>
+  Use multiple metrics to get a complete picture of model performance. No single metric tells the whole story.
+</Tip>
+
+<Tip>
+  For imbalanced datasets, focus on precision, recall, and F1-score rather than accuracy alone.
+</Tip>
+
+<Tip>
+  Visualize confusion matrices and ROC curves to understand where your model struggles.
+</Tip>
+
+<Warning>
+  Always evaluate on a held-out test set. Never use training data for evaluation.
+</Warning>
+
+## Related Modules
+
+<CardGroup cols={3}>
+  <Card title="Machine Learning" icon="robot" href="/modules/ml">
+    Train models to evaluate
+  </Card>
+  <Card title="Preprocessing" icon="filter" href="/modules/preprocess">
+    Cross-validation and splitting
+  </Card>
+  <Card title="Plotting" icon="chart-line" href="/modules/plot">
+    Visualize evaluation results
+  </Card>
+</CardGroup>
+
+## Learn More
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="book" href="/api/metrics">
+    Complete API documentation
+  </Card>
+  <Card title="Tutorial" icon="graduation-cap" href="/tutorials/model-evaluation">
+    Model evaluation guide
+  </Card>
+</CardGroup>

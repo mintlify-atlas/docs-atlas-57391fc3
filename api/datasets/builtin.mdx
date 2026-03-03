@@ -1,0 +1,424 @@
+---
+title: Built-in Datasets
+description: Load pre-generated synthetic datasets
+---
+
+## Overview
+
+Built-in datasets provide deterministic synthetic data inspired by common ML benchmarks. All datasets return the same values on every call.
+
+## Dataset Structure
+
+All loader functions return a `Dataset` object:
+
+```ts
+type Dataset = {
+  data: Tensor;          // Feature matrix
+  target: Tensor;        // Target values
+  featureNames: string[];  // Feature names
+  targetNames?: string[];  // Class/target names
+  description: string;   // Dataset description
+  images?: Tensor;       // Optional image data (for vision datasets)
+}
+```
+
+## Classification Datasets
+
+### loadIris
+
+Load the synthetic Iris dataset.
+
+```ts
+function loadIris(): Dataset
+```
+
+<ResponseField name="Returns" type="Dataset">
+  Dataset with:
+  - `data`: shape [150, 4]
+  - `target`: shape [150] (int32)
+  - 3 classes: setosa, versicolor, virginica
+  - 4 features: sepal length, sepal width, petal length, petal width
+</ResponseField>
+
+**Example:**
+
+```ts
+import { loadIris } from 'deepbox/datasets';
+
+const { data, target, featureNames, targetNames } = loadIris();
+console.log(data.shape);  // [150, 4]
+console.log(target.shape);  // [150]
+```
+
+### loadDigits
+
+Load the synthetic Digits dataset.
+
+```ts
+function loadDigits(): Dataset
+```
+
+<ResponseField name="Returns" type="Dataset">
+  Dataset with:
+  - `data`: shape [1797, 64]
+  - `target`: shape [1797] (int32)
+  - `images`: shape [1797, 8, 8]
+  - 10 classes: digits 0-9
+  - 64 features: 8×8 pixel values (0-15)
+</ResponseField>
+
+### loadBreastCancer
+
+Load the synthetic Breast Cancer dataset.
+
+```ts
+function loadBreastCancer(): Dataset
+```
+
+<ResponseField name="Returns" type="Dataset">
+  Dataset with:
+  - `data`: shape [569, 30]
+  - `target`: shape [569] (int32)
+  - 2 classes: malignant, benign
+  - 30 features: tumor measurements
+</ResponseField>
+
+### loadFlowersExtended
+
+Load the synthetic Flowers Extended dataset.
+
+```ts
+function loadFlowersExtended(): Dataset
+```
+
+<ResponseField name="Returns" type="Dataset">
+  Dataset with:
+  - `data`: shape [180, 6]
+  - `target`: shape [180] (int32)
+  - 4 species
+  - 6 features
+</ResponseField>
+
+### loadLeafShapes
+
+Load the synthetic Leaf Shapes dataset.
+
+```ts
+function loadLeafShapes(): Dataset
+```
+
+<ResponseField name="Returns" type="Dataset">
+  Dataset with:
+  - `data`: shape [150, 8]
+  - `target`: shape [150] (int32)
+  - 5 plant species
+  - 8 geometric features
+</ResponseField>
+
+### loadFruitQuality
+
+Load the synthetic Fruit Quality dataset.
+
+```ts
+function loadFruitQuality(): Dataset
+```
+
+<ResponseField name="Returns" type="Dataset">
+  Dataset with:
+  - `data`: shape [150, 5]
+  - `target`: shape [150] (int32)
+  - 3 fruit classes
+  - 5 features
+</ResponseField>
+
+### loadSeedMorphology
+
+Load the synthetic Seed Morphology dataset.
+
+```ts
+function loadSeedMorphology(): Dataset
+```
+
+<ResponseField name="Returns" type="Dataset">
+  Dataset with:
+  - `data`: shape [150, 4]
+  - `target`: shape [150] (int32)
+  - 3 seed types
+  - 4 features
+</ResponseField>
+
+### loadMoonsMulti
+
+Load the synthetic Moons-Multi dataset.
+
+```ts
+function loadMoonsMulti(): Dataset
+```
+
+<ResponseField name="Returns" type="Dataset">
+  Dataset with:
+  - `data`: shape [150, 2]
+  - `target`: shape [150] (int32)
+  - 3 interleaving moon classes
+  - 2D features
+</ResponseField>
+
+### loadConcentricRings
+
+Load the synthetic Concentric Rings dataset.
+
+```ts
+function loadConcentricRings(): Dataset
+```
+
+<ResponseField name="Returns" type="Dataset">
+  Dataset with:
+  - `data`: shape [150, 2]
+  - `target`: shape [150] (int32)
+  - 3 concentric circle classes
+  - 2D features
+</ResponseField>
+
+### loadSpiralArms
+
+Load the synthetic Spiral Arms dataset.
+
+```ts
+function loadSpiralArms(): Dataset
+```
+
+<ResponseField name="Returns" type="Dataset">
+  Dataset with:
+  - `data`: shape [150, 2]
+  - `target`: shape [150] (int32)
+  - 3 spiral classes
+  - 2D features
+</ResponseField>
+
+### loadGaussianIslands
+
+Load the synthetic Gaussian Islands dataset.
+
+```ts
+function loadGaussianIslands(): Dataset
+```
+
+<ResponseField name="Returns" type="Dataset">
+  Dataset with:
+  - `data`: shape [200, 3]
+  - `target`: shape [200] (int32)
+  - 4 separated Gaussian clusters
+  - 3D features
+</ResponseField>
+
+### loadStudentPerformance
+
+Load the synthetic Student Performance dataset.
+
+```ts
+function loadStudentPerformance(): Dataset
+```
+
+<ResponseField name="Returns" type="Dataset">
+  Dataset with:
+  - `data`: shape [150, 3]
+  - `target`: shape [150] (int32)
+  - 3 outcome classes: fail, pass, excellent
+  - 3 integer features
+</ResponseField>
+
+### loadTrafficConditions
+
+Load the synthetic Traffic Conditions dataset.
+
+```ts
+function loadTrafficConditions(): Dataset
+```
+
+<ResponseField name="Returns" type="Dataset">
+  Dataset with:
+  - `data`: shape [150, 3]
+  - `target`: shape [150] (int32)
+  - 3 traffic level classes
+  - 3 features
+</ResponseField>
+
+### loadSensorStates
+
+Load the synthetic Sensor States dataset.
+
+```ts
+function loadSensorStates(): Dataset
+```
+
+<ResponseField name="Returns" type="Dataset">
+  Dataset with:
+  - `data`: shape [180, 6]
+  - `target`: shape [180] (int32)
+  - 3 operating modes
+  - 6 sensor readings
+</ResponseField>
+
+### loadPerfectlySeparable
+
+Load the synthetic Perfectly Separable dataset.
+
+```ts
+function loadPerfectlySeparable(): Dataset
+```
+
+<ResponseField name="Returns" type="Dataset">
+  Dataset with:
+  - `data`: shape [100, 4]
+  - `target`: shape [100] (int32)
+  - 2 linearly separable classes
+  - 4 features
+</ResponseField>
+
+## Regression Datasets
+
+### loadDiabetes
+
+Load the synthetic Diabetes regression dataset.
+
+```ts
+function loadDiabetes(): Dataset
+```
+
+<ResponseField name="Returns" type="Dataset">
+  Dataset with:
+  - `data`: shape [442, 10]
+  - `target`: shape [442]
+  - Continuous target
+  - 10 features
+</ResponseField>
+
+### loadLinnerud
+
+Load the synthetic Linnerud multi-output regression dataset.
+
+```ts
+function loadLinnerud(): Dataset
+```
+
+<ResponseField name="Returns" type="Dataset">
+  Dataset with:
+  - `data`: shape [20, 3]
+  - `target`: shape [20, 3]
+  - 3 exercise features
+  - 3 physiological targets
+</ResponseField>
+
+### loadPlantGrowth
+
+Load the synthetic Plant Growth regression dataset.
+
+```ts
+function loadPlantGrowth(): Dataset
+```
+
+<ResponseField name="Returns" type="Dataset">
+  Dataset with:
+  - `data`: shape [200, 3]
+  - `target`: shape [200]
+  - Target: height (cm)
+  - 3 features: sunlight, water, soil quality
+</ResponseField>
+
+### loadHousingMini
+
+Load the synthetic Housing-Mini regression dataset.
+
+```ts
+function loadHousingMini(): Dataset
+```
+
+<ResponseField name="Returns" type="Dataset">
+  Dataset with:
+  - `data`: shape [200, 4]
+  - `target`: shape [200]
+  - Target: price (thousands)
+  - 4 features: size, rooms, age, distance
+</ResponseField>
+
+### loadEnergyEfficiency
+
+Load the synthetic Energy Efficiency regression dataset.
+
+```ts
+function loadEnergyEfficiency(): Dataset
+```
+
+<ResponseField name="Returns" type="Dataset">
+  Dataset with:
+  - `data`: shape [200, 3]
+  - `target`: shape [200]
+  - Target: energy usage (kWh)
+  - 3 features
+</ResponseField>
+
+### loadCropYield
+
+Load the synthetic Crop Yield regression dataset.
+
+```ts
+function loadCropYield(): Dataset
+```
+
+<ResponseField name="Returns" type="Dataset">
+  Dataset with:
+  - `data`: shape [200, 3]
+  - `target`: shape [200]
+  - Target: yield (tons/ha)
+  - 3 features: rainfall, fertilizer, temperature
+</ResponseField>
+
+### loadFitnessScores
+
+Load the synthetic Fitness Scores multi-output regression dataset.
+
+```ts
+function loadFitnessScores(): Dataset
+```
+
+<ResponseField name="Returns" type="Dataset">
+  Dataset with:
+  - `data`: shape [100, 3]
+  - `target`: shape [100, 3]
+  - 3 exercise features
+  - 3 fitness targets: strength, endurance, flexibility
+</ResponseField>
+
+### loadWeatherOutcomes
+
+Load the synthetic Weather Outcomes multi-output regression dataset.
+
+```ts
+function loadWeatherOutcomes(): Dataset
+```
+
+<ResponseField name="Returns" type="Dataset">
+  Dataset with:
+  - `data`: shape [150, 3]
+  - `target`: shape [150, 2]
+  - 3 features
+  - 2 targets: rain probability, wind speed
+</ResponseField>
+
+## Clustering Datasets
+
+### loadCustomerSegments
+
+Load the synthetic Customer Segments clustering dataset.
+
+```ts
+function loadCustomerSegments(): Dataset
+```
+
+<ResponseField name="Returns" type="Dataset">
+  Dataset with:
+  - `data`: shape [200, 3]
+  - `target`: shape [200] (int32)
+  - 4 natural clusters
+  - 3 features: age, income, spending score
+</ResponseField>

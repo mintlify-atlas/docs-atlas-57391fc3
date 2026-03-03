@@ -1,0 +1,349 @@
+---
+title: Linear Algebra Module
+description: Matrix operations, decompositions, and linear system solvers
+icon: square-root-variable
+---
+
+The Linear Algebra (linalg) module provides comprehensive matrix operations, decompositions, and linear system solvers. It's essential for scientific computing, machine learning, and numerical analysis.
+
+## Overview
+
+The linalg module offers a complete suite of linear algebra operations:
+
+- **Matrix Decompositions**: SVD, QR, LU, Cholesky, Eigenvalue decomposition
+- **Linear System Solvers**: Solve Ax=b, least squares, triangular systems
+- **Matrix Operations**: Inverse, determinant, trace, norm, rank
+- **Eigenvalues & Eigenvectors**: Standard and generalized eigenvalue problems
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Complete Decompositions" icon="layer-group">
+    SVD, QR, LU, Cholesky, and eigenvalue decompositions.
+  </Card>
+  <Card title="Efficient Solvers" icon="bolt">
+    Fast linear system and least squares solvers.
+  </Card>
+  <Card title="Matrix Analysis" icon="magnifying-glass">
+    Compute rank, condition number, norms, and determinants.
+  </Card>
+  <Card title="Numerical Stability" icon="balance-scale">
+    Algorithms optimized for numerical accuracy.
+  </Card>
+</CardGroup>
+
+## Matrix Decompositions
+
+### Singular Value Decomposition (SVD)
+
+```typescript
+import { svd } from 'deepbox/linalg';
+import { tensor } from 'deepbox/ndarray';
+
+const A = tensor([
+  [1, 2, 3],
+  [4, 5, 6],
+  [7, 8, 9]
+]);
+
+const { U, S, Vt } = svd(A);
+
+// A = U @ diag(S) @ Vt
+console.log(U.shape);   // [3, 3]
+console.log(S.shape);   // [3]
+console.log(Vt.shape);  // [3, 3]
+```
+
+### QR Decomposition
+
+```typescript
+import { qr } from 'deepbox/linalg';
+
+const A = tensor([[1, 2], [3, 4], [5, 6]]);
+const { Q, R } = qr(A);
+
+// A = Q @ R
+// Q is orthogonal, R is upper triangular
+console.log(Q.shape);  // [3, 2]
+console.log(R.shape);  // [2, 2]
+```
+
+### LU Decomposition
+
+```typescript
+import { lu } from 'deepbox/linalg';
+
+const A = tensor([[4, 3], [6, 3]]);
+const { P, L, U } = lu(A);
+
+// P @ A = L @ U
+// P is permutation, L is lower triangular, U is upper triangular
+```
+
+### Cholesky Decomposition
+
+```typescript
+import { cholesky } from 'deepbox/linalg';
+
+// For positive definite matrices
+const A = tensor([[4, 2], [2, 3]]);
+const L = cholesky(A);
+
+// A = L @ L^T
+console.log(L);  // Lower triangular
+```
+
+### Eigenvalue Decomposition
+
+```typescript
+import { eig, eigh, eigvals } from 'deepbox/linalg';
+
+// General matrices
+const A = tensor([[1, 2], [3, 4]]);
+const { eigenvalues, eigenvectors } = eig(A);
+
+// Symmetric/Hermitian matrices (more stable)
+const symmetric = tensor([[2, 1], [1, 2]]);
+const { eigenvalues: vals, eigenvectors: vecs } = eigh(symmetric);
+
+// Eigenvalues only (faster)
+const lambdas = eigvals(A);
+```
+
+## Linear System Solvers
+
+### Basic Linear System
+
+```typescript
+import { solve } from 'deepbox/linalg';
+import { tensor } from 'deepbox/ndarray';
+
+// Solve Ax = b
+const A = tensor([[3, 1], [1, 2]]);
+const b = tensor([9, 8]);
+
+const x = solve(A, b);
+console.log(x);  // [2, 3]
+
+// Verify: A @ x ≈ b
+```
+
+### Least Squares
+
+```typescript
+import { lstsq } from 'deepbox/linalg';
+
+// Solve overdetermined system (more equations than unknowns)
+const A = tensor([
+  [1, 1],
+  [1, 2],
+  [1, 3],
+  [1, 4]
+]);
+const b = tensor([2, 3, 5, 6]);
+
+const { x, residuals, rank } = lstsq(A, b);
+console.log(x);         // Best fit solution
+console.log(residuals); // Sum of squared residuals
+```
+
+### Triangular Systems
+
+```typescript
+import { solveTriangular } from 'deepbox/linalg';
+
+// Solve triangular system (faster than general solver)
+const L = tensor([[2, 0], [3, 4]]);
+const b = tensor([4, 10]);
+
+// Lower triangular
+const x = solveTriangular(L, b, { lower: true });
+```
+
+## Matrix Operations
+
+### Matrix Inverse
+
+```typescript
+import { inv, pinv } from 'deepbox/linalg';
+
+// Regular inverse (for square, non-singular matrices)
+const A = tensor([[4, 7], [2, 6]]);
+const A_inv = inv(A);
+
+// Moore-Penrose pseudoinverse (for any matrix)
+const B = tensor([[1, 2], [3, 4], [5, 6]]);
+const B_pinv = pinv(B);
+```
+
+### Matrix Properties
+
+```typescript
+import { det, trace, matrixRank, slogdet } from 'deepbox/linalg';
+
+const A = tensor([[1, 2], [3, 4]]);
+
+// Determinant
+const determinant = det(A);  // -2
+
+// Trace (sum of diagonal)
+const tr = trace(A);  // 5
+
+// Rank
+const rank = matrixRank(A);  // 2
+
+// Sign and log of determinant (for large matrices)
+const { sign, logdet } = slogdet(A);
+```
+
+### Matrix Norms
+
+```typescript
+import { norm, cond } from 'deepbox/linalg';
+
+const A = tensor([[1, 2], [3, 4]]);
+
+// Various norms
+const frobNorm = norm(A, 'fro');  // Frobenius norm
+const infNorm = norm(A, Infinity); // Infinity norm
+const l2Norm = norm(A, 2);         // 2-norm (spectral norm)
+
+// Condition number (for stability analysis)
+const condNumber = cond(A);
+```
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="Linear Regression">
+    Solve linear regression using least squares:
+    
+    ```typescript
+    import { lstsq } from 'deepbox/linalg';
+    import { tensor } from 'deepbox/ndarray';
+    
+    // X is design matrix, y is target
+    const X = tensor([[1, 1], [1, 2], [1, 3]]);
+    const y = tensor([2, 4, 6]);
+    
+    // Solve for coefficients: X @ beta = y
+    const { x: beta } = lstsq(X, y);
+    console.log(beta);  // [0, 2] (intercept and slope)
+    ```
+  </Accordion>
+
+  <Accordion title="Principal Component Analysis">
+    Use SVD for dimensionality reduction:
+    
+    ```typescript
+    import { svd } from 'deepbox/linalg';
+    import { tensor } from 'deepbox/ndarray';
+    
+    // Centered data matrix
+    const X = tensor([
+      [2.5, 2.4],
+      [0.5, 0.7],
+      [2.2, 2.9],
+      [1.9, 2.2]
+    ]);
+    
+    const { U, S, Vt } = svd(X);
+    
+    // Principal components are columns of V (rows of Vt)
+    // Project data: X_reduced = U @ diag(S)
+    ```
+  </Accordion>
+
+  <Accordion title="Numerical Stability">
+    Check condition number before solving:
+    
+    ```typescript
+    import { cond, solve, lstsq } from 'deepbox/linalg';
+    
+    const A = tensor([[1, 2], [3, 4]]);
+    const b = tensor([5, 6]);
+    
+    const condNumber = cond(A);
+    
+    if (condNumber < 1e10) {
+      // Well-conditioned, use direct solver
+      const x = solve(A, b);
+    } else {
+      // Ill-conditioned, use least squares or regularization
+      const { x } = lstsq(A, b);
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## API Reference
+
+### Decompositions
+
+- `svd(A, options)` - Singular Value Decomposition
+- `qr(A)` - QR Decomposition
+- `lu(A)` - LU Decomposition with pivoting
+- `cholesky(A)` - Cholesky Decomposition
+- `eig(A, options)` - Eigenvalue decomposition
+- `eigh(A)` - Eigenvalue decomposition for symmetric matrices
+- `eigvals(A)` - Compute eigenvalues only
+- `eigvalsh(A)` - Compute eigenvalues for symmetric matrices
+
+### Solvers
+
+- `solve(A, b)` - Solve linear system Ax=b
+- `lstsq(A, b)` - Least squares solution
+- `solveTriangular(A, b, options)` - Solve triangular system
+
+### Matrix Operations
+
+- `inv(A)` - Matrix inverse
+- `pinv(A)` - Moore-Penrose pseudoinverse
+- `det(A)` - Determinant
+- `slogdet(A)` - Sign and log-determinant
+- `trace(A)` - Matrix trace
+- `matrixRank(A)` - Matrix rank
+
+### Norms
+
+- `norm(A, ord)` - Matrix or vector norm
+- `cond(A)` - Condition number
+
+## Performance Tips
+
+<Tip>
+  Use specialized functions for symmetric matrices (`eigh` instead of `eig`) for better performance and accuracy.
+</Tip>
+
+<Tip>
+  For solving multiple systems with the same A matrix, consider computing the decomposition once and reusing it.
+</Tip>
+
+<Warning>
+  Check the condition number before solving linear systems. High condition numbers indicate ill-conditioned problems that may produce inaccurate results.
+</Warning>
+
+## Related Modules
+
+<CardGroup cols={3}>
+  <Card title="NDArray" icon="grid" href="/modules/ndarray">
+    Tensor operations and creation
+  </Card>
+  <Card title="Machine Learning" icon="brain" href="/modules/ml">
+    ML models using linear algebra
+  </Card>
+  <Card title="Statistics" icon="chart-line" href="/modules/stats">
+    Statistical computations
+  </Card>
+</CardGroup>
+
+## Learn More
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="book" href="/api/linalg">
+    Complete API documentation
+  </Card>
+  <Card title="Examples" icon="code" href="/examples/linear-algebra">
+    Linear algebra examples
+  </Card>
+</CardGroup>

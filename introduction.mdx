@@ -1,0 +1,199 @@
+---
+title: "Deepbox"
+description: "The TypeScript Toolkit for AI & Numerical Computing"
+---
+
+<img
+  className="block"
+  src="/images/hero-light.svg"
+  alt="Deepbox Hero"
+/>
+
+## The TypeScript Toolkit for AI & Numerical Computing
+
+Deepbox is a comprehensive, type-safe TypeScript library that unifies numerical computing, tabular data workflows, and machine learning into a single modular package. Zero runtime dependencies. 4,344 tests. Production-ready.
+
+<CardGroup cols={2}>
+  <Card
+    title="Quick Start"
+    icon="rocket"
+    href="/quickstart"
+  >
+    Get up and running in 5 minutes with a complete example
+  </Card>
+  <Card
+    title="Installation"
+    icon="download"
+    href="/installation"
+  >
+    Install Deepbox with npm, yarn, or pnpm
+  </Card>
+  <Card
+    title="Core Concepts"
+    icon="book"
+    href="/concepts/tensors"
+  >
+    Learn about tensors, autograd, and broadcasting
+  </Card>
+  <Card
+    title="API Reference"
+    icon="code"
+    href="/api/ndarray/tensor"
+  >
+    Explore the complete API documentation
+  </Card>
+</CardGroup>
+
+## Key Features
+
+<AccordionGroup>
+  <Accordion icon="grid" title="N-Dimensional Arrays">
+    **90+ operations** for arithmetic, trigonometric, logical, reductions, sorting, and manipulation
+    
+    - **Automatic differentiation**: GradTensor with reverse-mode backpropagation
+    - **Broadcasting**: Full broadcasting semantics for element-wise operations
+    - **Sparse matrices**: CSR format with arithmetic and matrix operations
+    - **Multiple dtypes**: float32, float64, int32, int64, uint8, bool, string
+    - **Activation functions**: ReLU, Sigmoid, Softmax, GELU, Mish, Swish, ELU, LeakyReLU
+  </Accordion>
+
+  <Accordion icon="table" title="DataFrames & Series">
+    **Tabular API** with familiar operations for data manipulation
+    
+    - Filtering, grouping, joining, merging, pivoting, sorting
+    - CSV I/O for reading and writing files
+    - Descriptive statistics: `describe()`, value counts, correlation matrices
+    - Series for one-dimensional labeled data
+  </Accordion>
+
+  <Accordion icon="chart-line" title="Machine Learning">
+    **Classical ML models** with scikit-learn-inspired API
+    
+    - **Linear models**: LinearRegression, Ridge, Lasso, LogisticRegression
+    - **Tree-based**: DecisionTreeClassifier/Regressor, RandomForestClassifier/Regressor
+    - **Ensemble**: GradientBoostingClassifier/Regressor
+    - **SVM**: LinearSVC, LinearSVR
+    - **Neighbors**: KNeighborsClassifier, KNeighborsRegressor
+    - **Naive Bayes**: GaussianNB
+    - **Clustering**: KMeans, DBSCAN
+    - **Dimensionality reduction**: PCA, t-SNE
+  </Accordion>
+
+  <Accordion icon="brain" title="Neural Networks">
+    **Deep learning layers and modules** for building custom architectures
+    
+    - **Layers**: Linear, Conv1d, Conv2d, MaxPool2d, AvgPool2d
+    - **Recurrent**: RNN, LSTM, GRU
+    - **Attention**: MultiheadAttention, TransformerEncoderLayer
+    - **Normalization**: BatchNorm1d, LayerNorm
+    - **Regularization**: Dropout
+    - **Losses**: MSE, MAE, CrossEntropy, BCE, Huber
+  </Accordion>
+
+  <Accordion icon="calculator" title="Linear Algebra & Statistics">
+    **Advanced mathematical operations** for scientific computing
+    
+    - **Decompositions**: SVD, QR, LU, Cholesky, Eigenvalue (eig, eigh)
+    - **Solvers**: solve(), lstsq(), solveTriangular()
+    - **Properties**: det(), trace(), matrixRank(), cond(), norm()
+    - **Statistics**: mean, median, mode, variance, std, skewness, kurtosis
+    - **Hypothesis tests**: t-tests, ANOVA, chi-square, Shapiro-Wilk, Mann-Whitney U
+  </Accordion>
+
+  <Accordion icon="sliders" title="Preprocessing & Optimization">
+    **Complete ML pipeline utilities** for data preparation and model training
+    
+    - **Scalers**: StandardScaler, MinMaxScaler, RobustScaler, Normalizer
+    - **Encoders**: LabelEncoder, OneHotEncoder, OrdinalEncoder
+    - **Splitting**: trainTestSplit, KFold, StratifiedKFold
+    - **Optimizers**: SGD, Adam, AdamW, RMSprop, Adagrad
+    - **LR Schedulers**: StepLR, CosineAnnealingLR, OneCycleLR
+  </Accordion>
+</AccordionGroup>
+
+## Why Deepbox?
+
+<CardGroup cols={3}>
+  <Card icon="typescript" title="Type-Safe">
+    Built with TypeScript for excellent IDE support and compile-time safety
+  </Card>
+  <Card icon="feather" title="Zero Dependencies">
+    No runtime dependencies - just pure TypeScript
+  </Card>
+  <Card icon="gauge" title="Production Ready">
+    4,344 tests ensure reliability and correctness
+  </Card>
+  <Card icon="boxes" title="Modular Design">
+    Import only what you need for optimal bundle size
+  </Card>
+  <Card icon="server" title="Node.js Native">
+    Works seamlessly in Node.js >= 24.13.0
+  </Card>
+  <Card icon="bolt" title="Competitive Performance">
+    Pure TypeScript implementation with competitive performance
+  </Card>
+</CardGroup>
+
+## Quick Example
+
+```typescript
+import { tensor, add, parameter } from "deepbox/ndarray";
+import { DataFrame } from "deepbox/dataframe";
+import { LinearRegression } from "deepbox/ml";
+
+// Tensor operations with broadcasting
+const a = tensor([[1, 2], [3, 4]]);
+const b = tensor([[5, 6], [7, 8]]);
+const c = add(a, b); // tensor([[6, 8], [10, 12]])
+
+// Automatic differentiation
+const x = parameter([2, 3]);
+const y = x.mul(x).sum();
+y.backward();
+// x.grad -> tensor([4, 6])
+
+// DataFrame operations
+const df = new DataFrame({
+  name: ["Alice", "Bob", "Charlie"],
+  age: [25, 30, 35],
+  score: [85, 90, 78],
+});
+
+// Machine learning
+const model = new LinearRegression();
+model.fit(XTrain, yTrain);
+const predictions = model.predict(XTest);
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card
+    title="Installation Guide"
+    icon="download"
+    href="/installation"
+  >
+    Install Deepbox and set up your development environment
+  </Card>
+  <Card
+    title="Quick Start Tutorial"
+    icon="play"
+    href="/quickstart"
+  >
+    Build your first Deepbox application in minutes
+  </Card>
+  <Card
+    title="Core Concepts"
+    icon="graduation-cap"
+    href="/concepts/tensors"
+  >
+    Understand the fundamental concepts behind Deepbox
+  </Card>
+  <Card
+    title="Examples"
+    icon="code"
+    href="/examples/tensor-basics"
+  >
+    Explore practical examples and use cases
+  </Card>
+</CardGroup>

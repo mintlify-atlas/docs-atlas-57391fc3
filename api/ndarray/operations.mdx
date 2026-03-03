@@ -1,0 +1,1307 @@
+---
+title: 'Tensor Operations'
+description: 'Mathematical operations, reductions, and transformations on tensors'
+---
+
+## Arithmetic Operations
+
+<ParamField path="add" type="function">
+  Element-wise addition with broadcasting.
+
+  **Parameters:**
+  - `a` (Tensor) - First tensor
+  - `b` (Tensor) - Second tensor
+
+  **Returns:** Element-wise sum
+
+  ```ts
+  import { add, tensor } from 'deepbox/ndarray';
+
+  const a = tensor([1, 2, 3]);
+  const b = tensor([4, 5, 6]);
+  const c = add(a, b);  // [5, 7, 9]
+  ```
+</ParamField>
+
+<ParamField path="sub" type="function">
+  Element-wise subtraction with broadcasting.
+
+  **Parameters:**
+  - `a` (Tensor) - First tensor
+  - `b` (Tensor) - Second tensor
+
+  **Returns:** Element-wise difference
+
+  ```ts
+  import { sub, tensor } from 'deepbox/ndarray';
+
+  const a = tensor([5, 7, 9]);
+  const b = tensor([1, 2, 3]);
+  const c = sub(a, b);  // [4, 5, 6]
+  ```
+</ParamField>
+
+<ParamField path="mul" type="function">
+  Element-wise multiplication with broadcasting.
+
+  **Parameters:**
+  - `a` (Tensor) - First tensor
+  - `b` (Tensor) - Second tensor
+
+  **Returns:** Element-wise product
+
+  ```ts
+  import { mul, tensor } from 'deepbox/ndarray';
+
+  const a = tensor([1, 2, 3]);
+  const b = tensor([4, 5, 6]);
+  const c = mul(a, b);  // [4, 10, 18]
+  ```
+</ParamField>
+
+<ParamField path="div" type="function">
+  Element-wise division with broadcasting.
+
+  **Parameters:**
+  - `a` (Tensor) - Numerator tensor
+  - `b` (Tensor) - Denominator tensor
+
+  **Returns:** Element-wise quotient
+
+  ```ts
+  import { div, tensor } from 'deepbox/ndarray';
+
+  const a = tensor([4, 10, 18]);
+  const b = tensor([2, 5, 3]);
+  const c = div(a, b);  // [2, 2, 6]
+  ```
+</ParamField>
+
+<ParamField path="addScalar" type="function">
+  Add a scalar value to all elements.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+  - `scalar` (number) - Scalar value to add
+
+  **Returns:** Tensor with scalar added
+
+  ```ts
+  import { addScalar, tensor } from 'deepbox/ndarray';
+
+  const t = tensor([1, 2, 3]);
+  const result = addScalar(t, 10);  // [11, 12, 13]
+  ```
+</ParamField>
+
+<ParamField path="mulScalar" type="function">
+  Multiply all elements by a scalar value.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+  - `scalar` (number) - Scalar multiplier
+
+  **Returns:** Tensor multiplied by scalar
+
+  ```ts
+  import { mulScalar, tensor } from 'deepbox/ndarray';
+
+  const t = tensor([1, 2, 3]);
+  const result = mulScalar(t, 2);  // [2, 4, 6]
+  ```
+</ParamField>
+
+<ParamField path="neg" type="function">
+  Element-wise negation.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** Negated tensor
+
+  ```ts
+  import { neg, tensor } from 'deepbox/ndarray';
+
+  const t = tensor([1, -2, 3]);
+  const result = neg(t);  // [-1, 2, -3]
+  ```
+</ParamField>
+
+<ParamField path="abs" type="function">
+  Element-wise absolute value.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** Absolute values
+
+  ```ts
+  import { abs, tensor } from 'deepbox/ndarray';
+
+  const t = tensor([-1, 2, -3]);
+  const result = abs(t);  // [1, 2, 3]
+  ```
+</ParamField>
+
+<ParamField path="pow" type="function">
+  Element-wise power.
+
+  **Parameters:**
+  - `base` (Tensor) - Base tensor
+  - `exponent` (Tensor) - Exponent tensor
+
+  **Returns:** base raised to exponent
+
+  ```ts
+  import { pow, tensor } from 'deepbox/ndarray';
+
+  const base = tensor([2, 3, 4]);
+  const exp = tensor([2, 2, 2]);
+  const result = pow(base, exp);  // [4, 9, 16]
+  ```
+</ParamField>
+
+<ParamField path="sqrt" type="function">
+  Element-wise square root.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** Square roots
+
+  ```ts
+  import { sqrt, tensor } from 'deepbox/ndarray';
+
+  const t = tensor([4, 9, 16]);
+  const result = sqrt(t);  // [2, 3, 4]
+  ```
+</ParamField>
+
+<ParamField path="square" type="function">
+  Element-wise square.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** Squared values
+
+  ```ts
+  import { square, tensor } from 'deepbox/ndarray';
+
+  const t = tensor([2, 3, 4]);
+  const result = square(t);  // [4, 9, 16]
+  ```
+</ParamField>
+
+<ParamField path="reciprocal" type="function">
+  Element-wise reciprocal (1/x).
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** Reciprocal values
+
+  ```ts
+  import { reciprocal, tensor } from 'deepbox/ndarray';
+
+  const t = tensor([2, 4, 5]);
+  const result = reciprocal(t);  // [0.5, 0.25, 0.2]
+  ```
+</ParamField>
+
+<ParamField path="sign" type="function">
+  Element-wise sign function (-1, 0, or 1).
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** Sign values
+
+  ```ts
+  import { sign, tensor } from 'deepbox/ndarray';
+
+  const t = tensor([-5, 0, 3]);
+  const result = sign(t);  // [-1, 0, 1]
+  ```
+</ParamField>
+
+<ParamField path="clip" type="function">
+  Clip (clamp) tensor values to a range.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+  - `min` (number) - Minimum value
+  - `max` (number) - Maximum value
+
+  **Returns:** Clipped tensor
+
+  ```ts
+  import { clip, tensor } from 'deepbox/ndarray';
+
+  const t = tensor([1, 5, 10]);
+  const result = clip(t, 2, 8);  // [2, 5, 8]
+  ```
+</ParamField>
+
+<ParamField path="maximum" type="function">
+  Element-wise maximum of two tensors.
+
+  **Parameters:**
+  - `a` (Tensor) - First tensor
+  - `b` (Tensor) - Second tensor
+
+  **Returns:** Element-wise maximum
+
+  ```ts
+  import { maximum, tensor } from 'deepbox/ndarray';
+
+  const a = tensor([1, 5, 3]);
+  const b = tensor([2, 3, 4]);
+  const result = maximum(a, b);  // [2, 5, 4]
+  ```
+</ParamField>
+
+<ParamField path="minimum" type="function">
+  Element-wise minimum of two tensors.
+
+  **Parameters:**
+  - `a` (Tensor) - First tensor
+  - `b` (Tensor) - Second tensor
+
+  **Returns:** Element-wise minimum
+
+  ```ts
+  import { minimum, tensor } from 'deepbox/ndarray';
+
+  const a = tensor([1, 5, 3]);
+  const b = tensor([2, 3, 4]);
+  const result = minimum(a, b);  // [1, 3, 3]
+  ```
+</ParamField>
+
+<ParamField path="floorDiv" type="function">
+  Element-wise floor division (rounds toward -Infinity).
+
+  **Parameters:**
+  - `a` (Tensor) - Numerator tensor
+  - `b` (Tensor) - Denominator tensor
+
+  **Returns:** Floor division result
+
+  ```ts
+  import { floorDiv, tensor } from 'deepbox/ndarray';
+
+  const a = tensor([7, 7]);
+  const b = tensor([3, -3]);
+  const result = floorDiv(a, b);  // [2, -3]
+  ```
+</ParamField>
+
+<ParamField path="mod" type="function">
+  Element-wise modulo (remainder has same sign as divisor).
+
+  **Parameters:**
+  - `a` (Tensor) - Dividend tensor
+  - `b` (Tensor) - Divisor tensor
+
+  **Returns:** Modulo result
+
+  ```ts
+  import { mod, tensor } from 'deepbox/ndarray';
+
+  const a = tensor([7, 7]);
+  const b = tensor([3, -3]);
+  const result = mod(a, b);  // [1, -2]
+  ```
+</ParamField>
+
+## Mathematical Functions
+
+<ParamField path="exp" type="function">
+  Element-wise exponential (e^x).
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** Exponential values
+
+  ```ts
+  import { exp, tensor } from 'deepbox/ndarray';
+
+  const t = tensor([0, 1, 2]);
+  const result = exp(t);  // [1, 2.718..., 7.389...]
+  ```
+</ParamField>
+
+<ParamField path="exp2" type="function">
+  Element-wise base-2 exponential (2^x).
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** Base-2 exponential values
+
+  ```ts
+  import { exp2, tensor } from 'deepbox/ndarray';
+
+  const t = tensor([0, 1, 2, 3]);
+  const result = exp2(t);  // [1, 2, 4, 8]
+  ```
+</ParamField>
+
+<ParamField path="expm1" type="function">
+  Element-wise exp(x) - 1, accurate for small x.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** exp(x) - 1 values
+</ParamField>
+
+<ParamField path="log" type="function">
+  Element-wise natural logarithm.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** Natural log values
+
+  ```ts
+  import { log, tensor } from 'deepbox/ndarray';
+
+  const t = tensor([1, 2.718, 7.389]);
+  const result = log(t);  // [0, 1, 2]
+  ```
+</ParamField>
+
+<ParamField path="log2" type="function">
+  Element-wise base-2 logarithm.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** Base-2 log values
+
+  ```ts
+  import { log2, tensor } from 'deepbox/ndarray';
+
+  const t = tensor([1, 2, 4, 8]);
+  const result = log2(t);  // [0, 1, 2, 3]
+  ```
+</ParamField>
+
+<ParamField path="log10" type="function">
+  Element-wise base-10 logarithm.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** Base-10 log values
+
+  ```ts
+  import { log10, tensor } from 'deepbox/ndarray';
+
+  const t = tensor([1, 10, 100, 1000]);
+  const result = log10(t);  // [0, 1, 2, 3]
+  ```
+</ParamField>
+
+<ParamField path="log1p" type="function">
+  Element-wise log(1 + x), accurate for small x.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** log(1 + x) values
+</ParamField>
+
+<ParamField path="rsqrt" type="function">
+  Element-wise reciprocal square root (1/sqrt(x)).
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** Reciprocal square root values
+</ParamField>
+
+<ParamField path="cbrt" type="function">
+  Element-wise cube root.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** Cube root values
+</ParamField>
+
+<ParamField path="ceil" type="function">
+  Element-wise ceiling (round up).
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** Ceiling values
+
+  ```ts
+  import { ceil, tensor } from 'deepbox/ndarray';
+
+  const t = tensor([1.1, 2.5, 3.9]);
+  const result = ceil(t);  // [2, 3, 4]
+  ```
+</ParamField>
+
+<ParamField path="floor" type="function">
+  Element-wise floor (round down).
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** Floor values
+
+  ```ts
+  import { floor, tensor } from 'deepbox/ndarray';
+
+  const t = tensor([1.1, 2.5, 3.9]);
+  const result = floor(t);  // [1, 2, 3]
+  ```
+</ParamField>
+
+<ParamField path="round" type="function">
+  Element-wise rounding to nearest integer.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** Rounded values
+
+  ```ts
+  import { round, tensor } from 'deepbox/ndarray';
+
+  const t = tensor([1.4, 2.5, 3.6]);
+  const result = round(t);  // [1, 2, 4]
+  ```
+</ParamField>
+
+<ParamField path="trunc" type="function">
+  Element-wise truncation (round toward zero).
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** Truncated values
+
+  ```ts
+  import { trunc, tensor } from 'deepbox/ndarray';
+
+  const t = tensor([1.9, -2.5, 3.1]);
+  const result = trunc(t);  // [1, -2, 3]
+  ```
+</ParamField>
+
+## Trigonometric Functions
+
+<ParamField path="sin" type="function">
+  Element-wise sine.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor (radians)
+
+  **Returns:** Sine values
+</ParamField>
+
+<ParamField path="cos" type="function">
+  Element-wise cosine.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor (radians)
+
+  **Returns:** Cosine values
+</ParamField>
+
+<ParamField path="tan" type="function">
+  Element-wise tangent.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor (radians)
+
+  **Returns:** Tangent values
+</ParamField>
+
+<ParamField path="asin" type="function">
+  Element-wise arcsine.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** Arcsine values (radians)
+</ParamField>
+
+<ParamField path="acos" type="function">
+  Element-wise arccosine.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** Arccosine values (radians)
+</ParamField>
+
+<ParamField path="atan" type="function">
+  Element-wise arctangent.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** Arctangent values (radians)
+</ParamField>
+
+<ParamField path="atan2" type="function">
+  Element-wise two-argument arctangent.
+
+  **Parameters:**
+  - `y` (Tensor) - Y coordinates
+  - `x` (Tensor) - X coordinates
+
+  **Returns:** Arctangent of y/x (radians)
+</ParamField>
+
+<ParamField path="sinh" type="function">
+  Element-wise hyperbolic sine.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** Hyperbolic sine values
+</ParamField>
+
+<ParamField path="cosh" type="function">
+  Element-wise hyperbolic cosine.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** Hyperbolic cosine values
+</ParamField>
+
+<ParamField path="tanh" type="function">
+  Element-wise hyperbolic tangent.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** Hyperbolic tangent values
+</ParamField>
+
+<ParamField path="asinh" type="function">
+  Element-wise inverse hyperbolic sine.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** Inverse hyperbolic sine values
+</ParamField>
+
+<ParamField path="acosh" type="function">
+  Element-wise inverse hyperbolic cosine.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** Inverse hyperbolic cosine values
+</ParamField>
+
+<ParamField path="atanh" type="function">
+  Element-wise inverse hyperbolic tangent.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** Inverse hyperbolic tangent values
+</ParamField>
+
+## Reduction Operations
+
+<ParamField path="sum" type="function">
+  Sum of tensor elements over a given axis.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+  - `axis` (Axis) - Optional axis to reduce along
+  - `keepdims` (boolean) - Keep reduced dimensions (default: false)
+
+  **Returns:** Sum result
+
+  ```ts
+  import { sum, tensor } from 'deepbox/ndarray';
+
+  const t = tensor([[1, 2, 3], [4, 5, 6]]);
+  const total = sum(t);           // 21 (scalar)
+  const colSums = sum(t, 0);      // [5, 7, 9]
+  const rowSums = sum(t, 1);      // [6, 15]
+  ```
+</ParamField>
+
+<ParamField path="mean" type="function">
+  Mean of tensor elements over a given axis.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+  - `axis` (Axis) - Optional axis to reduce along
+  - `keepdims` (boolean) - Keep reduced dimensions (default: false)
+
+  **Returns:** Mean result
+
+  ```ts
+  import { mean, tensor } from 'deepbox/ndarray';
+
+  const t = tensor([[1, 2, 3], [4, 5, 6]]);
+  const avg = mean(t);            // 3.5
+  const colMeans = mean(t, 0);    // [2.5, 3.5, 4.5]
+  ```
+</ParamField>
+
+<ParamField path="max" type="function">
+  Maximum value over a given axis.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+  - `axis` (Axis) - Optional axis to reduce along
+  - `keepdims` (boolean) - Keep reduced dimensions (default: false)
+
+  **Returns:** Maximum values
+
+  ```ts
+  import { max, tensor } from 'deepbox/ndarray';
+
+  const t = tensor([[1, 5, 3], [4, 2, 6]]);
+  const maximum = max(t);         // 6
+  const colMax = max(t, 0);       // [4, 5, 6]
+  ```
+</ParamField>
+
+<ParamField path="min" type="function">
+  Minimum value over a given axis.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+  - `axis` (Axis) - Optional axis to reduce along
+  - `keepdims` (boolean) - Keep reduced dimensions (default: false)
+
+  **Returns:** Minimum values
+
+  ```ts
+  import { min, tensor } from 'deepbox/ndarray';
+
+  const t = tensor([[1, 5, 3], [4, 2, 6]]);
+  const minimum = min(t);         // 1
+  const colMin = min(t, 0);       // [1, 2, 3]
+  ```
+</ParamField>
+
+<ParamField path="prod" type="function">
+  Product of tensor elements over a given axis.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+  - `axis` (Axis) - Optional axis to reduce along
+  - `keepdims` (boolean) - Keep reduced dimensions (default: false)
+
+  **Returns:** Product result
+
+  ```ts
+  import { prod, tensor } from 'deepbox/ndarray';
+
+  const t = tensor([[1, 2, 3], [4, 5, 6]]);
+  const total = prod(t);          // 720
+  const colProds = prod(t, 0);    // [4, 10, 18]
+  ```
+</ParamField>
+
+<ParamField path="std" type="function">
+  Standard deviation over a given axis.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+  - `axis` (Axis) - Optional axis to reduce along
+  - `keepdims` (boolean) - Keep reduced dimensions (default: false)
+
+  **Returns:** Standard deviation
+
+  ```ts
+  import { std, tensor } from 'deepbox/ndarray';
+
+  const t = tensor([1, 2, 3, 4, 5]);
+  const stdDev = std(t);  // ~1.414
+  ```
+</ParamField>
+
+<ParamField path="variance" type="function">
+  Variance over a given axis.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+  - `axis` (Axis) - Optional axis to reduce along
+  - `keepdims` (boolean) - Keep reduced dimensions (default: false)
+
+  **Returns:** Variance
+
+  ```ts
+  import { variance, tensor } from 'deepbox/ndarray';
+
+  const t = tensor([1, 2, 3, 4, 5]);
+  const var_ = variance(t);  // 2.0
+  ```
+</ParamField>
+
+<ParamField path="median" type="function">
+  Median value over a given axis.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+  - `axis` (Axis) - Optional axis to reduce along
+  - `keepdims` (boolean) - Keep reduced dimensions (default: false)
+
+  **Returns:** Median values
+</ParamField>
+
+<ParamField path="cumsum" type="function">
+  Cumulative sum along an axis.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+  - `axis` (Axis) - Axis along which to compute cumulative sum
+
+  **Returns:** Cumulative sum
+
+  ```ts
+  import { cumsum, tensor } from 'deepbox/ndarray';
+
+  const t = tensor([1, 2, 3, 4]);
+  const cs = cumsum(t, 0);  // [1, 3, 6, 10]
+  ```
+</ParamField>
+
+<ParamField path="cumprod" type="function">
+  Cumulative product along an axis.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+  - `axis` (Axis) - Axis along which to compute cumulative product
+
+  **Returns:** Cumulative product
+
+  ```ts
+  import { cumprod, tensor } from 'deepbox/ndarray';
+
+  const t = tensor([1, 2, 3, 4]);
+  const cp = cumprod(t, 0);  // [1, 2, 6, 24]
+  ```
+</ParamField>
+
+## Logical Operations
+
+<ParamField path="logicalAnd" type="function">
+  Element-wise logical AND.
+
+  **Parameters:**
+  - `a` (Tensor) - First tensor
+  - `b` (Tensor) - Second tensor
+
+  **Returns:** Logical AND result (bool dtype)
+</ParamField>
+
+<ParamField path="logicalOr" type="function">
+  Element-wise logical OR.
+
+  **Parameters:**
+  - `a` (Tensor) - First tensor
+  - `b` (Tensor) - Second tensor
+
+  **Returns:** Logical OR result (bool dtype)
+</ParamField>
+
+<ParamField path="logicalNot" type="function">
+  Element-wise logical NOT.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** Logical NOT result (bool dtype)
+</ParamField>
+
+<ParamField path="logicalXor" type="function">
+  Element-wise logical XOR.
+
+  **Parameters:**
+  - `a` (Tensor) - First tensor
+  - `b` (Tensor) - Second tensor
+
+  **Returns:** Logical XOR result (bool dtype)
+</ParamField>
+
+## Comparison Operations
+
+<ParamField path="equal" type="function">
+  Element-wise equality comparison.
+
+  **Parameters:**
+  - `a` (Tensor) - First tensor
+  - `b` (Tensor) - Second tensor
+
+  **Returns:** Boolean tensor
+
+  ```ts
+  import { equal, tensor } from 'deepbox/ndarray';
+
+  const a = tensor([1, 2, 3]);
+  const b = tensor([1, 0, 3]);
+  const result = equal(a, b);  // [true, false, true]
+  ```
+</ParamField>
+
+<ParamField path="notEqual" type="function">
+  Element-wise inequality comparison.
+
+  **Parameters:**
+  - `a` (Tensor) - First tensor
+  - `b` (Tensor) - Second tensor
+
+  **Returns:** Boolean tensor
+</ParamField>
+
+<ParamField path="greater" type="function">
+  Element-wise greater-than comparison.
+
+  **Parameters:**
+  - `a` (Tensor) - First tensor
+  - `b` (Tensor) - Second tensor
+
+  **Returns:** Boolean tensor
+</ParamField>
+
+<ParamField path="greaterEqual" type="function">
+  Element-wise greater-than-or-equal comparison.
+
+  **Parameters:**
+  - `a` (Tensor) - First tensor
+  - `b` (Tensor) - Second tensor
+
+  **Returns:** Boolean tensor
+</ParamField>
+
+<ParamField path="less" type="function">
+  Element-wise less-than comparison.
+
+  **Parameters:**
+  - `a` (Tensor) - First tensor
+  - `b` (Tensor) - Second tensor
+
+  **Returns:** Boolean tensor
+</ParamField>
+
+<ParamField path="lessEqual" type="function">
+  Element-wise less-than-or-equal comparison.
+
+  **Parameters:**
+  - `a` (Tensor) - First tensor
+  - `b` (Tensor) - Second tensor
+
+  **Returns:** Boolean tensor
+</ParamField>
+
+<ParamField path="isclose" type="function">
+  Element-wise approximate equality check.
+
+  **Parameters:**
+  - `a` (Tensor) - First tensor
+  - `b` (Tensor) - Second tensor
+  - `rtol` (number) - Relative tolerance (default: 1e-5)
+  - `atol` (number) - Absolute tolerance (default: 1e-8)
+
+  **Returns:** Boolean tensor
+</ParamField>
+
+<ParamField path="allclose" type="function">
+  Check if all elements are approximately equal.
+
+  **Parameters:**
+  - `a` (Tensor) - First tensor
+  - `b` (Tensor) - Second tensor
+  - `rtol` (number) - Relative tolerance (default: 1e-5)
+  - `atol` (number) - Absolute tolerance (default: 1e-8)
+
+  **Returns:** Boolean scalar
+</ParamField>
+
+<ParamField path="arrayEqual" type="function">
+  Check if all elements are exactly equal.
+
+  **Parameters:**
+  - `a` (Tensor) - First tensor
+  - `b` (Tensor) - Second tensor
+
+  **Returns:** Boolean scalar
+</ParamField>
+
+<ParamField path="isnan" type="function">
+  Element-wise NaN check.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** Boolean tensor
+</ParamField>
+
+<ParamField path="isinf" type="function">
+  Element-wise infinity check.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** Boolean tensor
+</ParamField>
+
+<ParamField path="isfinite" type="function">
+  Element-wise finite check.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** Boolean tensor
+</ParamField>
+
+<ParamField path="all" type="function">
+  Test whether all elements are true.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+  - `axis` (Axis) - Optional axis to reduce along
+  - `keepdims` (boolean) - Keep reduced dimensions (default: false)
+
+  **Returns:** Boolean result
+</ParamField>
+
+<ParamField path="any" type="function">
+  Test whether any element is true.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+  - `axis` (Axis) - Optional axis to reduce along
+  - `keepdims` (boolean) - Keep reduced dimensions (default: false)
+
+  **Returns:** Boolean result
+</ParamField>
+
+## Manipulation Operations
+
+<ParamField path="concatenate" type="function">
+  Join tensors along an existing axis.
+
+  **Parameters:**
+  - `tensors` (Tensor[]) - Array of tensors to concatenate
+  - `axis` (Axis) - Axis along which to join (default: 0)
+
+  **Returns:** Concatenated tensor
+
+  ```ts
+  import { concatenate, tensor } from 'deepbox/ndarray';
+
+  const a = tensor([[1, 2], [3, 4]]);
+  const b = tensor([[5, 6]]);
+  const c = concatenate([a, b], 0);
+  // [[1, 2],
+  //  [3, 4],
+  //  [5, 6]]
+  ```
+</ParamField>
+
+<ParamField path="stack" type="function">
+  Join tensors along a new axis.
+
+  **Parameters:**
+  - `tensors` (Tensor[]) - Array of tensors to stack
+  - `axis` (Axis) - Axis to insert (default: 0)
+
+  **Returns:** Stacked tensor
+
+  ```ts
+  import { stack, tensor } from 'deepbox/ndarray';
+
+  const a = tensor([1, 2, 3]);
+  const b = tensor([4, 5, 6]);
+  const c = stack([a, b], 0);
+  // [[1, 2, 3],
+  //  [4, 5, 6]]
+  ```
+</ParamField>
+
+<ParamField path="split" type="function">
+  Split tensor into multiple sub-tensors.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+  - `indicesOrSections` (number | number[]) - Number of equal sections or split indices
+  - `axis` (Axis) - Axis along which to split (default: 0)
+
+  **Returns:** Array of tensors
+
+  ```ts
+  import { split, tensor } from 'deepbox/ndarray';
+
+  const t = tensor([1, 2, 3, 4, 5, 6]);
+  const [a, b, c] = split(t, 3, 0);
+  // a: [1, 2]
+  // b: [3, 4]
+  // c: [5, 6]
+  ```
+</ParamField>
+
+<ParamField path="tile" type="function">
+  Construct a tensor by repeating input.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+  - `reps` (number | number[]) - Repetitions along each axis
+
+  **Returns:** Tiled tensor
+
+  ```ts
+  import { tile, tensor } from 'deepbox/ndarray';
+
+  const t = tensor([[1, 2], [3, 4]]);
+  const tiled = tile(t, [2, 1]);
+  // [[1, 2],
+  //  [3, 4],
+  //  [1, 2],
+  //  [3, 4]]
+  ```
+</ParamField>
+
+<ParamField path="repeat" type="function">
+  Repeat elements of a tensor.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+  - `repeats` (number) - Number of repetitions
+  - `axis` (Axis) - Optional axis along which to repeat
+
+  **Returns:** Repeated tensor
+</ParamField>
+
+<ParamField path="diff" type="function">
+  Calculate the n-th discrete difference along the given axis.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+  - `n` (number) - Number of times values are differenced (default: 1)
+  - `axis` (Axis) - Axis along which to compute difference (default: -1)
+
+  **Returns:** Differenced tensor
+</ParamField>
+
+## Sorting
+
+<ParamField path="sort" type="function">
+  Sort tensor elements along an axis.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+  - `axis` (Axis) - Axis to sort along (default: -1)
+  - `descending` (boolean) - Sort in descending order (default: false)
+
+  **Returns:** Sorted tensor
+
+  ```ts
+  import { sort, tensor } from 'deepbox/ndarray';
+
+  const t = tensor([3, 1, 4, 1, 5]);
+  const sorted = sort(t);  // [1, 1, 3, 4, 5]
+  ```
+</ParamField>
+
+<ParamField path="argsort" type="function">
+  Return indices that would sort a tensor.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+  - `axis` (Axis) - Axis to sort along (default: -1)
+  - `descending` (boolean) - Sort in descending order (default: false)
+
+  **Returns:** Index tensor
+
+  ```ts
+  import { argsort, tensor } from 'deepbox/ndarray';
+
+  const t = tensor([3, 1, 4, 1, 5]);
+  const indices = argsort(t);  // [1, 3, 0, 2, 4]
+  ```
+</ParamField>
+
+## Linear Algebra
+
+<ParamField path="dot" type="function">
+  Matrix multiplication (dot product).
+
+  Supports:
+  - Vector × Vector → scalar
+  - Matrix × Vector → vector
+  - Matrix × Matrix → matrix
+  - Batched operations
+
+  **Parameters:**
+  - `a` (Tensor) - First tensor
+  - `b` (Tensor) - Second tensor
+
+  **Returns:** Dot product
+
+  ```ts
+  import { dot, tensor } from 'deepbox/ndarray';
+
+  // Matrix multiplication
+  const A = tensor([[1, 2], [3, 4]]);
+  const B = tensor([[5, 6], [7, 8]]);
+  const C = dot(A, B);
+  // [[19, 22],
+  //  [43, 50]]
+  ```
+</ParamField>
+
+## Activation Functions
+
+<ParamField path="relu" type="function">
+  Rectified Linear Unit activation.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** max(0, t)
+
+  ```ts
+  import { relu, tensor } from 'deepbox/ndarray';
+
+  const t = tensor([-1, 0, 1, 2]);
+  const activated = relu(t);  // [0, 0, 1, 2]
+  ```
+</ParamField>
+
+<ParamField path="leakyRelu" type="function">
+  Leaky ReLU activation.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+  - `negativeSlope` (number) - Slope for negative values (default: 0.01)
+
+  **Returns:** Leaky ReLU activation
+</ParamField>
+
+<ParamField path="sigmoid" type="function">
+  Sigmoid activation (1 / (1 + exp(-x))).
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** Sigmoid activation
+</ParamField>
+
+<ParamField path="softmax" type="function">
+  Softmax activation.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+  - `axis` (Axis) - Axis along which to compute (default: -1)
+
+  **Returns:** Softmax probabilities
+</ParamField>
+
+<ParamField path="logSoftmax" type="function">
+  Log-softmax activation (numerically stable).
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+  - `axis` (Axis) - Axis along which to compute (default: -1)
+
+  **Returns:** Log-softmax values
+</ParamField>
+
+<ParamField path="elu" type="function">
+  Exponential Linear Unit activation.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+  - `alpha` (number) - Scale for negative values (default: 1.0)
+
+  **Returns:** ELU activation
+</ParamField>
+
+<ParamField path="gelu" type="function">
+  Gaussian Error Linear Unit activation.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** GELU activation
+</ParamField>
+
+<ParamField path="swish" type="function">
+  Swish activation (x * sigmoid(x)).
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** Swish activation
+</ParamField>
+
+<ParamField path="mish" type="function">
+  Mish activation (x * tanh(softplus(x))).
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** Mish activation
+</ParamField>
+
+<ParamField path="softplus" type="function">
+  Softplus activation (log(1 + exp(x))).
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+
+  **Returns:** Softplus activation
+</ParamField>
+
+## Convolution Helpers
+
+<ParamField path="im2col" type="function">
+  Convert image patches to columns for convolution.
+
+  **Parameters:**
+  - `input` (Tensor) - Input tensor (4D: batch × channels × height × width)
+  - `kernelSize` ([number, number]) - Kernel dimensions
+  - `stride` (number | [number, number]) - Stride (default: 1)
+  - `padding` (number | [number, number]) - Padding (default: 0)
+
+  **Returns:** Column matrix
+</ParamField>
+
+<ParamField path="col2im" type="function">
+  Convert columns back to image patches.
+
+  **Parameters:**
+  - `cols` (Tensor) - Column matrix
+  - `outputShape` (Shape) - Desired output shape
+  - `kernelSize` ([number, number]) - Kernel dimensions
+  - `stride` (number | [number, number]) - Stride (default: 1)
+  - `padding` (number | [number, number]) - Padding (default: 0)
+
+  **Returns:** Image tensor
+</ParamField>
+
+## Random Operations
+
+<ParamField path="dropoutMask" type="function">
+  Generate a dropout mask.
+
+  **Parameters:**
+  - `shape` (Shape) - Mask shape
+  - `rate` (number) - Dropout probability
+
+  **Returns:** Binary mask tensor
+</ParamField>

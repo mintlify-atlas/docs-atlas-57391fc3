@@ -1,0 +1,126 @@
+---
+title: Naive Bayes
+description: Gaussian Naive Bayes classifier for Deepbox
+---
+
+## GaussianNB
+
+Gaussian Naive Bayes classifier.
+
+Implements the Gaussian Naive Bayes algorithm for classification. Assumes features follow a Gaussian (normal) distribution.
+
+**Algorithm:**
+1. Calculate mean and variance for each feature per class
+2. For prediction, calculate likelihood using Gaussian PDF
+3. Apply Bayes' theorem to get posterior probabilities
+4. Predict class with highest posterior probability
+
+**Time Complexity:**
+- Training: O(n * d) where n=samples, d=features
+- Prediction: O(k * d) per sample where k=classes
+
+### Constructor
+
+```typescript
+new GaussianNB(options?: {
+  varSmoothing?: number;
+})
+```
+
+<ParamField path="options.varSmoothing" type="number" default="1e-9">
+  Portion of largest variance added to variances for stability. Helps avoid degenerate Gaussians when variance is zero.
+</ParamField>
+
+### Methods
+
+#### fit
+
+```typescript
+fit(X: Tensor, y: Tensor): this
+```
+
+Fit Gaussian Naive Bayes classifier from the training set.
+
+Computes per-class mean, variance, and prior probabilities.
+
+<ParamField path="X" type="Tensor" required>
+  Training data of shape (n_samples, n_features)
+</ParamField>
+
+<ParamField path="y" type="Tensor" required>
+  Target class labels of shape (n_samples,)
+</ParamField>
+
+**Returns:** The fitted estimator
+
+**Throws:** `DataValidationError` if zero variance encountered with varSmoothing=0
+
+#### predict
+
+```typescript
+predict(X: Tensor): Tensor
+```
+
+Predict class labels for samples in X.
+
+<ParamField path="X" type="Tensor" required>
+  Samples of shape (n_samples, n_features)
+</ParamField>
+
+**Returns:** Predicted class labels of shape (n_samples,)
+
+#### predictProba
+
+```typescript
+predictProba(X: Tensor): Tensor
+```
+
+Predict class probabilities for samples in X.
+
+Uses Bayes' theorem with Gaussian class-conditional likelihoods.
+
+<ParamField path="X" type="Tensor" required>
+  Samples of shape (n_samples, n_features)
+</ParamField>
+
+**Returns:** Class probability matrix of shape (n_samples, n_classes)
+
+#### score
+
+```typescript
+score(X: Tensor, y: Tensor): number
+```
+
+Return the mean accuracy on the given test data and labels.
+
+<ParamField path="X" type="Tensor" required>
+  Test samples of shape (n_samples, n_features)
+</ParamField>
+
+<ParamField path="y" type="Tensor" required>
+  True labels of shape (n_samples,)
+</ParamField>
+
+**Returns:** Accuracy score in range [0, 1]
+
+### Properties
+
+<ResponseField name="classes" type="Tensor | undefined">
+  Unique class labels discovered during fitting.
+</ResponseField>
+
+### Example
+
+```typescript
+import { GaussianNB } from 'deepbox/ml';
+import { tensor } from 'deepbox/ndarray';
+
+const X = tensor([[1, 2], [2, 3], [3, 4], [4, 5]]);
+const y = tensor([0, 0, 1, 1]);
+
+const nb = new GaussianNB();
+nb.fit(X, y);
+
+const predictions = nb.predict(tensor([[2.5, 3.5]]));
+const probabilities = nb.predictProba(tensor([[2.5, 3.5]]));
+```

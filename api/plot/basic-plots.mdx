@@ -1,0 +1,353 @@
+---
+title: Basic Plots
+description: Core plotting functions for data visualization
+---
+
+## Overview
+
+Basic plotting functions provide fundamental chart types for visualizing data.
+
+## Functions
+
+### plot
+
+Plot a connected line series on the current axes.
+
+```ts
+function plot(x: Tensor, y: Tensor, options?: PlotOptions): void
+```
+
+<ParamField path="x" type="Tensor" required>
+  X-axis values
+</ParamField>
+
+<ParamField path="y" type="Tensor" required>
+  Y-axis values
+</ParamField>
+
+<ParamField path="options" type="PlotOptions">
+  Plot styling options (color, linewidth, label, etc.)
+</ParamField>
+
+**Example:**
+
+```ts
+import { plot, tensor } from 'deepbox/plot';
+
+const x = tensor([0, 1, 2, 3, 4]);
+const y = tensor([0, 1, 4, 9, 16]);
+plot(x, y, { color: '#1f77b4', linewidth: 2 });
+```
+
+### scatter
+
+Plot unconnected points on the current axes.
+
+```ts
+function scatter(x: Tensor, y: Tensor, options?: PlotOptions): void
+```
+
+<ParamField path="x" type="Tensor" required>
+  X-axis values
+</ParamField>
+
+<ParamField path="y" type="Tensor" required>
+  Y-axis values
+</ParamField>
+
+<ParamField path="options" type="PlotOptions">
+  Plot styling options (color, size, label, etc.)
+</ParamField>
+
+**Example:**
+
+```ts
+import { scatter, tensor } from 'deepbox/plot';
+
+const x = tensor([0, 1, 2, 3, 4]);
+const y = tensor([0, 1, 4, 9, 16]);
+scatter(x, y, { color: '#ff7f0e', size: 5 });
+```
+
+### bar
+
+Plot vertical bars on the current axes.
+
+```ts
+function bar(x: Tensor, height: Tensor, options?: PlotOptions): void
+```
+
+<ParamField path="x" type="Tensor" required>
+  X-axis positions
+</ParamField>
+
+<ParamField path="height" type="Tensor" required>
+  Bar heights
+</ParamField>
+
+<ParamField path="options" type="PlotOptions">
+  Plot styling options
+</ParamField>
+
+### barh
+
+Plot horizontal bars on the current axes.
+
+```ts
+function barh(y: Tensor, width: Tensor, options?: PlotOptions): void
+```
+
+<ParamField path="y" type="Tensor" required>
+  Y-axis positions
+</ParamField>
+
+<ParamField path="width" type="Tensor" required>
+  Bar widths
+</ParamField>
+
+<ParamField path="options" type="PlotOptions">
+  Plot styling options
+</ParamField>
+
+### hist
+
+Plot a histogram on the current axes.
+
+```ts
+function hist(
+  x: Tensor,
+  bins?: number | (PlotOptions & { bins?: number }),
+  options?: PlotOptions
+): void
+```
+
+<ParamField path="x" type="Tensor" required>
+  Data values
+</ParamField>
+
+<ParamField path="bins" type="number | object">
+  Number of bins (default: 10) or options object
+</ParamField>
+
+<ParamField path="options" type="PlotOptions">
+  Plot styling options
+</ParamField>
+
+**Example:**
+
+```ts
+import { hist, randn } from 'deepbox/plot';
+
+const data = randn([1000]);
+hist(data, 30, { color: '#2ca02c' });
+```
+
+### heatmap
+
+Plot a heatmap for a 2D tensor.
+
+```ts
+function heatmap(data: Tensor, options?: PlotOptions): void
+```
+
+<ParamField path="data" type="Tensor" required>
+  2D tensor data
+</ParamField>
+
+<ParamField path="options" type="PlotOptions">
+  Plot styling options (colormap, vmin, vmax, etc.)
+</ParamField>
+
+**Example:**
+
+```ts
+import { heatmap, tensor } from 'deepbox/plot';
+
+const data = tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]]);
+heatmap(data, { colormap: 'viridis' });
+```
+
+### imshow
+
+Display a matrix as an image (alias of heatmap).
+
+```ts
+function imshow(data: Tensor, options?: PlotOptions): void
+```
+
+<ParamField path="data" type="Tensor" required>
+  2D tensor data
+</ParamField>
+
+<ParamField path="options" type="PlotOptions">
+  Plot styling options
+</ParamField>
+
+### contour
+
+Plot contour lines for a 2D grid.
+
+```ts
+function contour(X: Tensor, Y: Tensor, Z: Tensor, options?: PlotOptions): void
+```
+
+<ParamField path="X" type="Tensor" required>
+  X-coordinate grid
+</ParamField>
+
+<ParamField path="Y" type="Tensor" required>
+  Y-coordinate grid
+</ParamField>
+
+<ParamField path="Z" type="Tensor" required>
+  Z values at grid points
+</ParamField>
+
+<ParamField path="options" type="PlotOptions">
+  Plot styling options
+</ParamField>
+
+### contourf
+
+Plot filled contours for a 2D grid.
+
+```ts
+function contourf(X: Tensor, Y: Tensor, Z: Tensor, options?: PlotOptions): void
+```
+
+<ParamField path="X" type="Tensor" required>
+  X-coordinate grid
+</ParamField>
+
+<ParamField path="Y" type="Tensor" required>
+  Y-coordinate grid
+</ParamField>
+
+<ParamField path="Z" type="Tensor" required>
+  Z values at grid points
+</ParamField>
+
+<ParamField path="options" type="PlotOptions">
+  Plot styling options
+</ParamField>
+
+### boxplot
+
+Plot a box-and-whisker summary on the current axes.
+
+```ts
+function boxplot(data: Tensor, options?: PlotOptions): void
+```
+
+<ParamField path="data" type="Tensor" required>
+  Data values
+</ParamField>
+
+<ParamField path="options" type="PlotOptions">
+  Plot styling options
+</ParamField>
+
+### violinplot
+
+Plot a violin summary on the current axes.
+
+```ts
+function violinplot(data: Tensor, options?: PlotOptions): void
+```
+
+<ParamField path="data" type="Tensor" required>
+  Data values
+</ParamField>
+
+<ParamField path="options" type="PlotOptions">
+  Plot styling options
+</ParamField>
+
+### pie
+
+Plot a pie chart on the current axes.
+
+```ts
+function pie(values: Tensor, labels?: readonly string[], options?: PlotOptions): void
+```
+
+<ParamField path="values" type="Tensor" required>
+  Slice values
+</ParamField>
+
+<ParamField path="labels" type="string[]">
+  Optional labels for each slice
+</ParamField>
+
+<ParamField path="options" type="PlotOptions">
+  Plot styling options
+</ParamField>
+
+**Example:**
+
+```ts
+import { pie, tensor } from 'deepbox/plot';
+
+const values = tensor([30, 25, 20, 15, 10]);
+const labels = ['A', 'B', 'C', 'D', 'E'];
+pie(values, labels);
+```
+
+## Rendering
+
+### show
+
+Render a figure to SVG or PNG.
+
+```ts
+function show(
+  options?: { figure?: Figure; format?: "svg" | "png" }
+): RenderedSVG | Promise<RenderedPNG>
+```
+
+<ParamField path="options.figure" type="Figure">
+  Figure to render (default: current figure)
+</ParamField>
+
+<ParamField path="options.format" type="string">
+  Output format: `'svg'` (default) or `'png'`
+</ParamField>
+
+<ResponseField name="Returns" type="RenderedSVG | Promise<RenderedPNG>">
+  Rendered figure
+</ResponseField>
+
+### saveFig
+
+Save a figure to disk as SVG or PNG.
+
+```ts
+function saveFig(
+  path: string,
+  options?: { figure?: Figure; format?: "svg" | "png" }
+): Promise<void>
+```
+
+<ParamField path="path" type="string" required>
+  Output file path (extension must match format)
+</ParamField>
+
+<ParamField path="options.figure" type="Figure">
+  Figure to save (default: current figure)
+</ParamField>
+
+<ParamField path="options.format" type="string">
+  Output format: `'svg'` or `'png'` (inferred from extension if not specified)
+</ParamField>
+
+### legend
+
+Show or configure a legend on the current axes.
+
+```ts
+function legend(options?: LegendOptions): void
+```
+
+<ParamField path="options" type="LegendOptions">
+  Legend configuration options
+</ParamField>

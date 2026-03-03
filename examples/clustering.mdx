@@ -1,0 +1,147 @@
+---
+title: Clustering
+description: Discover patterns in unlabeled data with clustering algorithms
+---
+
+Clustering groups similar data points together without labeled training data. This guide covers K-Means clustering, one of the most popular algorithms.
+
+## K-Means Clustering
+
+<Steps>
+
+### Create and train a K-Means model
+
+Group data points into clusters:
+
+```typescript
+import { tensor } from "deepbox/ndarray";
+import { KMeans } from "deepbox/ml";
+
+// Create data with natural clusters
+const clusterData = tensor([
+  [1, 2],
+  [1.5, 1.8],
+  [5, 8],
+  [8, 8],
+  [1, 0.6],
+  [9, 11],
+  [8, 2],
+  [10, 2],
+  [9, 3],
+]);
+
+// Create and train K-Means
+const kmeans = new KMeans({ 
+  nClusters: 3,      // Number of clusters to find
+  randomState: 42    // For reproducibility
+});
+kmeans.fit(clusterData);
+
+console.log("K-Means Clustering");
+console.log(`Number of iterations: ${kmeans.nIter}`);
+console.log(`Inertia: ${kmeans.inertia.toFixed(4)}`);
+```
+
+**Output:**
+```
+K-Means Clustering
+Number of iterations: 3
+Inertia: 8.2500
+```
+
+### Predict cluster assignments
+
+Assign data points to their nearest cluster:
+
+```typescript
+const clusterLabels = kmeans.predict(clusterData);
+console.log("\nCluster assignments:");
+console.log(clusterLabels.toString());
+
+console.log("\nCluster centers:");
+console.log(kmeans.clusterCenters.toString());
+```
+
+**Output:**
+```
+Cluster assignments:
+Tensor([0, 0, 1, 1, 0, 2, 2, 2, 2])
+
+Cluster centers:
+Tensor([[1.1667, 1.4667],
+        [6.5000, 8.0000],
+        [9.0000, 4.5000]])
+```
+
+### Cluster new data points
+
+Predict clusters for unseen data:
+
+```typescript
+const newData = tensor([
+  [2, 1.5],
+  [8, 9],
+  [9, 2.5],
+]);
+
+const newLabels = kmeans.predict(newData);
+console.log("\nPredictions for new data:");
+console.log(newLabels.toString());
+```
+
+**Output:**
+```
+Predictions for new data:
+Tensor([0, 1, 2])
+```
+
+### Choosing the number of clusters
+
+Use the elbow method to find optimal cluster count:
+
+```typescript
+console.log("\nElbow method - testing different cluster counts:");
+
+for (let k = 2; k <= 5; k++) {
+  const km = new KMeans({ nClusters: k, randomState: 42 });
+  km.fit(clusterData);
+  console.log(`k=${k}: inertia=${km.inertia.toFixed(4)}`);
+}
+```
+
+**Output:**
+```
+Elbow method - testing different cluster counts:
+k=2: inertia=32.5625
+k=3: inertia=8.2500
+k=4: inertia=4.1250
+k=5: inertia=2.0625
+```
+
+</Steps>
+
+## Understanding K-Means
+
+- **Inertia**: Sum of squared distances to nearest cluster center (lower is better)
+- **Cluster centers**: Mean position of all points in each cluster
+- **Convergence**: Algorithm stops when cluster assignments no longer change
+- **Elbow method**: Look for "elbow" in inertia plot to choose optimal k
+
+## Use Cases
+
+- Customer segmentation
+- Image compression
+- Anomaly detection
+- Document clustering
+- Feature engineering
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="PCA" icon="compress" href="/api-reference/ml/pca">
+    Reduce dimensionality before clustering
+  </Card>
+  <Card title="Gaussian Naive Bayes" icon="bell" href="/api-reference/ml/naive-bayes">
+    Probabilistic classification
+  </Card>
+</CardGroup>

@@ -1,0 +1,486 @@
+---
+title: Normalization & Dropout
+description: Batch normalization, layer normalization, and dropout regularization
+---
+
+Normalization layers help stabilize training and improve convergence. Dropout prevents overfitting.
+
+## BatchNorm1d
+
+Batch Normalization layer for 1D or 2D inputs.
+
+### Constructor
+
+```typescript
+class BatchNorm1d extends Module
+
+constructor(
+  numFeatures: number,
+  options?: {
+    eps?: number;
+    momentum?: number;
+    affine?: boolean;
+    trackRunningStats?: boolean;
+  }
+)
+```
+
+**Parameters:**
+- `numFeatures` - Number of features (C from input shape)
+- `options.eps` - Small constant for numerical stability (default: 1e-5)
+- `options.momentum` - Momentum for running statistics (default: 0.1)
+- `options.affine` - If true, learns scale (gamma) and shift (beta) parameters (default: true)
+- `options.trackRunningStats` - If true, tracks running mean/variance (default: true)
+
+**Throws:**
+- `InvalidParameterError` - If numFeatures is invalid
+
+### Formula
+
+```
+y = (x - E[x]) / sqrt(Var[x] + eps) * gamma + beta
+```
+
+Where:
+- `E[x]` is the batch mean
+- `Var[x]` is the batch variance
+- `gamma` and `beta` are learnable parameters (if `affine=true`)
+
+### Behavior
+
+**Training Mode:**
+- Uses batch statistics (mean and variance from current batch)
+- Updates running statistics with exponential moving average
+
+**Evaluation Mode:**
+- Uses running statistics (accumulated during training)
+- Provides consistent normalization for single samples
+
+### Shape
+
+**Input:**
+- 2D: `(batch, num_features)`
+- 3D: `(batch, num_features, length)`
+
+**Output:** Same shape as input
+
+### Properties
+
+- `weight` (gamma) - Learnable scale parameter of shape `(num_features,)`
+- `bias` (beta) - Learnable shift parameter of shape `(num_features,)`
+- `running_mean` - Running mean buffer of shape `(num_features,)`
+- `running_var` - Running variance buffer of shape `(num_features,)`
+
+### Example
+
+```typescript
+import { BatchNorm1d } from 'deepbox/nn';
+import { tensor } from 'deepbox/ndarray';
+
+const bn = new BatchNorm1d(10);
+
+// Training mode
+bn.train();
+const x = tensor([[1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                  [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]]);
+const y = bn.forward(x);
+// Normalizes using batch statistics
+
+// Evaluation mode
+bn.eval();
+const testX = tensor([[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]);
+const testY = bn.forward(testX);
+// Uses running statistics
+```
+
+### In Neural Networks
+
+```typescript
+import { Sequential, Linear, BatchNorm1d, ReLU } from 'deepbox/nn';
+
+const model = new Sequential(
+  new Linear(784, 256),
+  new BatchNorm1d(256),
+  new ReLU(),
+  new Linear(256, 128),
+  new BatchNorm1d(128),
+  new ReLU(),
+  new Linear(128, 10)
+);
+```
+
+### Benefits
+
+1. **Faster Training**: Allows higher learning rates
+2. **Reduces Covariate Shift**: Normalizes activations
+3. **Regularization**: Acts as a regularizer (slight)
+4. **Gradient Flow**: Helps prevent vanishing/exploding gradients
+
+---
+
+## LayerNorm
+
+Layer Normalization. Normalizes across features for each sample independently.
+
+### Constructor
+
+```typescript
+class LayerNorm extends Module
+
+constructor(
+  normalizedShape: number | readonly number[],
+  options?: {
+    eps?: number;
+    elementwiseAffine?: boolean;
+  }
+)
+```
+
+**Parameters:**
+- `normalizedShape` - Shape of the normalized dimensions (single number or array)
+- `options.eps` - Small constant for numerical stability (default: 1e-5)
+- `options.elementwiseAffine` - If true, learns scale and shift (default: true)
+
+**Throws:**
+- `InvalidParameterError` - If normalizedShape is invalid
+
+### Formula
+
+```
+y = (x - E[x]) / sqrt(Var[x] + eps) * gamma + beta
+```
+
+Where:
+- `E[x]` and `Var[x]` are computed over the normalized dimensions
+- Computed independently for each sample (no batch statistics)
+
+### Shape
+
+**Input:** `(..., *normalized_shape)`
+
+The input must end with the dimensions specified by `normalizedShape`.
+
+**Output:** Same shape as input
+
+### Behavior
+
+- Works the same in training and evaluation modes
+- No running statistics needed
+- Normalizes each sample independently
+- Common in transformers and RNNs
+
+### Examples
+
+#### 1D Normalization
+
+```typescript
+import { LayerNorm } from 'deepbox/nn';
+import { tensor } from 'deepbox/ndarray';
+
+const ln = new LayerNorm(10);
+
+const x = tensor([[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]]);
+const y = ln.forward(x);
+// Normalizes the last dimension independently for each sample
+```
+
+#### Multi-dimensional Normalization
+
+```typescript
+const ln = new LayerNorm([5, 10]);
+
+// Input shape: (batch=2, seq_len=5, features=10)
+const x = tensor(/* ... */);
+const y = ln.forward(x);
+// Normalizes over the last two dimensions (5, 10)
+```
+
+#### In Transformers
+
+```typescript
+import { Module, MultiheadAttention, LayerNorm, Linear } from 'deepbox/nn';
+import { add, type Tensor } from 'deepbox/ndarray';
+
+class TransformerBlock extends Module {
+  private attn: MultiheadAttention;
+  private norm1: LayerNorm;
+  private ffn: Linear;
+  private norm2: LayerNorm;
+
+  constructor(dModel: number, nHead: number) {
+    super();
+    this.attn = new MultiheadAttention(dModel, nHead);
+    this.norm1 = new LayerNorm(dModel);
+    this.ffn = new Linear(dModel, dModel);
+    this.norm2 = new LayerNorm(dModel);
+
+    this.registerModule('attn', this.attn);
+    this.registerModule('norm1', this.norm1);
+    this.registerModule('ffn', this.ffn);
+    this.registerModule('norm2', this.norm2);
+  }
+
+  forward(x: Tensor): Tensor {
+    // Self-attention with residual
+    let out = add(x, this.attn.forward(x));
+    out = this.norm1.forward(out);
+    
+    // FFN with residual
+    out = add(out, this.ffn.forward(out));
+    out = this.norm2.forward(out);
+    
+    return out;
+  }
+}
+```
+
+### Benefits
+
+1. **Sample Independence**: No batch statistics, works with any batch size
+2. **RNN Friendly**: Good for sequences with varying lengths
+3. **Transformer Standard**: Used in BERT, GPT, etc.
+4. **Training/Eval Consistency**: Same behavior in both modes
+
+---
+
+## Dropout
+
+Dropout regularization layer.
+
+### Constructor
+
+```typescript
+class Dropout extends Module
+
+constructor(p: number = 0.5)
+```
+
+**Parameters:**
+- `p` - Probability of an element being zeroed (0 ≤ p &lt; 1)
+
+**Throws:**
+- `InvalidParameterError` - If p is not in valid range [0, 1)
+
+### Formula
+
+**Training:**
+```
+y = x * mask / (1 - p)
+```
+Where `mask` is a binary tensor with probability `(1-p)` of being 1.
+
+**Evaluation:**
+```
+y = x
+```
+(Identity function - no dropout applied)
+
+### Behavior
+
+**Training Mode:**
+- Randomly zeros elements with probability `p`
+- Scales remaining elements by `1 / (1 - p)` (inverted dropout)
+- Provides regularization
+
+**Evaluation Mode:**
+- Returns input unchanged
+- No randomness
+
+### Properties
+
+- `dropoutRate: number` - The dropout probability
+
+### Examples
+
+#### Basic Usage
+
+```typescript
+import { Dropout } from 'deepbox/nn';
+import { tensor } from 'deepbox/ndarray';
+
+const dropout = new Dropout(0.5);
+
+// Training mode
+dropout.train();
+const x = tensor([[1, 2, 3, 4]]);
+const y = dropout.forward(x);
+// Randomly zeros ~50% of elements and scales others
+
+// Evaluation mode
+dropout.eval();
+const testX = tensor([[1, 2, 3, 4]]);
+const testY = dropout.forward(testX);
+// Returns input unchanged: [[1, 2, 3, 4]]
+```
+
+#### In Neural Networks
+
+```typescript
+import { Sequential, Linear, ReLU, Dropout } from 'deepbox/nn';
+
+const model = new Sequential(
+  new Linear(784, 512),
+  new ReLU(),
+  new Dropout(0.5),    // Drop 50% of neurons
+  new Linear(512, 256),
+  new ReLU(),
+  new Dropout(0.3),    // Drop 30% of neurons
+  new Linear(256, 10)
+);
+
+// Training
+model.train();
+const output = model.forward(trainInput);
+
+// Evaluation
+model.eval();
+const predictions = model.forward(testInput);
+```
+
+#### Different Dropout Rates
+
+```typescript
+// Light regularization
+const lightDropout = new Dropout(0.2);
+
+// Standard regularization
+const stdDropout = new Dropout(0.5);
+
+// Heavy regularization
+const heavyDropout = new Dropout(0.7);
+```
+
+### Purpose
+
+1. **Prevents Overfitting**: Forces network to learn redundant representations
+2. **Ensemble Effect**: Approximates training ensemble of networks
+3. **Robust Features**: Prevents co-adaptation of neurons
+4. **Improves Generalization**: Better test performance
+
+### Best Practices
+
+1. **Typical Rates**: 0.2-0.5 for hidden layers, 0.5 for fully connected
+2. **Not for Convolutions**: Usually not applied to CNN layers (use sparingly)
+3. **Training vs Eval**: Always remember to set model.train() / model.eval()
+4. **After Activations**: Usually applied after activation functions
+5. **Not on Output**: Don't use on final layer
+
+---
+
+## Comparison
+
+| Feature | BatchNorm1d | LayerNorm | Dropout |
+|---------|-------------|-----------|---------||
+| Normalizes | Across batch | Across features | N/A (zeros) |
+| Statistics | Batch & Running | Per sample | N/A |
+| Training/Eval | Different | Same | Different |
+| Use Case | CNNs, MLPs | Transformers, RNNs | All networks |
+| Parameters | gamma, beta | gamma, beta | None |
+| Batch Size | Needs > 1 | Works with 1 | Any |
+
+---
+
+## Complete Example
+
+```typescript
+import {
+  Module,
+  Linear,
+  BatchNorm1d,
+  LayerNorm,
+  ReLU,
+  Dropout
+} from 'deepbox/nn';
+import type { Tensor } from 'deepbox/ndarray';
+
+class RegularizedMLP extends Module {
+  private fc1: Linear;
+  private bn1: BatchNorm1d;
+  private relu1: ReLU;
+  private dropout1: Dropout;
+  
+  private fc2: Linear;
+  private ln2: LayerNorm;
+  private relu2: ReLU;
+  private dropout2: Dropout;
+  
+  private fc3: Linear;
+
+  constructor() {
+    super();
+    
+    // Layer 1: Linear + BatchNorm + ReLU + Dropout
+    this.fc1 = new Linear(784, 512);
+    this.bn1 = new BatchNorm1d(512);
+    this.relu1 = new ReLU();
+    this.dropout1 = new Dropout(0.5);
+    
+    // Layer 2: Linear + LayerNorm + ReLU + Dropout
+    this.fc2 = new Linear(512, 256);
+    this.ln2 = new LayerNorm(256);
+    this.relu2 = new ReLU();
+    this.dropout2 = new Dropout(0.3);
+    
+    // Output layer
+    this.fc3 = new Linear(256, 10);
+
+    // Register all modules
+    this.registerModule('fc1', this.fc1);
+    this.registerModule('bn1', this.bn1);
+    this.registerModule('relu1', this.relu1);
+    this.registerModule('dropout1', this.dropout1);
+    this.registerModule('fc2', this.fc2);
+    this.registerModule('ln2', this.ln2);
+    this.registerModule('relu2', this.relu2);
+    this.registerModule('dropout2', this.dropout2);
+    this.registerModule('fc3', this.fc3);
+  }
+
+  forward(x: Tensor): Tensor {
+    // Layer 1
+    let out = this.fc1.forward(x);
+    out = this.bn1.forward(out);
+    out = this.relu1.forward(out);
+    out = this.dropout1.forward(out);
+    
+    // Layer 2
+    out = this.fc2.forward(out);
+    out = this.ln2.forward(out);
+    out = this.relu2.forward(out);
+    out = this.dropout2.forward(out);
+    
+    // Output
+    return this.fc3.forward(out);
+  }
+}
+
+const model = new RegularizedMLP();
+
+// Training
+model.train();
+const trainOutput = model.forward(trainData);
+
+// Evaluation
+model.eval();
+const testOutput = model.forward(testData);
+```
+
+---
+
+## Tips
+
+1. **BatchNorm**: Use for CNNs and MLPs with batch training
+2. **LayerNorm**: Use for transformers, RNNs, and small batch sizes
+3. **Dropout**: Use everywhere for regularization, except:
+   - Usually not in CNNs (BatchNorm provides regularization)
+   - Never in output layer
+   - Not in batch norm layers
+4. **Order**: Linear -> Norm -> Activation -> Dropout
+5. **Mode Switching**: Always call `model.train()` / `model.eval()` appropriately
+
+## See Also
+
+- [Linear Layer](/api/nn/layers) - Fully connected layers
+- [Activation Functions](/api/nn/activations) - ReLU, etc.
+- [Convolutional Layers](/api/nn/convolution) - Conv2d with BatchNorm
+- [Attention Layers](/api/nn/attention) - Transformers with LayerNorm

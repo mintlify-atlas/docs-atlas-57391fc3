@@ -1,0 +1,362 @@
+---
+title: Tree Models
+description: Decision tree classifiers and regressors for Deepbox
+---
+
+## DecisionTreeClassifier
+
+A non-parametric supervised learning method that learns simple decision rules inferred from the data features.
+
+Uses CART (Classification and Regression Trees) algorithm with Gini impurity for classification.
+
+### Constructor
+
+```typescript
+new DecisionTreeClassifier(options?: {
+  maxDepth?: number;
+  minSamplesSplit?: number;
+  minSamplesLeaf?: number;
+  maxFeatures?: number;
+  randomState?: number;
+})
+```
+
+<ParamField path="options.maxDepth" type="number" default="10">
+  Maximum depth of the tree. Controls model complexity.
+</ParamField>
+
+<ParamField path="options.minSamplesSplit" type="number" default="2">
+  Minimum number of samples required to split an internal node.
+</ParamField>
+
+<ParamField path="options.minSamplesLeaf" type="number" default="1">
+  Minimum number of samples required to be at a leaf node.
+</ParamField>
+
+<ParamField path="options.maxFeatures" type="number">
+  Number of features to consider when looking for the best split. If undefined, uses all features.
+</ParamField>
+
+<ParamField path="options.randomState" type="number">
+  Random seed for reproducibility.
+</ParamField>
+
+### Methods
+
+#### fit
+
+```typescript
+fit(X: Tensor, y: Tensor): this
+```
+
+Build a decision tree classifier from the training set.
+
+#### predict
+
+```typescript
+predict(X: Tensor): Tensor
+```
+
+Predict class labels for samples in X.
+
+#### predictProba
+
+```typescript
+predictProba(X: Tensor): Tensor
+```
+
+Predict class probabilities for samples in X.
+
+**Returns:** Class probability matrix of shape (n_samples, n_classes)
+
+#### score
+
+```typescript
+score(X: Tensor, y: Tensor): number
+```
+
+Return the mean accuracy on the given test data and labels.
+
+### Properties
+
+<ResponseField name="classes" type="Tensor | undefined">
+  Unique class labels discovered during fitting.
+</ResponseField>
+
+### Example
+
+```typescript
+import { DecisionTreeClassifier } from 'deepbox/ml';
+import { tensor } from 'deepbox/ndarray';
+
+const X = tensor([[1, 2], [3, 4], [5, 6], [7, 8]]);
+const y = tensor([0, 0, 1, 1]);
+
+const clf = new DecisionTreeClassifier({ maxDepth: 3 });
+clf.fit(X, y);
+const predictions = clf.predict(X);
+```
+
+---
+
+## DecisionTreeRegressor
+
+Decision Tree Regressor using MSE reduction to find optimal splits.
+
+### Constructor
+
+```typescript
+new DecisionTreeRegressor(options?: {
+  maxDepth?: number;
+  minSamplesSplit?: number;
+  minSamplesLeaf?: number;
+  maxFeatures?: number;
+  randomState?: number;
+})
+```
+
+<ParamField path="options.maxDepth" type="number" default="10">
+  Maximum depth of the tree.
+</ParamField>
+
+<ParamField path="options.minSamplesSplit" type="number" default="2">
+  Minimum samples required to split an internal node.
+</ParamField>
+
+<ParamField path="options.minSamplesLeaf" type="number" default="1">
+  Minimum samples required at a leaf node.
+</ParamField>
+
+<ParamField path="options.maxFeatures" type="number">
+  Number of features to consider for best split.
+</ParamField>
+
+<ParamField path="options.randomState" type="number">
+  Random seed for reproducibility.
+</ParamField>
+
+### Methods
+
+#### fit
+
+```typescript
+fit(X: Tensor, y: Tensor): this
+```
+
+Build a decision tree regressor from the training set.
+
+#### predict
+
+```typescript
+predict(X: Tensor): Tensor
+```
+
+Predict target values for samples in X.
+
+#### score
+
+```typescript
+score(X: Tensor, y: Tensor): number
+```
+
+Return the R² score on the given test data.
+
+**Returns:** R² = 1 - SS_res / SS_tot
+
+### Example
+
+```typescript
+import { DecisionTreeRegressor } from 'deepbox/ml';
+import { tensor } from 'deepbox/ndarray';
+
+const X = tensor([[1], [2], [3], [4]]);
+const y = tensor([1.5, 2.5, 3.5, 4.5]);
+
+const reg = new DecisionTreeRegressor({ maxDepth: 5 });
+reg.fit(X, y);
+const predictions = reg.predict(X);
+```
+
+---
+
+## RandomForestClassifier
+
+An ensemble of decision trees trained on random subsets of data and features. Predictions are made by majority voting.
+
+### Constructor
+
+```typescript
+new RandomForestClassifier(options?: {
+  nEstimators?: number;
+  maxDepth?: number;
+  minSamplesSplit?: number;
+  minSamplesLeaf?: number;
+  maxFeatures?: "sqrt" | "log2" | number;
+  bootstrap?: boolean;
+  randomState?: number;
+})
+```
+
+<ParamField path="options.nEstimators" type="number" default="100">
+  Number of trees in the forest.
+</ParamField>
+
+<ParamField path="options.maxDepth" type="number" default="10">
+  Maximum depth of each tree.
+</ParamField>
+
+<ParamField path="options.minSamplesSplit" type="number" default="2">
+  Minimum samples to split a node.
+</ParamField>
+
+<ParamField path="options.minSamplesLeaf" type="number" default="1">
+  Minimum samples at a leaf.
+</ParamField>
+
+<ParamField path="options.maxFeatures" type="string | number" default="sqrt">
+  Number of features to consider: 'sqrt', 'log2', or integer.
+</ParamField>
+
+<ParamField path="options.bootstrap" type="boolean" default="true">
+  Whether to use bootstrap samples.
+</ParamField>
+
+<ParamField path="options.randomState" type="number">
+  Random seed for reproducibility.
+</ParamField>
+
+### Methods
+
+#### fit
+
+```typescript
+fit(X: Tensor, y: Tensor): this
+```
+
+Fit the random forest classifier. Builds an ensemble of decision trees.
+
+#### predict
+
+```typescript
+predict(X: Tensor): Tensor
+```
+
+Predict class labels via majority voting.
+
+#### predictProba
+
+```typescript
+predictProba(X: Tensor): Tensor
+```
+
+Predict class probabilities by averaging predictions from all trees.
+
+#### score
+
+```typescript
+score(X: Tensor, y: Tensor): number
+```
+
+Return mean accuracy.
+
+### Properties
+
+<ResponseField name="classes" type="Tensor | undefined">
+  Unique class labels.
+</ResponseField>
+
+### Example
+
+```typescript
+import { RandomForestClassifier } from 'deepbox/ml';
+import { tensor } from 'deepbox/ndarray';
+
+const clf = new RandomForestClassifier({ nEstimators: 100 });
+clf.fit(X_train, y_train);
+const predictions = clf.predict(X_test);
+```
+
+---
+
+## RandomForestRegressor
+
+An ensemble of decision tree regressors. Predictions are averaged across all trees.
+
+### Constructor
+
+```typescript
+new RandomForestRegressor(options?: {
+  nEstimators?: number;
+  maxDepth?: number;
+  minSamplesSplit?: number;
+  minSamplesLeaf?: number;
+  maxFeatures?: "sqrt" | "log2" | number;
+  bootstrap?: boolean;
+  randomState?: number;
+})
+```
+
+<ParamField path="options.nEstimators" type="number" default="100">
+  Number of trees in the forest.
+</ParamField>
+
+<ParamField path="options.maxDepth" type="number" default="10">
+  Maximum depth of each tree.
+</ParamField>
+
+<ParamField path="options.minSamplesSplit" type="number" default="2">
+  Minimum samples to split a node.
+</ParamField>
+
+<ParamField path="options.minSamplesLeaf" type="number" default="1">
+  Minimum samples at a leaf.
+</ParamField>
+
+<ParamField path="options.maxFeatures" type="string | number" default="1.0">
+  Number of features to consider: 'sqrt', 'log2', 1.0 (all), or integer.
+</ParamField>
+
+<ParamField path="options.bootstrap" type="boolean" default="true">
+  Whether to use bootstrap samples.
+</ParamField>
+
+<ParamField path="options.randomState" type="number">
+  Random seed.
+</ParamField>
+
+### Methods
+
+#### fit
+
+```typescript
+fit(X: Tensor, y: Tensor): this
+```
+
+Fit the random forest regressor.
+
+#### predict
+
+```typescript
+predict(X: Tensor): Tensor
+```
+
+Predict target values by averaging predictions from all trees.
+
+#### score
+
+```typescript
+score(X: Tensor, y: Tensor): number
+```
+
+Return R² score.
+
+### Example
+
+```typescript
+import { RandomForestRegressor } from 'deepbox/ml';
+import { tensor } from 'deepbox/ndarray';
+
+const reg = new RandomForestRegressor({ nEstimators: 100 });
+reg.fit(X_train, y_train);
+const predictions = reg.predict(X_test);
+```

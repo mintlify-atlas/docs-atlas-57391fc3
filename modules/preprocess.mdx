@@ -1,0 +1,540 @@
+---
+title: Preprocessing Module
+description: Data preprocessing, feature scaling, encoding, and train/test splitting
+icon: filter
+---
+
+The Preprocessing module provides essential tools for preparing data before machine learning. It includes feature scaling, encoding categorical variables, and data splitting utilities compatible with scikit-learn.
+
+## Overview
+
+The preprocess module offers three main categories:
+
+- **Scalers**: Standardize, normalize, and transform features
+- **Encoders**: Convert categorical data to numerical format
+- **Splitting**: Train/test split and cross-validation utilities
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Feature Scaling" icon="ruler">
+    StandardScaler, MinMaxScaler, RobustScaler, and more.
+  </Card>
+  <Card title="Encoding" icon="code">
+    Label encoding, one-hot encoding, and ordinal encoding.
+  </Card>
+  <Card title="Scikit-learn API" icon="python">
+    Familiar fit/transform interface.
+  </Card>
+  <Card title="Cross-Validation" icon="repeat">
+    K-Fold, stratified, and time series splitting.
+  </Card>
+</CardGroup>
+
+## Feature Scalers
+
+### StandardScaler
+
+Standardize features by removing mean and scaling to unit variance:
+
+```typescript
+import { StandardScaler } from 'deepbox/preprocess';
+import { tensor } from 'deepbox/ndarray';
+
+const scaler = new StandardScaler();
+
+const X_train = tensor([
+  [1, 2],
+  [2, 3],
+  [3, 4],
+  [4, 5]
+]);
+
+// Fit and transform training data
+scaler.fit(X_train);
+const X_train_scaled = scaler.transform(X_train);
+
+// Transform test data using training statistics
+const X_test = tensor([[5, 6]]);
+const X_test_scaled = scaler.transform(X_test);
+
+// Or fit and transform in one step
+const X_scaled = scaler.fitTransform(X_train);
+```
+
+### MinMaxScaler
+
+Scale features to a given range (default [0, 1]):
+
+```typescript
+import { MinMaxScaler } from 'deepbox/preprocess';
+
+const scaler = new MinMaxScaler({
+  featureRange: [0, 1]
+});
+
+scaler.fit(X_train);
+const X_scaled = scaler.transform(X_train);
+
+// Scale to custom range
+const scaler_custom = new MinMaxScaler({
+  featureRange: [-1, 1]
+});
+```
+
+### RobustScaler
+
+Scale features using statistics robust to outliers:
+
+```typescript
+import { RobustScaler } from 'deepbox/preprocess';
+
+// Uses median and IQR instead of mean and std
+const scaler = new RobustScaler({
+  quantileRange: [0.25, 0.75]  // IQR
+});
+
+scaler.fit(X_train);
+const X_scaled = scaler.transform(X_train);
+```
+
+### MaxAbsScaler
+
+Scale by maximum absolute value (preserves sparsity):
+
+```typescript
+import { MaxAbsScaler } from 'deepbox/preprocess';
+
+const scaler = new MaxAbsScaler();
+scaler.fit(X_train);
+const X_scaled = scaler.transform(X_train);
+
+// All values will be in [-1, 1]
+```
+
+### Normalizer
+
+Normalize samples individually to unit norm:
+
+```typescript
+import { Normalizer } from 'deepbox/preprocess';
+
+const normalizer = new Normalizer({
+  norm: 'l2'  // 'l1', 'l2', or 'max'
+});
+
+const X_normalized = normalizer.transform(X);
+// Each row has unit L2 norm
+```
+
+### PowerTransformer
+
+Apply power transform to make data more Gaussian:
+
+```typescript
+import { PowerTransformer } from 'deepbox/preprocess';
+
+// Yeo-Johnson or Box-Cox transformation
+const transformer = new PowerTransformer({
+  method: 'yeo-johnson',  // or 'box-cox'
+  standardize: true
+});
+
+transformer.fit(X_train);
+const X_transformed = transformer.transform(X_train);
+```
+
+### QuantileTransformer
+
+Transform features to follow a uniform or normal distribution:
+
+```typescript
+import { QuantileTransformer } from 'deepbox/preprocess';
+
+const transformer = new QuantileTransformer({
+  outputDistribution: 'normal',  // or 'uniform'
+  nQuantiles: 1000
+});
+
+transformer.fit(X_train);
+const X_transformed = transformer.transform(X_train);
+```
+
+## Encoders
+
+### LabelEncoder
+
+Encode target labels with values 0 to n_classes-1:
+
+```typescript
+import { LabelEncoder } from 'deepbox/preprocess';
+import { tensor } from 'deepbox/ndarray';
+
+const encoder = new LabelEncoder();
+
+const y = ['cat', 'dog', 'cat', 'bird', 'dog'];
+
+// Fit and transform
+encoder.fit(y);
+const y_encoded = encoder.transform(y);
+// [0, 1, 0, 2, 1]
+
+// Inverse transform
+const y_decoded = encoder.inverseTransform(y_encoded);
+// ['cat', 'dog', 'cat', 'bird', 'dog']
+
+// Get classes
+console.log(encoder.classes);  // ['cat', 'dog', 'bird']
+```
+
+### OneHotEncoder
+
+Encode categorical features as one-hot vectors:
+
+```typescript
+import { OneHotEncoder } from 'deepbox/preprocess';
+
+const encoder = new OneHotEncoder({
+  sparse: false,
+  dropFirst: false
+});
+
+const X = tensor([
+  ['red'],
+  ['blue'],
+  ['green'],
+  ['red']
+]);
+
+encoder.fit(X);
+const X_encoded = encoder.transform(X);
+// [[1, 0, 0],
+//  [0, 1, 0],
+//  [0, 0, 1],
+//  [1, 0, 0]]
+```
+
+### OrdinalEncoder
+
+Encode categorical features as integers (with order):
+
+```typescript
+import { OrdinalEncoder } from 'deepbox/preprocess';
+
+const encoder = new OrdinalEncoder({
+  categories: [['low', 'medium', 'high']]
+});
+
+const X = [['low'], ['high'], ['medium'], ['low']];
+
+encoder.fit(X);
+const X_encoded = encoder.transform(X);
+// [[0], [2], [1], [0]]
+```
+
+### LabelBinarizer
+
+Binarize labels in a one-vs-all fashion:
+
+```typescript
+import { LabelBinarizer } from 'deepbox/preprocess';
+
+const binarizer = new LabelBinarizer();
+
+const y = [1, 2, 3, 1, 2];
+
+binarizer.fit(y);
+const y_binary = binarizer.transform(y);
+// [[1, 0, 0],
+//  [0, 1, 0],
+//  [0, 0, 1],
+//  [1, 0, 0],
+//  [0, 1, 0]]
+```
+
+### MultiLabelBinarizer
+
+Transform between iterable of iterables and multilabel format:
+
+```typescript
+import { MultiLabelBinarizer } from 'deepbox/preprocess';
+
+const mlb = new MultiLabelBinarizer();
+
+const y = [
+  ['sci-fi', 'thriller'],
+  ['comedy'],
+  ['comedy', 'romance']
+];
+
+mlb.fit(y);
+const y_binary = mlb.transform(y);
+// [[0, 1, 0, 1],
+//  [1, 0, 0, 0],
+//  [1, 0, 1, 0]]
+// Columns: [comedy, sci-fi, romance, thriller]
+```
+
+## Data Splitting
+
+### Train-Test Split
+
+```typescript
+import { trainTestSplit } from 'deepbox/preprocess';
+import { tensor } from 'deepbox/ndarray';
+
+const X = tensor([
+  [1, 2], [3, 4], [5, 6], [7, 8], [9, 10]
+]);
+const y = tensor([1, 2, 3, 4, 5]);
+
+// Split with 20% test size
+const { XTrain, XTest, yTrain, yTest } = trainTestSplit(X, y, {
+  testSize: 0.2,
+  randomState: 42,
+  shuffle: true
+});
+
+console.log(XTrain.shape);  // [4, 2]
+console.log(XTest.shape);   // [1, 2]
+```
+
+### K-Fold Cross-Validation
+
+```typescript
+import { KFold } from 'deepbox/preprocess';
+
+const kfold = new KFold({
+  nSplits: 5,
+  shuffle: true,
+  randomState: 42
+});
+
+const n = 100;  // number of samples
+
+for (const { train, test } of kfold.split(n)) {
+  const X_train_fold = X.gather(train);
+  const X_test_fold = X.gather(test);
+  const y_train_fold = y.gather(train);
+  const y_test_fold = y.gather(test);
+  
+  // Train and evaluate model
+}
+```
+
+### Stratified K-Fold
+
+Preserve class distribution in each fold:
+
+```typescript
+import { StratifiedKFold } from 'deepbox/preprocess';
+
+const skfold = new StratifiedKFold({
+  nSplits: 5,
+  shuffle: true,
+  randomState: 42
+});
+
+for (const { train, test } of skfold.split(X, y)) {
+  // Each fold has same class distribution as original data
+  const X_train_fold = X.gather(train);
+  const y_train_fold = y.gather(train);
+  // ...
+}
+```
+
+### Group K-Fold
+
+Ensure same group is not in both train and test:
+
+```typescript
+import { GroupKFold } from 'deepbox/preprocess';
+
+const groups = [0, 0, 1, 1, 2, 2, 3, 3];  // Group labels
+
+const gkfold = new GroupKFold({ nSplits: 4 });
+
+for (const { train, test } of gkfold.split(X, y, groups)) {
+  // Groups in train and test are disjoint
+}
+```
+
+### Leave-One-Out
+
+```typescript
+import { LeaveOneOut } from 'deepbox/preprocess';
+
+const loo = new LeaveOneOut();
+
+for (const { train, test } of loo.split(X.shape[0])) {
+  // test contains exactly one sample
+  console.log(train.length, test.length);  // n-1, 1
+}
+```
+
+### Leave-P-Out
+
+```typescript
+import { LeavePOut } from 'deepbox/preprocess';
+
+const lpo = new LeavePOut({ p: 2 });
+
+for (const { train, test } of lpo.split(10)) {
+  // test contains exactly 2 samples
+  console.log(test.length);  // 2
+}
+```
+
+## Complete Pipeline Example
+
+```typescript
+import { 
+  trainTestSplit, 
+  StandardScaler, 
+  LabelEncoder,
+  KFold 
+} from 'deepbox/preprocess';
+import { LogisticRegression } from 'deepbox/ml';
+import { accuracy } from 'deepbox/metrics';
+import { tensor } from 'deepbox/ndarray';
+
+// Load data
+const X = tensor([...]);  // Features
+const y = ['cat', 'dog', 'cat', ...];  // Labels
+
+// Encode labels
+const labelEncoder = new LabelEncoder();
+labelEncoder.fit(y);
+const y_encoded = labelEncoder.transform(y);
+
+// Split data
+const { XTrain, XTest, yTrain, yTest } = trainTestSplit(
+  X, 
+  y_encoded, 
+  { testSize: 0.2, randomState: 42 }
+);
+
+// Scale features
+const scaler = new StandardScaler();
+scaler.fit(XTrain);
+const XTrainScaled = scaler.transform(XTrain);
+const XTestScaled = scaler.transform(XTest);
+
+// Cross-validation
+const kfold = new KFold({ nSplits: 5, shuffle: true });
+const cvScores = [];
+
+for (const { train, test } of kfold.split(XTrainScaled.shape[0])) {
+  const XTrainFold = XTrainScaled.gather(train);
+  const yTrainFold = yTrain.gather(train);
+  const XValFold = XTrainScaled.gather(test);
+  const yValFold = yTrain.gather(test);
+  
+  const model = new LogisticRegression();
+  model.fit(XTrainFold, yTrainFold);
+  
+  const yPred = model.predict(XValFold);
+  const score = accuracy(yValFold, yPred);
+  cvScores.push(score);
+}
+
+const avgCvScore = cvScores.reduce((a, b) => a + b) / cvScores.length;
+console.log(`CV Score: ${(avgCvScore * 100).toFixed(2)}%`);
+
+// Train final model on all training data
+const finalModel = new LogisticRegression();
+finalModel.fit(XTrainScaled, yTrain);
+
+// Evaluate on test set
+const yPredTest = finalModel.predict(XTestScaled);
+const testScore = accuracy(yTest, yPredTest);
+console.log(`Test Accuracy: ${(testScore * 100).toFixed(2)}%`);
+```
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="Feature Scaling for ML">
+    Scale features before training models:
+    
+    ```typescript
+    import { StandardScaler } from 'deepbox/preprocess';
+    import { LogisticRegression } from 'deepbox/ml';
+    
+    const scaler = new StandardScaler();
+    const X_scaled = scaler.fitTransform(X_train);
+    
+    const model = new LogisticRegression();
+    model.fit(X_scaled, y_train);
+    ```
+  </Accordion>
+
+  <Accordion title="Categorical Variable Encoding">
+    Convert categories to numbers:
+    
+    ```typescript
+    import { OneHotEncoder } from 'deepbox/preprocess';
+    
+    const encoder = new OneHotEncoder();
+    const X_encoded = encoder.fitTransform(X_categorical);
+    ```
+  </Accordion>
+
+  <Accordion title="Robust to Outliers">
+    Use robust scaling for data with outliers:
+    
+    ```typescript
+    import { RobustScaler } from 'deepbox/preprocess';
+    
+    const scaler = new RobustScaler();
+    const X_scaled = scaler.fitTransform(X_with_outliers);
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<Tip>
+  Always fit scalers on training data only, then transform both train and test sets.
+</Tip>
+
+<Tip>
+  Use StandardScaler for most ML algorithms. Use MinMaxScaler for neural networks.
+</Tip>
+
+<Tip>
+  For data with outliers, prefer RobustScaler over StandardScaler.
+</Tip>
+
+<Warning>
+  Never fit preprocessing on test data. This causes data leakage and inflated performance metrics.
+</Warning>
+
+<Warning>
+  Save your fitted scalers and encoders for production inference.
+</Warning>
+
+## Related Modules
+
+<CardGroup cols={3}>
+  <Card title="Machine Learning" icon="robot" href="/modules/ml">
+    Train models on preprocessed data
+  </Card>
+  <Card title="DataFrame" icon="table" href="/modules/dataframe">
+    Data manipulation and analysis
+  </Card>
+  <Card title="Metrics" icon="bullseye" href="/modules/metrics">
+    Evaluate model performance
+  </Card>
+</CardGroup>
+
+## Learn More
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="book" href="/api/preprocess">
+    Complete API documentation
+  </Card>
+  <Card title="Tutorial" icon="graduation-cap" href="/tutorials/preprocessing">
+    Data preprocessing guide
+  </Card>
+</CardGroup>

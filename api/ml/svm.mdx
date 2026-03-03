@@ -1,0 +1,201 @@
+---
+title: Support Vector Machines
+description: Linear SVM classifiers and regressors for Deepbox
+---
+
+## LinearSVC
+
+Support Vector Machine (SVM) Classifier.
+
+Implements a linear SVM using sub-gradient descent on the hinge loss with L2 regularization (soft margin). Suitable for binary classification tasks.
+
+**Mathematical Formulation:**
+- Decision function: f(x) = sign(w · x + b)
+- Optimization: minimize (1/2)||w||² + C * Σmax(0, 1 - y_i(w · x_i + b))
+
+### Constructor
+
+```typescript
+new LinearSVC(options?: {
+  C?: number;
+  maxIter?: number;
+  tol?: number;
+})
+```
+
+<ParamField path="options.C" type="number" default="1.0">
+  Regularization parameter (inverse of regularization strength). Larger C = stronger penalty on errors = harder margin.
+</ParamField>
+
+<ParamField path="options.maxIter" type="number" default="1000">
+  Maximum iterations for optimization.
+</ParamField>
+
+<ParamField path="options.tol" type="number" default="1e-4">
+  Convergence tolerance.
+</ParamField>
+
+### Methods
+
+#### fit
+
+```typescript
+fit(X: Tensor, y: Tensor): this
+```
+
+Fit the SVM classifier using sub-gradient descent.
+
+Supports both binary and multiclass classification (via OvR).
+
+<ParamField path="X" type="Tensor" required>
+  Training data of shape (n_samples, n_features)
+</ParamField>
+
+<ParamField path="y" type="Tensor" required>
+  Target labels of shape (n_samples,). Must contain at least 2 classes.
+</ParamField>
+
+**Returns:** The fitted estimator
+
+#### predict
+
+```typescript
+predict(X: Tensor): Tensor
+```
+
+Predict class labels for samples in X.
+
+**Returns:** Predicted labels of shape (n_samples,)
+
+#### predictProba
+
+```typescript
+predictProba(X: Tensor): Tensor
+```
+
+Predict class probabilities using Platt scaling approximation.
+
+**Returns:** Probability estimates of shape (n_samples, n_classes)
+
+#### score
+
+```typescript
+score(X: Tensor, y: Tensor): number
+```
+
+Return the mean accuracy on the given test data and labels.
+
+**Returns:** Accuracy score in range [0, 1]
+
+### Properties
+
+<ResponseField name="coef" type="Tensor">
+  Weight vectors as tensor of shape (n_classes, n_features)
+</ResponseField>
+
+<ResponseField name="intercept" type="Tensor">
+  Bias terms as tensor
+</ResponseField>
+
+### Example
+
+```typescript
+import { LinearSVC } from 'deepbox/ml';
+import { tensor } from 'deepbox/ndarray';
+
+const X = tensor([[1, 2], [2, 3], [3, 1], [4, 2]]);
+const y = tensor([0, 0, 1, 1]);
+
+const svm = new LinearSVC({ C: 1.0 });
+svm.fit(X, y);
+const predictions = svm.predict(X);
+```
+
+---
+
+## LinearSVR
+
+Support Vector Machine (SVM) Regressor.
+
+Implements epsilon-SVR (Support Vector Regression) using sub-gradient descent.
+
+### Constructor
+
+```typescript
+new LinearSVR(options?: {
+  C?: number;
+  epsilon?: number;
+  maxIter?: number;
+  tol?: number;
+})
+```
+
+<ParamField path="options.C" type="number" default="1.0">
+  Regularization parameter. Must be positive.
+</ParamField>
+
+<ParamField path="options.epsilon" type="number" default="0.1">
+  Epsilon in the epsilon-SVR model. Defines the epsilon-tube within which no penalty is associated in the training loss function.
+</ParamField>
+
+<ParamField path="options.maxIter" type="number" default="1000">
+  Maximum number of iterations.
+</ParamField>
+
+<ParamField path="options.tol" type="number" default="1e-4">
+  Tolerance for stopping criterion.
+</ParamField>
+
+### Methods
+
+#### fit
+
+```typescript
+fit(X: Tensor, y: Tensor): this
+```
+
+Fit the SVR model using sub-gradient descent on epsilon-insensitive loss.
+
+<ParamField path="X" type="Tensor" required>
+  Training data of shape (n_samples, n_features)
+</ParamField>
+
+<ParamField path="y" type="Tensor" required>
+  Target values of shape (n_samples,)
+</ParamField>
+
+**Returns:** The fitted estimator
+
+#### predict
+
+```typescript
+predict(X: Tensor): Tensor
+```
+
+Predict target values for samples in X.
+
+**Returns:** Predicted values of shape (n_samples,)
+
+#### score
+
+```typescript
+score(X: Tensor, y: Tensor): number
+```
+
+Return the R² score on the given test data and target values.
+
+**Returns:** R² score (best possible is 1.0, can be negative)
+
+### Example
+
+```typescript
+import { LinearSVR } from 'deepbox/ml';
+import { tensor } from 'deepbox/ndarray';
+
+const X = tensor([[1], [2], [3], [4]]);
+const y = tensor([1.5, 2.5, 3.5, 4.5]);
+
+const svr = new LinearSVR({ C: 1.0, epsilon: 0.1 });
+svr.fit(X, y);
+const predictions = svr.predict(X);
+```

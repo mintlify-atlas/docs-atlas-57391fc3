@@ -1,0 +1,178 @@
+---
+title: RNNs and LSTMs
+description: Process sequential data with recurrent neural networks
+---
+
+Recurrent Neural Networks (RNNs) and Long Short-Term Memory (LSTM) networks are designed to process sequential data by maintaining hidden state across time steps.
+
+## Recurrent Layers
+
+<Steps>
+
+### Simple RNN
+
+Process sequences with a basic recurrent layer:
+
+```typescript
+import { tensor } from "deepbox/ndarray";
+import { RNN } from "deepbox/nn";
+
+// RNN(inputSize, hiddenSize, options)
+// Input shape (batchFirst=true): (batch, seqLen, inputSize)
+const rnn = new RNN(4, 8, { batchFirst: true });
+console.log("RNN(inputSize=4, hiddenSize=8, batchFirst=true)");
+
+// Batch of 2 sequences, each with 3 time steps and 4 features
+const rnnInput = tensor([
+  [
+    [1, 2, 3, 4],
+    [5, 6, 7, 8],
+    [9, 10, 11, 12],
+  ],
+  [
+    [13, 14, 15, 16],
+    [17, 18, 19, 20],
+    [21, 22, 23, 24],
+  ],
+]);
+
+console.log(`Input shape:  [${rnnInput.shape.join(", ")}]`);
+
+const rnnResult = rnn.forward(rnnInput);
+const rnnOut = rnnResult instanceof GradTensor ? rnnResult.tensor : rnnResult;
+console.log(`Output shape: [${rnnOut.shape.join(", ")}]`);
+console.log("Output contains hidden states for all time steps");
+```
+
+**Output:**
+```
+RNN(inputSize=4, hiddenSize=8, batchFirst=true)
+Input shape:  [2, 3, 4]
+Output shape: [2, 3, 8]
+Output contains hidden states for all time steps
+```
+
+### LSTM networks
+
+Use LSTM for better long-range dependencies:
+
+```typescript
+import { LSTM } from "deepbox/nn";
+
+// LSTM adds cell state for better memory
+const lstm = new LSTM(4, 8, { batchFirst: true });
+console.log("\nLSTM(inputSize=4, hiddenSize=8, batchFirst=true)");
+console.log(`Input shape:  [${rnnInput.shape.join(", ")}]`);
+
+const lstmResult = lstm.forward(rnnInput);
+const lstmOut = lstmResult instanceof GradTensor ? lstmResult.tensor : lstmResult;
+console.log(`Output shape: [${lstmOut.shape.join(", ")}]`);
+console.log("LSTM uses forget/input/output gates for selective memory");
+```
+
+**Output:**
+```
+LSTM(inputSize=4, hiddenSize=8, batchFirst=true)
+Input shape:  [2, 3, 4]
+Output shape: [2, 3, 8]
+LSTM uses forget/input/output gates for selective memory
+```
+
+### GRU networks
+
+GRU is a simplified alternative to LSTM:
+
+```typescript
+import { GRU } from "deepbox/nn";
+
+// GRU has fewer parameters than LSTM
+const gru = new GRU(4, 8, { batchFirst: true });
+console.log("\nGRU(inputSize=4, hiddenSize=8, batchFirst=true)");
+console.log(`Input shape:  [${rnnInput.shape.join(", ")}]`);
+
+const gruResult = gru.forward(rnnInput);
+const gruOut = gruResult instanceof GradTensor ? gruResult.tensor : gruResult;
+console.log(`Output shape: [${gruOut.shape.join(", ")}]`);
+console.log("GRU uses reset/update gates — fewer params than LSTM");
+```
+
+**Output:**
+```
+GRU(inputSize=4, hiddenSize=8, batchFirst=true)
+Input shape:  [2, 3, 4]
+Output shape: [2, 3, 8]
+GRU uses reset/update gates — fewer params than LSTM
+```
+
+### Multi-layer RNNs
+
+Stack multiple recurrent layers:
+
+```typescript
+const deepRnn = new RNN(4, 16, { numLayers: 2, batchFirst: true });
+console.log("\nRNN(inputSize=4, hiddenSize=16, numLayers=2)");
+console.log(`Input shape:  [${rnnInput.shape.join(", ")}]`);
+
+const deepResult = deepRnn.forward(rnnInput);
+const deepOut = deepResult instanceof GradTensor ? deepResult.tensor : deepResult;
+console.log(`Output shape: [${deepOut.shape.join(", ")}]`);
+console.log("2-layer RNN extracts higher-level sequential patterns");
+```
+
+**Output:**
+```
+RNN(inputSize=4, hiddenSize=16, numLayers=2)
+Input shape:  [2, 3, 4]
+Output shape: [2, 3, 16]
+2-layer RNN extracts higher-level sequential patterns
+```
+
+### Parameter comparison
+
+Compare parameter counts across RNN types:
+
+```typescript
+const rnnParams = Array.from(rnn.parameters()).length;
+const lstmParams = Array.from(lstm.parameters()).length;
+const gruParams = Array.from(gru.parameters()).length;
+
+console.log("\nParameter Comparison:");
+console.log(`RNN  parameters: ${rnnParams}`);
+console.log(`LSTM parameters: ${lstmParams} (4x gates)`);
+console.log(`GRU  parameters: ${gruParams} (3x gates)`);
+```
+
+**Output:**
+```
+Parameter Comparison:
+RNN  parameters: 2
+LSTM parameters: 8 (4x gates)
+GRU  parameters: 6 (3x gates)
+```
+
+</Steps>
+
+## When to Use Each Type
+
+- **RNN**: Simple sequences, faster training
+- **LSTM**: Long sequences, vanishing gradient problems
+- **GRU**: Balance between RNN and LSTM, fewer parameters
+
+## Use Cases
+
+- Time series forecasting
+- Natural language processing
+- Speech recognition
+- Video analysis
+- Sequence generation
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Attention & Transformers" icon="lightbulb" href="/examples/attention-transformer">
+    Learn modern sequence modeling with attention
+  </Card>
+  <Card title="Dropout" icon="droplet" href="/api-reference/nn/dropout">
+    Prevent overfitting in recurrent networks
+  </Card>
+</CardGroup>

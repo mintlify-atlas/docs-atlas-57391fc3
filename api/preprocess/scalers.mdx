@@ -1,0 +1,421 @@
+---
+title: Scalers
+description: Feature scaling and normalization transformers
+---
+
+Scalers transform features by removing statistical properties or normalizing to a specific range.
+
+## StandardScaler
+
+Standardize features by removing mean and scaling to unit variance.
+
+**Formula**: `z = (x - μ) / σ`
+
+```typescript
+import { StandardScaler } from 'deepbox/preprocess';
+import { tensor } from 'deepbox/ndarray';
+
+const X = tensor([[1, 2], [3, 4], [5, 6]]);
+const scaler = new StandardScaler();
+scaler.fit(X);
+const XScaled = scaler.transform(X);
+```
+
+### Constructor
+
+```typescript
+new StandardScaler(options?: {
+  withMean?: boolean;    // Center data before scaling (default: true)
+  withStd?: boolean;     // Scale data to unit variance (default: true)
+  copy?: boolean;        // API parity (default: true)
+})
+```
+
+### Methods
+
+<ResponseField name="fit" type="(X: Tensor) => this">
+  Compute the mean and standard deviation from training data.
+  
+  **Parameters:**
+  - `X` - Training data (2D tensor)
+  
+  **Returns:** self for method chaining
+</ResponseField>
+
+<ResponseField name="transform" type="(X: Tensor) => Tensor">
+  Standardize features using fitted statistics.
+  
+  **Parameters:**
+  - `X` - Data to transform (2D tensor)
+  
+  **Returns:** Scaled data tensor
+</ResponseField>
+
+<ResponseField name="fitTransform" type="(X: Tensor) => Tensor">
+  Fit to data and transform in one step.
+</ResponseField>
+
+<ResponseField name="inverseTransform" type="(X: Tensor) => Tensor">
+  Transform scaled data back to original scale.
+</ResponseField>
+
+### Attributes
+
+After fitting:
+- `mean_` - Mean of each feature
+- `scale_` - Standard deviation of each feature
+
+---
+
+## MinMaxScaler
+
+Scale features to a range [min, max].
+
+**Formula**: `X_scaled = (X - X.min) / (X.max - X.min) * (max - min) + min`
+
+```typescript
+import { MinMaxScaler } from 'deepbox/preprocess';
+
+const scaler = new MinMaxScaler({ featureRange: [0, 1] });
+const XScaled = scaler.fitTransform(X);
+```
+
+### Constructor
+
+```typescript
+new MinMaxScaler(options?: {
+  featureRange?: [number, number];  // Desired range (default: [0, 1])
+  clip?: boolean;                   // Clip to range (default: false)
+  copy?: boolean;                   // API parity (default: true)
+})
+```
+
+### Methods
+
+<ResponseField name="fit" type="(X: Tensor) => this">
+  Compute minimum and maximum from training data.
+</ResponseField>
+
+<ResponseField name="transform" type="(X: Tensor) => Tensor">
+  Scale features to the configured range.
+</ResponseField>
+
+<ResponseField name="fitTransform" type="(X: Tensor) => Tensor">
+  Fit and transform in one step.
+</ResponseField>
+
+<ResponseField name="inverseTransform" type="(X: Tensor) => Tensor">
+  Transform scaled data back to original scale.
+</ResponseField>
+
+### Attributes
+
+After fitting:
+- `dataMin_` - Minimum value per feature
+- `dataMax_` - Maximum value per feature
+
+---
+
+## RobustScaler
+
+Scale features using statistics robust to outliers (median and IQR).
+
+```typescript
+import { RobustScaler } from 'deepbox/preprocess';
+
+const scaler = new RobustScaler({ quantileRange: [25, 75] });
+const XScaled = scaler.fitTransform(X);
+```
+
+### Constructor
+
+```typescript
+new RobustScaler(options?: {
+  withCentering?: boolean;           // Center using median (default: true)
+  withScaling?: boolean;             // Scale using IQR (default: true)
+  quantileRange?: [number, number];  // Percentile range (default: [25, 75])
+  unitVariance?: boolean;            // Scale to unit variance under normality (default: false)
+  copy?: boolean;                    // API parity (default: true)
+})
+```
+
+### Methods
+
+<ResponseField name="fit" type="(X: Tensor) => this">
+  Compute median and IQR from training data.
+</ResponseField>
+
+<ResponseField name="transform" type="(X: Tensor) => Tensor">
+  Scale features using robust statistics.
+</ResponseField>
+
+<ResponseField name="fitTransform" type="(X: Tensor) => Tensor">
+  Fit and transform in one step.
+</ResponseField>
+
+<ResponseField name="inverseTransform" type="(X: Tensor) => Tensor">
+  Transform scaled data back to original scale.
+</ResponseField>
+
+### Attributes
+
+After fitting:
+- `center_` - Median of each feature
+- `scale_` - IQR (interquartile range) of each feature
+
+---
+
+## MaxAbsScaler
+
+Scale features by maximum absolute value to range [-1, 1].
+
+Suitable for data already centered at zero.
+
+```typescript
+import { MaxAbsScaler } from 'deepbox/preprocess';
+
+const scaler = new MaxAbsScaler();
+const XScaled = scaler.fitTransform(X);
+```
+
+### Constructor
+
+```typescript
+new MaxAbsScaler(options?: {
+  copy?: boolean;  // API parity (default: true)
+})
+```
+
+### Methods
+
+<ResponseField name="fit" type="(X: Tensor) => this">
+  Compute maximum absolute value per feature.
+</ResponseField>
+
+<ResponseField name="transform" type="(X: Tensor) => Tensor">
+  Scale features by maximum absolute value.
+</ResponseField>
+
+<ResponseField name="fitTransform" type="(X: Tensor) => Tensor">
+  Fit and transform in one step.
+</ResponseField>
+
+<ResponseField name="inverseTransform" type="(X: Tensor) => Tensor">
+  Transform scaled data back to original scale.
+</ResponseField>
+
+### Attributes
+
+After fitting:
+- `maxAbs_` - Maximum absolute value per feature
+
+---
+
+## Normalizer
+
+Normalize samples (rows) to unit norm.
+
+Scales each sample individually to have unit norm (L1, L2, or max).
+
+```typescript
+import { Normalizer } from 'deepbox/preprocess';
+
+const normalizer = new Normalizer({ norm: 'l2' });
+const XNorm = normalizer.transform(X);
+```
+
+### Constructor
+
+```typescript
+new Normalizer(options?: {
+  norm?: 'l1' | 'l2' | 'max';  // Norm to use (default: 'l2')
+  copy?: boolean;              // API parity (default: true)
+})
+```
+
+### Methods
+
+<ResponseField name="fit" type="(X: Tensor) => this">
+  No-op. Normalizer is stateless and does not require fitting.
+</ResponseField>
+
+<ResponseField name="transform" type="(X: Tensor) => Tensor">
+  Normalize each sample to unit norm.
+  
+  - **L2 norm**: Euclidean norm √(Σx²)
+  - **L1 norm**: Manhattan norm Σ|x|
+  - **Max norm**: Maximum absolute value
+</ResponseField>
+
+<ResponseField name="fitTransform" type="(X: Tensor) => Tensor">
+  Transform without fitting (Normalizer is stateless).
+</ResponseField>
+
+---
+
+## PowerTransformer
+
+Apply power transform to make data more Gaussian-like.
+
+Supports Box-Cox (strictly positive data) and Yeo-Johnson (any data) transforms.
+
+```typescript
+import { PowerTransformer } from 'deepbox/preprocess';
+
+const transformer = new PowerTransformer({
+  method: 'yeo-johnson',
+  standardize: true
+});
+const XTrans = transformer.fitTransform(X);
+```
+
+### Constructor
+
+```typescript
+new PowerTransformer(options?: {
+  method?: 'box-cox' | 'yeo-johnson';  // Transform method (default: 'yeo-johnson')
+  standardize?: boolean;               // Standardize after transform (default: false)
+  copy?: boolean;                      // API parity (default: true)
+})
+```
+
+### Methods
+
+<ResponseField name="fit" type="(X: Tensor) => this">
+  Estimate optimal lambda parameters for each feature using maximum likelihood.
+  
+  **Note:** Box-Cox requires strictly positive values.
+</ResponseField>
+
+<ResponseField name="transform" type="(X: Tensor) => Tensor">
+  Apply power transform using fitted lambda values.
+</ResponseField>
+
+<ResponseField name="fitTransform" type="(X: Tensor) => Tensor">
+  Fit and transform in one step.
+</ResponseField>
+
+<ResponseField name="inverseTransform" type="(X: Tensor) => Tensor">
+  Transform data back to original space.
+</ResponseField>
+
+### Attributes
+
+After fitting:
+- `lambdas_` - Optimal lambda parameter per feature
+- `mean_` - Mean of transformed features (if standardize=true)
+- `scale_` - Std of transformed features (if standardize=true)
+
+---
+
+## QuantileTransformer
+
+Transform features using quantile information.
+
+Maps features to uniform or normal distribution.
+
+```typescript
+import { QuantileTransformer } from 'deepbox/preprocess';
+
+const transformer = new QuantileTransformer({
+  nQuantiles: 1000,
+  outputDistribution: 'normal'
+});
+const XTrans = transformer.fitTransform(X);
+```
+
+### Constructor
+
+```typescript
+new QuantileTransformer(options?: {
+  nQuantiles?: number;                        // Number of quantiles (default: 1000)
+  outputDistribution?: 'uniform' | 'normal';  // Output distribution (default: 'uniform')
+  subsample?: number;                         // Max samples for quantile estimation
+  randomState?: number;                       // Random seed for subsampling
+  copy?: boolean;                             // API parity (default: true)
+})
+```
+
+### Methods
+
+<ResponseField name="fit" type="(X: Tensor) => this">
+  Compute quantiles from training data.
+</ResponseField>
+
+<ResponseField name="transform" type="(X: Tensor) => Tensor">
+  Transform features to uniform or normal distribution.
+</ResponseField>
+
+<ResponseField name="fitTransform" type="(X: Tensor) => Tensor">
+  Fit and transform in one step.
+</ResponseField>
+
+<ResponseField name="inverseTransform" type="(X: Tensor) => Tensor">
+  Transform data back to original distribution.
+</ResponseField>
+
+### Attributes
+
+After fitting:
+- `quantiles_` - Map of quantile values per feature
+
+---
+
+## Preprocessing Pipeline Example
+
+Combine multiple scalers in a preprocessing workflow:
+
+```typescript
+import { StandardScaler, MinMaxScaler } from 'deepbox/preprocess';
+import { tensor } from 'deepbox/ndarray';
+
+// Training data
+const XTrain = tensor([
+  [1.0, 2.0, 3.0],
+  [4.0, 5.0, 6.0],
+  [7.0, 8.0, 9.0]
+]);
+
+// Test data
+const XTest = tensor([
+  [2.0, 3.0, 4.0],
+  [5.0, 6.0, 7.0]
+]);
+
+// Fit scaler on training data
+const scaler = new StandardScaler();
+scaler.fit(XTrain);
+
+// Transform both sets using the same fitted scaler
+const XTrainScaled = scaler.transform(XTrain);
+const XTestScaled = scaler.transform(XTest);
+
+// Inverse transform to get original scale
+const XTrainOriginal = scaler.inverseTransform(XTrainScaled);
+```
+
+## When to Use Each Scaler
+
+<CardGroup cols={2}>
+  <Card title="StandardScaler" icon="chart-line">
+    Best for normally distributed features. Sensitive to outliers.
+  </Card>
+  <Card title="MinMaxScaler" icon="arrows-left-right">
+    Best when you need a specific range. Sensitive to outliers.
+  </Card>
+  <Card title="RobustScaler" icon="shield">
+    Best when data contains outliers. Uses median and IQR.
+  </Card>
+  <Card title="MaxAbsScaler" icon="maximize">
+    Best for sparse data that is already centered.
+  </Card>
+  <Card title="Normalizer" icon="arrows-maximize">
+    Best for normalizing individual samples (e.g., text vectors).
+  </Card>
+  <Card title="PowerTransformer" icon="wand-magic-sparkles">
+    Best for making data more Gaussian. Handles skewed distributions.
+  </Card>
+  <Card title="QuantileTransformer" icon="chart-area">
+    Best for non-linear transformations. Robust to outliers.
+  </Card>
+</CardGroup>

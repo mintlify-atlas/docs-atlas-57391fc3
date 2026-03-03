@@ -1,0 +1,509 @@
+---
+title: Datasets Module
+description: Built-in datasets and data loaders for machine learning
+icon: database
+---
+
+The Datasets module provides built-in datasets for machine learning experimentation, along with data generation utilities and efficient data loading. It includes classic ML datasets and synthetic data generators.
+
+## Overview
+
+The datasets module offers:
+
+- **Classic Datasets**: Iris, Boston Housing, MNIST-like digits, and more
+- **Synthetic Generators**: Create custom datasets for classification and regression
+- **Data Loaders**: Efficient batch loading for training neural networks
+- **Preprocessing**: Pre-split train/test sets ready for modeling
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Ready-to-Use" icon="box-open">
+    Pre-loaded classic datasets for quick experiments.
+  </Card>
+  <Card title="Data Generators" icon="wand-magic-sparkles">
+    Create synthetic data with custom properties.
+  </Card>
+  <Card title="Efficient Loading" icon="gauge-high">
+    DataLoader for batching and shuffling.
+  </Card>
+  <Card title="Standardized Format" icon="table">
+    All datasets return consistent data structures.
+  </Card>
+</CardGroup>
+
+## Built-in Datasets
+
+### Dataset Structure
+
+All dataset loaders return a `Dataset` object with this structure:
+
+```typescript
+interface Dataset {
+  data: Tensor;        // Features (X)
+  target: Tensor;      // Labels (y)
+  featureNames?: string[];  // Feature names
+  targetNames?: string[];   // Class names
+  description?: string;     // Dataset description
+}
+```
+
+### Classification Datasets
+
+#### Iris Dataset
+
+```typescript
+import { loadIris } from 'deepbox/datasets';
+
+const { data, target, featureNames, targetNames } = loadIris();
+
+console.log(data.shape);      // [150, 4] - 150 samples, 4 features
+console.log(target.shape);    // [150] - 3 classes (0, 1, 2)
+console.log(featureNames);    // ['sepal length', 'sepal width', ...]
+console.log(targetNames);     // ['setosa', 'versicolor', 'virginica']
+
+// Use with ML model
+import { LogisticRegression } from 'deepbox/ml';
+
+const model = new LogisticRegression();
+model.fit(data, target);
+```
+
+#### Breast Cancer Dataset
+
+```typescript
+import { loadBreastCancer } from 'deepbox/datasets';
+
+const { data, target, featureNames, targetNames } = loadBreastCancer();
+
+console.log(data.shape);   // [569, 30] - 30 features
+console.log(targetNames);  // ['malignant', 'benign']
+```
+
+#### Digits Dataset
+
+```typescript
+import { loadDigits } from 'deepbox/datasets';
+
+// Handwritten digits (0-9)
+const { data, target } = loadDigits();
+
+console.log(data.shape);    // [1797, 64] - 8x8 images flattened
+console.log(target.shape);  // [1797] - 10 classes (0-9)
+
+// Reshape for visualization
+const image = data.slice([0]).reshape([8, 8]);
+```
+
+### Regression Datasets
+
+#### Diabetes Dataset
+
+```typescript
+import { loadDiabetes } from 'deepbox/datasets';
+
+const { data, target } = loadDiabetes();
+
+console.log(data.shape);    // [442, 10] - 10 features
+console.log(target.shape);  // [442] - Disease progression
+
+// Use with regression model
+import { LinearRegression } from 'deepbox/ml';
+
+const model = new LinearRegression();
+model.fit(data, target);
+```
+
+#### Housing Dataset
+
+```typescript
+import { loadHousingMini } from 'deepbox/datasets';
+
+const { data, target, featureNames } = loadHousingMini();
+
+console.log(data.shape);   // Housing features
+console.log(featureNames); // Feature descriptions
+```
+
+### More Datasets
+
+```typescript
+import { 
+  loadLinnerud,
+  loadSensorStates,
+  loadStudentPerformance,
+  loadWeatherOutcomes,
+  loadFruitQuality,
+  loadFlowersExtended,
+  loadLeafShapes,
+  loadSeedMorphology
+} from 'deepbox/datasets';
+
+// Exercise dataset
+const linnerud = loadLinnerud();
+
+// Sensor readings
+const sensors = loadSensorStates();
+
+// Educational data
+const students = loadStudentPerformance();
+
+// Weather classification
+const weather = loadWeatherOutcomes();
+```
+
+## Synthetic Data Generators
+
+### Classification Data
+
+```typescript
+import { makeClassification } from 'deepbox/datasets';
+
+const { data, target } = makeClassification({
+  nSamples: 1000,
+  nFeatures: 20,
+  nInformative: 15,
+  nRedundant: 5,
+  nClasses: 3,
+  nClustersPerClass: 2,
+  weights: [0.5, 0.3, 0.2],  // Class distribution
+  flipY: 0.01,                // Label noise
+  randomState: 42
+});
+
+console.log(data.shape);    // [1000, 20]
+console.log(target.shape);  // [1000]
+```
+
+### Regression Data
+
+```typescript
+import { makeRegression } from 'deepbox/datasets';
+
+const { data, target } = makeRegression({
+  nSamples: 1000,
+  nFeatures: 10,
+  nInformative: 5,
+  noise: 10.0,
+  bias: 0.0,
+  randomState: 42
+});
+
+console.log(data.shape);    // [1000, 10]
+console.log(target.shape);  // [1000]
+```
+
+### Clustering Data
+
+#### Blobs
+
+```typescript
+import { makeBlobs } from 'deepbox/datasets';
+
+const { data, target, centers } = makeBlobs({
+  nSamples: 1000,
+  nFeatures: 2,
+  centers: 3,
+  clusterStd: 1.0,
+  randomState: 42
+});
+
+// Use with K-Means
+import { KMeans } from 'deepbox/ml';
+const kmeans = new KMeans({ nClusters: 3 });
+kmeans.fit(data);
+```
+
+#### Moons
+
+```typescript
+import { makeMoons } from 'deepbox/datasets';
+
+// Two interleaving half circles
+const { data, target } = makeMoons({
+  nSamples: 1000,
+  noise: 0.1,
+  randomState: 42
+});
+
+// Good for testing non-linear classifiers
+```
+
+#### Circles
+
+```typescript
+import { makeCircles } from 'deepbox/datasets';
+
+// Concentric circles
+const { data, target } = makeCircles({
+  nSamples: 1000,
+  noise: 0.05,
+  factor: 0.5,  // Scale factor between circles
+  randomState: 42
+});
+```
+
+### Advanced Generators
+
+```typescript
+import { 
+  makeGaussianQuantiles,
+  loadGaussianIslands,
+  loadConcentricRings,
+  loadSpiralArms,
+  loadMoonsMulti,
+  loadPerfectlySeparable
+} from 'deepbox/datasets';
+
+// Gaussian quantiles for multi-class
+const gaussianData = makeGaussianQuantiles({
+  nSamples: 1000,
+  nFeatures: 2,
+  nClasses: 3,
+  randomState: 42
+});
+
+// Complex geometric patterns
+const islands = loadGaussianIslands();
+const rings = loadConcentricRings();
+const spirals = loadSpiralArms();
+const moons = loadMoonsMulti();
+```
+
+## Data Loaders
+
+### Basic DataLoader
+
+```typescript
+import { DataLoader } from 'deepbox/datasets';
+import { tensor } from 'deepbox/ndarray';
+
+const X = tensor([[...], [...], ...]);  // Features
+const y = tensor([...]);                // Labels
+
+// Create data loader
+const loader = new DataLoader(X, y, {
+  batchSize: 32,
+  shuffle: true,
+  dropLast: false
+});
+
+// Iterate over batches
+for (const { input, target } of loader) {
+  console.log(input.shape);   // [32, nFeatures]
+  console.log(target.shape);  // [32]
+  
+  // Train model on batch
+  const output = model.forward(input);
+  const loss = criterion(output, target);
+  // ...
+}
+```
+
+### Training with DataLoader
+
+```typescript
+import { DataLoader } from 'deepbox/datasets';
+import { trainTestSplit } from 'deepbox/preprocess';
+import { Sequential, Linear, ReLU } from 'deepbox/nn';
+import { Adam } from 'deepbox/optim';
+import { crossEntropyLoss } from 'deepbox/nn';
+
+// Load and split data
+const { data, target } = loadIris();
+const { XTrain, XTest, yTrain, yTest } = trainTestSplit(data, target, {
+  testSize: 0.2
+});
+
+// Create data loaders
+const trainLoader = new DataLoader(XTrain, yTrain, {
+  batchSize: 16,
+  shuffle: true
+});
+
+const testLoader = new DataLoader(XTest, yTest, {
+  batchSize: 16,
+  shuffle: false
+});
+
+// Define model
+const model = new Sequential([
+  new Linear(4, 10),
+  new ReLU(),
+  new Linear(10, 3)
+]);
+
+const optimizer = new Adam(model.parameters(), { lr: 0.01 });
+
+// Training loop
+for (let epoch = 0; epoch < 100; epoch++) {
+  model.train();
+  
+  for (const { input, target } of trainLoader) {
+    optimizer.zeroGrad();
+    
+    const output = model.forward(input);
+    const loss = crossEntropyLoss(output, target);
+    
+    loss.backward();
+    optimizer.step();
+  }
+  
+  // Validation
+  model.eval();
+  let correct = 0;
+  let total = 0;
+  
+  for (const { input, target } of testLoader) {
+    const output = model.forward(input);
+    const predicted = output.argmax(1);
+    
+    total += target.size;
+    correct += predicted.equal(target).sum().item();
+  }
+  
+  const accuracy = correct / total;
+  console.log(`Epoch ${epoch}: Accuracy = ${(accuracy * 100).toFixed(2)}%`);
+}
+```
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="Quick Prototyping">
+    Test algorithms on standard datasets:
+    
+    ```typescript
+    import { loadIris } from 'deepbox/datasets';
+    import { RandomForestClassifier } from 'deepbox/ml';
+    import { accuracy } from 'deepbox/metrics';
+    import { trainTestSplit } from 'deepbox/preprocess';
+    
+    const { data, target } = loadIris();
+    const { XTrain, XTest, yTrain, yTest } = trainTestSplit(data, target);
+    
+    const model = new RandomForestClassifier();
+    model.fit(XTrain, yTrain);
+    
+    const yPred = model.predict(XTest);
+    const acc = accuracy(yTest, yPred);
+    ```
+  </Accordion>
+
+  <Accordion title="Algorithm Benchmarking">
+    Compare models on same dataset:
+    
+    ```typescript
+    import { loadBreastCancer } from 'deepbox/datasets';
+    import { LogisticRegression, RandomForestClassifier } from 'deepbox/ml';
+    
+    const { data, target } = loadBreastCancer();
+    
+    const models = [
+      new LogisticRegression(),
+      new RandomForestClassifier({ nEstimators: 100 })
+    ];
+    
+    for (const model of models) {
+      // Train and evaluate each model
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Synthetic Data for Testing">
+    Generate data with known properties:
+    
+    ```typescript
+    import { makeClassification } from 'deepbox/datasets';
+    
+    // Easy problem (high separability)
+    const easy = makeClassification({
+      nSamples: 1000,
+      nFeatures: 20,
+      nInformative: 18,
+      nRedundant: 2,
+      nClasses: 2,
+      randomState: 42
+    });
+    
+    // Hard problem (low separability, noise)
+    const hard = makeClassification({
+      nSamples: 1000,
+      nFeatures: 20,
+      nInformative: 5,
+      nRedundant: 10,
+      nClasses: 5,
+      flipY: 0.1,  // 10% label noise
+      randomState: 42
+    });
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Dataset Catalog
+
+### Classification
+
+- **loadIris()** - 3 classes, 150 samples, 4 features
+- **loadBreastCancer()** - 2 classes, 569 samples, 30 features
+- **loadDigits()** - 10 classes, 1797 samples, 64 features (8x8 images)
+- **loadWeatherOutcomes()** - Weather classification
+- **loadSensorStates()** - Sensor reading classification
+
+### Regression
+
+- **loadDiabetes()** - 442 samples, 10 features
+- **loadHousingMini()** - Housing price prediction
+- **loadLinnerud()** - Exercise physiological data
+- **loadStudentPerformance()** - Educational data
+
+### Clustering & Synthetic
+
+- **makeBlobs()** - Isotropic Gaussian blobs
+- **makeMoons()** - Two interleaving half circles
+- **makeCircles()** - Concentric circles
+- **makeClassification()** - General classification
+- **makeRegression()** - General regression
+
+## Best Practices
+
+<Tip>
+  Use `randomState` parameter in data generators for reproducible results.
+</Tip>
+
+<Tip>
+  Start with small, well-understood datasets like Iris or Digits before moving to larger datasets.
+</Tip>
+
+<Tip>
+  Use synthetic data generators to create datasets with specific properties for testing algorithms.
+</Tip>
+
+<Warning>
+  Always split data into train/test sets before evaluation. Never test on training data.
+</Warning>
+
+## Related Modules
+
+<CardGroup cols={3}>
+  <Card title="Preprocessing" icon="filter" href="/modules/preprocess">
+    Split and scale dataset features
+  </Card>
+  <Card title="Machine Learning" icon="robot" href="/modules/ml">
+    Train models on datasets
+  </Card>
+  <Card title="Plotting" icon="chart-line" href="/modules/plot">
+    Visualize dataset distributions
+  </Card>
+</CardGroup>
+
+## Learn More
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="book" href="/api/datasets">
+    Complete API documentation
+  </Card>
+  <Card title="Examples" icon="code" href="/examples/datasets">
+    Dataset usage examples
+  </Card>
+</CardGroup>

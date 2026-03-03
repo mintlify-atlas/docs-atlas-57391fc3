@@ -1,0 +1,632 @@
+---
+title: 'Autograd'
+description: 'Automatic differentiation for gradient-based optimization'
+---
+
+The autograd module implements reverse-mode automatic differentiation (backpropagation) for tensor operations.
+
+## GradTensor Class
+
+<ParamField path="GradTensor" type="class">
+  Tensor wrapper that records a computation graph for reverse-mode autodiff.
+
+  Tracks operations and enables automatic gradient computation through backpropagation.
+
+  ```ts
+  import { parameter } from 'deepbox/ndarray';
+
+  const x = parameter([1, 2, 3], { requiresGrad: true });
+  const y = x.mul(x).sum();
+  y.backward();
+  console.log(x.grad);  // Gradient with respect to x
+  ```
+</ParamField>
+
+### Properties
+
+<ParamField path="tensor" type="Tensor">
+  The underlying tensor containing the data.
+</ParamField>
+
+<ParamField path="requiresGrad" type="boolean">
+  Whether this tensor requires gradient computation.
+</ParamField>
+
+<ParamField path="grad" type="Tensor | null">
+  Accumulated gradient for this tensor. Returns null if no gradient has been computed.
+</ParamField>
+
+<ParamField path="shape" type="Shape">
+  The dimensions of the underlying tensor.
+</ParamField>
+
+<ParamField path="dtype" type="DType">
+  Data type of the tensor elements.
+</ParamField>
+
+<ParamField path="size" type="number">
+  Total number of elements.
+</ParamField>
+
+<ParamField path="ndim" type="number">
+  Number of dimensions.
+</ParamField>
+
+### Gradient Operations
+
+<ParamField path="backward" type="function">
+  Backpropagate gradients from this node through the recorded graph.
+
+  **Parameters:**
+  - `grad` (Tensor) - Optional seed gradient (default: ones)
+
+  ```ts
+  const x = parameter([1, 2, 3], { requiresGrad: true });
+  const y = x.sum();
+  y.backward();
+  console.log(x.grad);  // [1, 1, 1]
+  ```
+</ParamField>
+
+<ParamField path="zeroGrad" type="function">
+  Reset accumulated gradients to zero.
+
+  ```ts
+  x.zeroGrad();
+  ```
+</ParamField>
+
+<ParamField path="detach" type="function">
+  Create a new GradTensor that doesn't track gradients.
+
+  **Returns:** GradTensor with `requiresGrad=false`
+
+  ```ts
+  const x = parameter([1, 2, 3], { requiresGrad: true });
+  const y = x.detach();  // No gradient tracking
+  ```
+</ParamField>
+
+<ParamField path="setGrad" type="function">
+  Manually set the gradient for this tensor.
+
+  **Parameters:**
+  - `grad` (Tensor) - Gradient tensor
+
+  ```ts
+  x.setGrad(tensor([1, 1, 1]));
+  ```
+</ParamField>
+
+<ParamField path="setRequiresGrad" type="function">
+  Enable or disable gradient tracking.
+
+  **Parameters:**
+  - `value` (boolean) - Whether to track gradients
+
+  ```ts
+  x.setRequiresGrad(false);
+  ```
+</ParamField>
+
+### Arithmetic Operations
+
+<ParamField path="add" type="function">
+  Element-wise addition with automatic differentiation.
+
+  **Parameters:**
+  - `other` (GradTensor) - Tensor to add
+
+  **Returns:** GradTensor result
+
+  ```ts
+  const x = parameter([1, 2, 3], { requiresGrad: true });
+  const y = parameter([4, 5, 6], { requiresGrad: true });
+  const z = x.add(y);
+  z.backward(tensor([1, 1, 1]));
+  console.log(x.grad);  // [1, 1, 1]
+  console.log(y.grad);  // [1, 1, 1]
+  ```
+</ParamField>
+
+<ParamField path="sub" type="function">
+  Element-wise subtraction with automatic differentiation.
+
+  **Parameters:**
+  - `other` (GradTensor) - Tensor to subtract
+
+  **Returns:** GradTensor result
+</ParamField>
+
+<ParamField path="mul" type="function">
+  Element-wise multiplication with automatic differentiation.
+
+  **Parameters:**
+  - `other` (GradTensor) - Tensor to multiply
+
+  **Returns:** GradTensor result
+
+  ```ts
+  const x = parameter([2, 3], { requiresGrad: true });
+  const y = parameter([4, 5], { requiresGrad: true });
+  const z = x.mul(y);  // [8, 15]
+  z.backward(tensor([1, 1]));
+  console.log(x.grad);  // [4, 5]
+  console.log(y.grad);  // [2, 3]
+  ```
+</ParamField>
+
+<ParamField path="div" type="function">
+  Element-wise division with automatic differentiation.
+
+  **Parameters:**
+  - `other` (GradTensor) - Divisor tensor
+
+  **Returns:** GradTensor result
+</ParamField>
+
+<ParamField path="neg" type="function">
+  Element-wise negation with automatic differentiation.
+
+  **Returns:** GradTensor result
+</ParamField>
+
+<ParamField path="abs" type="function">
+  Element-wise absolute value with automatic differentiation.
+
+  **Returns:** GradTensor result
+</ParamField>
+
+<ParamField path="pow" type="function">
+  Element-wise power with automatic differentiation.
+
+  **Parameters:**
+  - `exponent` (number) - Exponent value
+
+  **Returns:** GradTensor result
+
+  ```ts
+  const x = parameter([2, 3], { requiresGrad: true });
+  const y = x.pow(2);  // [4, 9]
+  y.backward(tensor([1, 1]));
+  console.log(x.grad);  // [4, 6] (2*x)
+  ```
+</ParamField>
+
+<ParamField path="sqrt" type="function">
+  Element-wise square root with automatic differentiation.
+
+  **Returns:** GradTensor result
+</ParamField>
+
+<ParamField path="square" type="function">
+  Element-wise square with automatic differentiation.
+
+  **Returns:** GradTensor result
+</ParamField>
+
+<ParamField path="clip" type="function">
+  Clip values with automatic differentiation.
+
+  **Parameters:**
+  - `minVal` (number) - Minimum value
+  - `maxVal` (number) - Maximum value
+
+  **Returns:** GradTensor result
+</ParamField>
+
+### Mathematical Functions
+
+<ParamField path="exp" type="function">
+  Element-wise exponential with automatic differentiation.
+
+  **Returns:** GradTensor result
+
+  ```ts
+  const x = parameter([0, 1], { requiresGrad: true });
+  const y = x.exp();  // [1, 2.718...]
+  y.backward(tensor([1, 1]));
+  console.log(x.grad);  // [1, 2.718...] (exp(x))
+  ```
+</ParamField>
+
+<ParamField path="log" type="function">
+  Element-wise natural logarithm with automatic differentiation.
+
+  **Returns:** GradTensor result
+
+  ```ts
+  const x = parameter([1, 2], { requiresGrad: true });
+  const y = x.log();
+  y.backward(tensor([1, 1]));
+  console.log(x.grad);  // [1, 0.5] (1/x)
+  ```
+</ParamField>
+
+<ParamField path="tanh" type="function">
+  Element-wise hyperbolic tangent with automatic differentiation.
+
+  **Returns:** GradTensor result
+</ParamField>
+
+### Activation Functions
+
+<ParamField path="relu" type="function">
+  ReLU activation with automatic differentiation.
+
+  **Returns:** GradTensor result
+
+  ```ts
+  const x = parameter([-1, 2], { requiresGrad: true });
+  const y = x.relu();  // [0, 2]
+  y.backward(tensor([1, 1]));
+  console.log(x.grad);  // [0, 1]
+  ```
+</ParamField>
+
+<ParamField path="leakyRelu" type="function">
+  Leaky ReLU activation with automatic differentiation.
+
+  **Parameters:**
+  - `negativeSlope` (number) - Slope for negative values (default: 0.01)
+
+  **Returns:** GradTensor result
+</ParamField>
+
+<ParamField path="sigmoid" type="function">
+  Sigmoid activation with automatic differentiation.
+
+  **Returns:** GradTensor result
+
+  ```ts
+  const x = parameter([0], { requiresGrad: true });
+  const y = x.sigmoid();  // [0.5]
+  y.backward(tensor([1]));
+  console.log(x.grad);  // [0.25] (sigmoid(x) * (1 - sigmoid(x)))
+  ```
+</ParamField>
+
+### Reduction Operations
+
+<ParamField path="sum" type="function">
+  Sum with automatic differentiation.
+
+  **Parameters:**
+  - `axis` (Axis) - Optional axis to reduce along
+  - `keepdims` (boolean) - Keep reduced dimensions (default: false)
+
+  **Returns:** GradTensor result
+
+  ```ts
+  const x = parameter([[1, 2], [3, 4]], { requiresGrad: true });
+  const y = x.sum();
+  y.backward();
+  console.log(x.grad);  // [[1, 1], [1, 1]]
+  ```
+</ParamField>
+
+<ParamField path="mean" type="function">
+  Mean with automatic differentiation.
+
+  **Parameters:**
+  - `axis` (Axis) - Optional axis to reduce along
+  - `keepdims` (boolean) - Keep reduced dimensions (default: false)
+
+  **Returns:** GradTensor result
+</ParamField>
+
+<ParamField path="max" type="function">
+  Maximum with automatic differentiation.
+
+  **Parameters:**
+  - `axis` (Axis) - Optional axis to reduce along
+  - `keepdims` (boolean) - Keep reduced dimensions (default: false)
+
+  **Returns:** GradTensor result
+
+  Note: When multiple elements share the maximum value, all tied positions receive the gradient.
+</ParamField>
+
+<ParamField path="min" type="function">
+  Minimum with automatic differentiation.
+
+  **Parameters:**
+  - `axis` (Axis) - Optional axis to reduce along
+  - `keepdims` (boolean) - Keep reduced dimensions (default: false)
+
+  **Returns:** GradTensor result
+
+  Note: When multiple elements share the minimum value, all tied positions receive the gradient.
+</ParamField>
+
+### Shape Operations
+
+<ParamField path="reshape" type="function">
+  Reshape with automatic differentiation.
+
+  **Parameters:**
+  - `newShape` (Shape) - Desired shape
+
+  **Returns:** GradTensor result
+
+  ```ts
+  const x = parameter([1, 2, 3, 4], { requiresGrad: true });
+  const y = x.reshape([2, 2]);
+  y.backward(tensor([[1, 1], [1, 1]]));
+  console.log(x.grad);  // [1, 1, 1, 1]
+  ```
+</ParamField>
+
+<ParamField path="flatten" type="function">
+  Flatten to 1D with automatic differentiation.
+
+  **Returns:** GradTensor result
+</ParamField>
+
+<ParamField path="transpose" type="function">
+  Transpose with automatic differentiation.
+
+  **Parameters:**
+  - `axes` (readonly number[]) - Optional axis permutation
+
+  **Returns:** GradTensor result
+</ParamField>
+
+<ParamField path="view" type="function">
+  Create a view with automatic differentiation.
+
+  **Parameters:**
+  - `shape` (Shape) - Desired shape
+  - `strides` (readonly number[]) - Optional strides
+  - `offset` (number) - Optional offset
+
+  **Returns:** GradTensor result
+</ParamField>
+
+### Indexing Operations
+
+<ParamField path="slice" type="function">
+  Slice with automatic differentiation.
+
+  **Parameters:**
+  - `...ranges` (SliceRange[]) - Slice specifications
+
+  **Returns:** GradTensor result
+
+  ```ts
+  const x = parameter([[1, 2, 3], [4, 5, 6]], { requiresGrad: true });
+  const y = x.slice(0);
+  y.backward(tensor([1, 1, 1]));
+  console.log(x.grad);  // [[1, 1, 1], [0, 0, 0]]
+  ```
+</ParamField>
+
+<ParamField path="gather" type="function">
+  Gather with automatic differentiation.
+
+  **Parameters:**
+  - `indices` (GradTensor) - Index tensor
+  - `axis` (Axis) - Axis to gather along
+
+  **Returns:** GradTensor result
+</ParamField>
+
+### Linear Algebra
+
+<ParamField path="matmul" type="function">
+  Matrix multiplication with automatic differentiation.
+
+  **Parameters:**
+  - `other` (GradTensor) - Right-hand tensor
+
+  **Returns:** GradTensor result
+
+  ```ts
+  const A = parameter([[1, 2], [3, 4]], { requiresGrad: true });
+  const B = parameter([[5, 6], [7, 8]], { requiresGrad: true });
+  const C = A.matmul(B);
+  C.backward(tensor([[1, 1], [1, 1]]));
+  console.log(A.grad);
+  console.log(B.grad);
+  ```
+</ParamField>
+
+## Creation Functions
+
+<ParamField path="parameter" type="function">
+  Create a GradTensor from data (learnable parameter).
+
+  **Parameters:**
+  - `data` (number | number[] | number[][] | number[][][]) - Initial values
+  - `options` (GradTensorOptions) - Optional `{ requiresGrad?, dtype? }`
+
+  **Returns:** GradTensor
+
+  ```ts
+  import { parameter } from 'deepbox/ndarray';
+
+  const weights = parameter([[0.1, 0.2], [0.3, 0.4]], {
+    requiresGrad: true,
+    dtype: 'float32'
+  });
+  ```
+</ParamField>
+
+<ParamField path="GradTensor.fromTensor" type="function">
+  Create a GradTensor from an existing Tensor.
+
+  **Parameters:**
+  - `t` (Tensor) - Input tensor
+  - `options` (GradTensorOptions) - Optional `{ requiresGrad?, dtype? }`
+
+  **Returns:** GradTensor
+
+  ```ts
+  import { GradTensor, tensor } from 'deepbox/ndarray';
+
+  const t = tensor([1, 2, 3]);
+  const gt = GradTensor.fromTensor(t, { requiresGrad: true });
+  ```
+</ParamField>
+
+<ParamField path="GradTensor.scalar" type="function">
+  Create a scalar GradTensor.
+
+  **Parameters:**
+  - `value` (number) - Scalar value
+  - `options` (GradTensorOptions) - Optional `{ requiresGrad?, dtype? }`
+
+  **Returns:** GradTensor
+
+  ```ts
+  import { GradTensor } from 'deepbox/ndarray';
+
+  const learningRate = GradTensor.scalar(0.01, { requiresGrad: false });
+  ```
+</ParamField>
+
+## Context Management
+
+<ParamField path="noGrad" type="function">
+  Temporarily disable gradient tracking.
+
+  **Parameters:**
+  - `callback` (() => T) - Synchronous function to execute without gradient tracking
+
+  **Returns:** Callback return value
+
+  ```ts
+  import { noGrad, parameter } from 'deepbox/ndarray';
+
+  const x = parameter([1, 2, 3], { requiresGrad: true });
+
+  // Inference mode - no gradient tracking
+  const result = noGrad(() => {
+    return x.mul(x).sum();
+  });
+
+  // Gradient tracking is restored here
+  ```
+
+  **Note:** Only accepts synchronous callbacks. Async functions will throw an error.
+</ParamField>
+
+## Gradient-Aware Operations
+
+These are specialized versions of operations with gradient support:
+
+<ParamField path="softmaxGrad" type="function">
+  Softmax with gradient support.
+
+  **Parameters:**
+  - `t` (Tensor | GradTensor) - Input tensor
+  - `axis` (Axis) - Axis to compute along (default: -1)
+
+  **Returns:** Tensor or GradTensor
+</ParamField>
+
+<ParamField path="logSoftmaxGrad" type="function">
+  Log-softmax with gradient support.
+
+  **Parameters:**
+  - `t` (Tensor | GradTensor) - Input tensor
+  - `axis` (Axis) - Axis to compute along (default: -1)
+
+  **Returns:** Tensor or GradTensor
+</ParamField>
+
+<ParamField path="varianceGrad" type="function">
+  Variance with gradient support.
+
+  **Parameters:**
+  - `t` (Tensor | GradTensor) - Input tensor
+  - `axis` (Axis) - Optional axis to reduce along
+  - `keepdims` (boolean) - Keep reduced dimensions (default: false)
+
+  **Returns:** Tensor or GradTensor
+</ParamField>
+
+<ParamField path="dropoutGrad" type="function">
+  Dropout with gradient support.
+
+  **Parameters:**
+  - `t` (Tensor | GradTensor) - Input tensor
+  - `rate` (number) - Dropout probability
+  - `training` (boolean) - Whether in training mode
+
+  **Returns:** Tensor or GradTensor
+</ParamField>
+
+<ParamField path="im2colGrad" type="function">
+  Image-to-column transformation with gradient support.
+
+  **Parameters:**
+  - `input` (Tensor | GradTensor) - Input tensor
+  - `kernelSize` ([number, number]) - Kernel dimensions
+  - `stride` (number | [number, number]) - Stride
+  - `padding` (number | [number, number]) - Padding
+
+  **Returns:** Tensor or GradTensor
+</ParamField>
+
+## Types
+
+<ParamField path="GradTensorOptions" type="type">
+  Options for creating GradTensors.
+
+  ```ts
+  type GradTensorOptions = {
+    requiresGrad?: boolean;
+    dtype?: Exclude<DType, 'string'>;
+  };
+  ```
+</ParamField>
+
+## Static Methods
+
+<ParamField path="GradTensor.isGradTensor" type="function">
+  Check if a value is a GradTensor.
+
+  **Parameters:**
+  - `value` (unknown) - Value to check
+
+  **Returns:** Type guard boolean
+
+  ```ts
+  import { GradTensor, parameter } from 'deepbox/ndarray';
+
+  const x = parameter([1, 2, 3]);
+  console.log(GradTensor.isGradTensor(x));  // true
+  ```
+</ParamField>
+
+## Example: Training Loop
+
+```ts
+import { parameter, noGrad } from 'deepbox/ndarray';
+
+// Create learnable parameters
+const W = parameter([[0.1, 0.2], [0.3, 0.4]], { requiresGrad: true });
+const b = parameter([0, 0], { requiresGrad: true });
+
+for (let epoch = 0; epoch < 100; epoch++) {
+  // Forward pass
+  const y = W.matmul(x).add(b);
+  const loss = y.sub(target).square().sum();
+
+  // Backward pass
+  W.zeroGrad();
+  b.zeroGrad();
+  loss.backward();
+
+  // Update parameters (without tracking gradients)
+  noGrad(() => {
+    W.tensor.data.forEach((val, i) => {
+      W.tensor.data[i] = val - 0.01 * W.grad!.data[i];
+    });
+    b.tensor.data.forEach((val, i) => {
+      b.tensor.data[i] = val - 0.01 * b.grad!.data[i];
+    });
+  });
+}
+```

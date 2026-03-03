@@ -1,122 +1,210 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "Deepbox",
+  "theme": "palm",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#3B82F6",
+    "light": "#60A5FA",
+    "dark": "#2563EB"
   },
-  "favicon": "/favicon.svg",
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/jehaad1/Deepbox"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/jehaad1/Deepbox"
+    }
+  },
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Documentation",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Get Started",
             "pages": [
-              "index",
-              "quickstart",
-              "development"
+              "introduction",
+              "installation",
+              "quickstart"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Core Concepts",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "concepts/tensors",
+              "concepts/autograd",
+              "concepts/broadcasting"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "Modules",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
-            ]
-          },
-          {
-            "group": "AI tools",
-            "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "modules/ndarray",
+              "modules/dataframe",
+              "modules/linalg",
+              "modules/stats",
+              "modules/ml",
+              "modules/nn",
+              "modules/optim",
+              "modules/preprocess",
+              "modules/metrics",
+              "modules/random",
+              "modules/plot",
+              "modules/datasets"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "API Reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "NDArray",
             "pages": [
-              "api-reference/introduction"
+              "api/ndarray/tensor",
+              "api/ndarray/operations",
+              "api/ndarray/autograd",
+              "api/ndarray/sparse"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "DataFrame",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "api/dataframe/dataframe",
+              "api/dataframe/series"
+            ]
+          },
+          {
+            "group": "Linear Algebra",
+            "pages": [
+              "api/linalg/decompositions",
+              "api/linalg/solvers",
+              "api/linalg/operations"
+            ]
+          },
+          {
+            "group": "Statistics",
+            "pages": [
+              "api/stats/descriptive",
+              "api/stats/correlation",
+              "api/stats/tests"
+            ]
+          },
+          {
+            "group": "Machine Learning",
+            "pages": [
+              "api/ml/linear-models",
+              "api/ml/tree-models",
+              "api/ml/ensemble",
+              "api/ml/neighbors",
+              "api/ml/svm",
+              "api/ml/naive-bayes",
+              "api/ml/clustering",
+              "api/ml/decomposition"
+            ]
+          },
+          {
+            "group": "Neural Networks",
+            "pages": [
+              "api/nn/module",
+              "api/nn/layers",
+              "api/nn/activations",
+              "api/nn/convolution",
+              "api/nn/recurrent",
+              "api/nn/attention",
+              "api/nn/normalization",
+              "api/nn/losses"
+            ]
+          },
+          {
+            "group": "Optimization",
+            "pages": [
+              "api/optim/optimizers",
+              "api/optim/schedulers"
+            ]
+          },
+          {
+            "group": "Preprocessing",
+            "pages": [
+              "api/preprocess/scalers",
+              "api/preprocess/encoders",
+              "api/preprocess/splitting"
+            ]
+          },
+          {
+            "group": "Metrics",
+            "pages": [
+              "api/metrics/classification",
+              "api/metrics/regression",
+              "api/metrics/clustering"
+            ]
+          },
+          {
+            "group": "Random",
+            "pages": [
+              "api/random/distributions",
+              "api/random/sampling"
+            ]
+          },
+          {
+            "group": "Plotting",
+            "pages": [
+              "api/plot/basic-plots",
+              "api/plot/statistical-plots",
+              "api/plot/ml-plots"
+            ]
+          },
+          {
+            "group": "Datasets",
+            "pages": [
+              "api/datasets/builtin",
+              "api/datasets/generators"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Examples",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "examples/tensor-basics",
+              "examples/dataframe-basics"
+            ]
+          },
+          {
+            "group": "Machine Learning",
+            "pages": [
+              "examples/linear-regression",
+              "examples/logistic-regression",
+              "examples/decision-trees",
+              "examples/random-forests",
+              "examples/clustering"
+            ]
+          },
+          {
+            "group": "Deep Learning",
+            "pages": [
+              "examples/neural-network",
+              "examples/cnn",
+              "examples/rnn-lstm",
+              "examples/attention-transformer"
+            ]
+          },
+          {
+            "group": "Data Analysis",
+            "pages": [
+              "examples/data-preprocessing",
+              "examples/statistical-analysis",
+              "examples/visualization"
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
-  },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+    ]
   }
 }

@@ -1,0 +1,528 @@
+---
+title: Optimizers
+description: Optimization algorithms for training neural networks
+---
+
+Optimizers update model parameters based on computed gradients during training. Deepbox provides implementations of popular optimization algorithms including SGD, Adam, AdamW, and more.
+
+## Base Optimizer
+
+All optimizers extend the abstract `Optimizer` base class, which provides common functionality for parameter management, gradient zeroing, and state persistence.
+
+### Common Methods
+
+All optimizers implement these methods:
+
+- `step(closure?)` - Perform a single optimization step (parameter update)
+- `zeroGrad()` - Zero out all parameter gradients
+- `addParamGroup(group)` - Add a new parameter group with custom hyperparameters
+- `stateDict()` - Get optimizer state for checkpointing
+- `loadStateDict(state)` - Load optimizer state from checkpoint
+
+## SGD
+
+Stochastic Gradient Descent optimizer with optional momentum, weight decay, and Nesterov acceleration.
+
+```typescript
+import { SGD } from 'deepbox/optim';
+
+const optimizer = new SGD(model.parameters(), {
+  lr: 0.01,
+  momentum: 0.9,
+  weightDecay: 5e-4,
+  nesterov: true
+});
+```
+
+### Constructor
+
+<ParamField path="params" type="Iterable<GradTensor> | ReadonlyArray<ParamGroup<SGDOptions>>" required>
+  Model parameters to optimize, or array of parameter groups with per-group options
+</ParamField>
+
+<ParamField path="options" type="object">
+  Optimization hyperparameters
+  
+  <Expandable title="properties">
+    <ParamField path="lr" type="number" default="0.01">
+      Learning rate (step size)
+    </ParamField>
+    
+    <ParamField path="momentum" type="number" default="0">
+      Momentum factor for accelerated gradient descent
+    </ParamField>
+    
+    <ParamField path="dampening" type="number" default="0">
+      Dampening for momentum
+    </ParamField>
+    
+    <ParamField path="weightDecay" type="number" default="0">
+      Weight decay (L2 penalty) coefficient
+    </ParamField>
+    
+    <ParamField path="nesterov" type="boolean" default="false">
+      Enable Nesterov momentum
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Training Loop Example
+
+```typescript
+const optimizer = new SGD(model.parameters(), {
+  lr: 0.01,
+  momentum: 0.9,
+  weightDecay: 5e-4
+});
+
+for (let epoch = 0; epoch < numEpochs; epoch++) {
+  for (const [inputs, targets] of dataLoader) {
+    optimizer.zeroGrad();
+    const outputs = model.forward(inputs);
+    const loss = criterion(outputs, targets);
+    loss.backward();
+    optimizer.step();
+  }
+}
+```
+
+### Methods
+
+<ParamField path="getLearningRate" type="(groupIdx?: number) => number">
+  Get the current learning rate for a parameter group (default: group 0)
+</ParamField>
+
+<ParamField path="setLearningRate" type="(lr: number) => void">
+  Set the learning rate for all parameter groups
+</ParamField>
+
+## Adam
+
+Adaptive Moment Estimation optimizer that computes adaptive learning rates for each parameter using running averages of gradients and their squared values.
+
+```typescript
+import { Adam } from 'deepbox/optim';
+
+const optimizer = new Adam(model.parameters(), {
+  lr: 0.001,
+  beta1: 0.9,
+  beta2: 0.999
+});
+```
+
+### Constructor
+
+<ParamField path="params" type="Iterable<GradTensor> | ReadonlyArray<ParamGroup<AdamOptions>>" required>
+  Model parameters to optimize, or array of parameter groups
+</ParamField>
+
+<ParamField path="options" type="object">
+  Optimization hyperparameters
+  
+  <Expandable title="properties">
+    <ParamField path="lr" type="number" default="0.001">
+      Learning rate
+    </ParamField>
+    
+    <ParamField path="beta1" type="number" default="0.9">
+      Exponential decay rate for first moment estimates (mean of gradients)
+    </ParamField>
+    
+    <ParamField path="beta2" type="number" default="0.999">
+      Exponential decay rate for second moment estimates (variance of gradients)
+    </ParamField>
+    
+    <ParamField path="eps" type="number" default="1e-8">
+      Small constant for numerical stability
+    </ParamField>
+    
+    <ParamField path="weightDecay" type="number" default="0">
+      Weight decay (L2 penalty) coefficient
+    </ParamField>
+    
+    <ParamField path="amsgrad" type="boolean" default="false">
+      Enable AMSGrad variant that uses max of past second moments
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Example with Parameter Groups
+
+```typescript
+const optimizer = new Adam([
+  { params: model.backbone.parameters(), lr: 0.001 },
+  { params: model.classifier.parameters(), lr: 0.01 }
+], { beta1: 0.9, beta2: 0.999 });
+```
+
+### Methods
+
+<ParamField path="getLearningRate" type="(groupIdx?: number) => number">
+  Get the current learning rate for a parameter group
+</ParamField>
+
+<ParamField path="setLearningRate" type="(lr: number) => void">
+  Set the learning rate for all parameter groups
+</ParamField>
+
+## AdamW
+
+Adam with decoupled Weight decay. Fixes the weight decay implementation in Adam by applying it directly to parameters rather than including it in the gradient-based update. This leads to better generalization and is the recommended variant for most applications.
+
+```typescript
+import { AdamW } from 'deepbox/optim';
+
+const optimizer = new AdamW(model.parameters(), {
+  lr: 0.001,
+  weightDecay: 0.01  // Typical value for AdamW
+});
+```
+
+### Constructor
+
+<ParamField path="params" type="Iterable<GradTensor> | ReadonlyArray<ParamGroup<AdamWOptions>>" required>
+  Model parameters to optimize
+</ParamField>
+
+<ParamField path="options" type="object">
+  Optimization hyperparameters
+  
+  <Expandable title="properties">
+    <ParamField path="lr" type="number" default="0.001">
+      Learning rate
+    </ParamField>
+    
+    <ParamField path="beta1" type="number" default="0.9">
+      First moment decay rate
+    </ParamField>
+    
+    <ParamField path="beta2" type="number" default="0.999">
+      Second moment decay rate
+    </ParamField>
+    
+    <ParamField path="eps" type="number" default="1e-8">
+      Numerical stability constant
+    </ParamField>
+    
+    <ParamField path="weightDecay" type="number" default="0.01">
+      Weight decay coefficient (decoupled from gradient update)
+    </ParamField>
+    
+    <ParamField path="amsgrad" type="boolean" default="false">
+      Enable AMSGrad variant
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Training Example
+
+```typescript
+const optimizer = new AdamW(model.parameters(), {
+  lr: 0.001,
+  weightDecay: 0.01,
+  beta1: 0.9,
+  beta2: 0.999
+});
+
+for (let epoch = 0; epoch < numEpochs; epoch++) {
+  optimizer.zeroGrad();
+  const loss = computeLoss();
+  loss.backward();
+  optimizer.step();
+}
+```
+
+### Methods
+
+<ParamField path="getLearningRate" type="(groupIdx?: number) => number">
+  Get the current learning rate for a parameter group
+</ParamField>
+
+<ParamField path="setLearningRate" type="(lr: number) => void">
+  Set the learning rate for all parameter groups
+</ParamField>
+
+## Nadam
+
+Nesterov-accelerated Adam optimizer. Combines Adam's adaptive learning rates with Nesterov momentum for potentially faster convergence by applying "look-ahead" gradients.
+
+```typescript
+import { Nadam } from 'deepbox/optim';
+
+const optimizer = new Nadam(model.parameters(), {
+  lr: 0.002,
+  beta1: 0.9,
+  beta2: 0.999
+});
+```
+
+### Constructor
+
+<ParamField path="params" type="Iterable<GradTensor> | ReadonlyArray<ParamGroup<NadamOptions>>" required>
+  Model parameters to optimize
+</ParamField>
+
+<ParamField path="options" type="object">
+  Optimization hyperparameters
+  
+  <Expandable title="properties">
+    <ParamField path="lr" type="number" default="0.002">
+      Learning rate
+    </ParamField>
+    
+    <ParamField path="beta1" type="number" default="0.9">
+      First moment decay rate
+    </ParamField>
+    
+    <ParamField path="beta2" type="number" default="0.999">
+      Second moment decay rate
+    </ParamField>
+    
+    <ParamField path="eps" type="number" default="1e-8">
+      Numerical stability constant
+    </ParamField>
+    
+    <ParamField path="weightDecay" type="number" default="0">
+      Weight decay coefficient
+    </ParamField>
+    
+    <ParamField path="momentumDecay" type="number" default="0.004">
+      Momentum decay schedule parameter
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Methods
+
+<ParamField path="getLearningRate" type="(groupIdx?: number) => number">
+  Get the current learning rate for a parameter group
+</ParamField>
+
+<ParamField path="setLearningRate" type="(lr: number) => void">
+  Set the learning rate for all parameter groups
+</ParamField>
+
+## RMSprop
+
+Root Mean Square Propagation optimizer. Adapts the learning rate for each parameter by dividing by a running average of recent gradient magnitudes. Particularly effective for RNNs and non-stationary objectives.
+
+```typescript
+import { RMSprop } from 'deepbox/optim';
+
+const optimizer = new RMSprop(model.parameters(), {
+  lr: 0.01,
+  alpha: 0.99,
+  momentum: 0.9,
+  centered: true
+});
+```
+
+### Constructor
+
+<ParamField path="params" type="Iterable<GradTensor> | ReadonlyArray<ParamGroup<RMSpropOptions>>" required>
+  Model parameters to optimize
+</ParamField>
+
+<ParamField path="options" type="object">
+  Optimization hyperparameters
+  
+  <Expandable title="properties">
+    <ParamField path="lr" type="number" default="0.01">
+      Learning rate
+    </ParamField>
+    
+    <ParamField path="alpha" type="number" default="0.99">
+      Smoothing constant for moving average of squared gradients (range: [0, 1])
+    </ParamField>
+    
+    <ParamField path="eps" type="number" default="1e-8">
+      Numerical stability constant
+    </ParamField>
+    
+    <ParamField path="weightDecay" type="number" default="0">
+      Weight decay coefficient
+    </ParamField>
+    
+    <ParamField path="momentum" type="number" default="0">
+      Momentum factor
+    </ParamField>
+    
+    <ParamField path="centered" type="boolean" default="false">
+      Use centered RMSprop variant (computes centered second moment)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Training Example
+
+```typescript
+const optimizer = new RMSprop(model.parameters(), {
+  lr: 0.01,
+  alpha: 0.99,
+  momentum: 0.9,
+  centered: true
+});
+
+for (let epoch = 0; epoch < numEpochs; epoch++) {
+  optimizer.zeroGrad();
+  const loss = computeLoss();
+  loss.backward();
+  optimizer.step();
+}
+```
+
+### Methods
+
+<ParamField path="getLearningRate" type="(groupIdx?: number) => number">
+  Get the current learning rate for a parameter group
+</ParamField>
+
+<ParamField path="setLearningRate" type="(lr: number) => void">
+  Set the learning rate for all parameter groups
+</ParamField>
+
+## Adagrad
+
+Adaptive Gradient Algorithm. Adapts the learning rate for each parameter based on the historical sum of squared gradients. Parameters with larger gradients receive smaller effective learning rates.
+
+```typescript
+import { Adagrad } from 'deepbox/optim';
+
+const optimizer = new Adagrad(model.parameters(), {
+  lr: 0.01,
+  eps: 1e-10
+});
+```
+
+### Constructor
+
+<ParamField path="params" type="Iterable<GradTensor> | ReadonlyArray<ParamGroup<AdagradOptions>>" required>
+  Model parameters to optimize
+</ParamField>
+
+<ParamField path="options" type="object">
+  Optimization hyperparameters
+  
+  <Expandable title="properties">
+    <ParamField path="lr" type="number" default="0.01">
+      Learning rate
+    </ParamField>
+    
+    <ParamField path="eps" type="number" default="1e-10">
+      Numerical stability constant
+    </ParamField>
+    
+    <ParamField path="weightDecay" type="number" default="0">
+      Weight decay coefficient
+    </ParamField>
+    
+    <ParamField path="lrDecay" type="number" default="0">
+      Learning rate decay factor
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Training Example
+
+```typescript
+const optimizer = new Adagrad(model.parameters(), {
+  lr: 0.01,
+  eps: 1e-10
+});
+
+for (let epoch = 0; epoch < numEpochs; epoch++) {
+  optimizer.zeroGrad();
+  const loss = computeLoss();
+  loss.backward();
+  optimizer.step();
+}
+```
+
+### Methods
+
+<ParamField path="getLearningRate" type="(groupIdx?: number) => number">
+  Get the current learning rate for a parameter group
+</ParamField>
+
+<ParamField path="setLearningRate" type="(lr: number) => void">
+  Set the learning rate for all parameter groups
+</ParamField>
+
+## AdaDelta
+
+Adaptive learning rate method that seeks to reduce Adagrad's aggressive, monotonically decreasing learning rate. Uses a moving window of gradient updates rather than accumulating all past gradients.
+
+```typescript
+import { AdaDelta } from 'deepbox/optim';
+
+const optimizer = new AdaDelta(model.parameters(), {
+  lr: 1.0,
+  rho: 0.9,
+  eps: 1e-6
+});
+```
+
+### Constructor
+
+<ParamField path="params" type="Iterable<GradTensor> | ReadonlyArray<ParamGroup<AdaDeltaOptions>>" required>
+  Model parameters to optimize
+</ParamField>
+
+<ParamField path="options" type="object">
+  Optimization hyperparameters
+  
+  <Expandable title="properties">
+    <ParamField path="lr" type="number" default="1.0">
+      Learning rate (scaling factor)
+    </ParamField>
+    
+    <ParamField path="rho" type="number" default="0.9">
+      Decay rate for moving averages (range: [0, 1])
+    </ParamField>
+    
+    <ParamField path="eps" type="number" default="1e-6">
+      Numerical stability constant
+    </ParamField>
+    
+    <ParamField path="weightDecay" type="number" default="0">
+      Weight decay coefficient
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Training Example
+
+```typescript
+const optimizer = new AdaDelta(model.parameters(), {
+  lr: 1.0,
+  rho: 0.9,
+  eps: 1e-6
+});
+
+for (let epoch = 0; epoch < numEpochs; epoch++) {
+  optimizer.zeroGrad();
+  const loss = computeLoss();
+  loss.backward();
+  optimizer.step();
+}
+```
+
+### Methods
+
+<ParamField path="getLearningRate" type="(groupIdx?: number) => number">
+  Get the current learning rate for a parameter group
+</ParamField>
+
+<ParamField path="setLearningRate" type="(lr: number) => void">
+  Set the learning rate for all parameter groups
+</ParamField>
+
+## Choosing an Optimizer
+
+- **SGD with momentum** - Classic choice, works well with proper tuning, good for fine-tuning
+- **Adam** - Good default choice, works well out-of-the-box for many problems
+- **AdamW** - Preferred over Adam for better generalization, especially for transformers
+- **Nadam** - Try when Adam plateaus, combines adaptive learning with Nesterov momentum
+- **RMSprop** - Good for RNNs and online learning scenarios
+- **Adagrad** - Useful for sparse data and features
+- **AdaDelta** - Parameter-free alternative to Adagrad (lr=1.0 typically works)

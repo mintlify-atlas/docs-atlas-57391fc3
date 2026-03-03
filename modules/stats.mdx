@@ -1,0 +1,439 @@
+---
+title: Statistics Module
+description: Statistical functions, hypothesis tests, and correlation analysis
+icon: chart-simple
+---
+
+The Statistics module provides comprehensive statistical analysis tools including descriptive statistics, correlation measures, and hypothesis testing. It's essential for data analysis, experimentation, and statistical inference.
+
+## Overview
+
+The stats module offers three main categories of functionality:
+
+- **Descriptive Statistics**: Mean, median, variance, quantiles, moments
+- **Correlation Analysis**: Pearson, Spearman, Kendall correlation coefficients
+- **Hypothesis Testing**: t-tests, ANOVA, chi-square, normality tests, and more
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Descriptive Stats" icon="calculator">
+    Compute mean, median, variance, skewness, kurtosis, and more.
+  </Card>
+  <Card title="Correlation" icon="link">
+    Pearson, Spearman, and Kendall correlation analysis.
+  </Card>
+  <Card title="Hypothesis Tests" icon="flask">
+    t-tests, ANOVA, chi-square, normality tests.
+  </Card>
+  <Card title="Tensor Integration" icon="cube">
+    Works seamlessly with Deepbox tensors.
+  </Card>
+</CardGroup>
+
+## Descriptive Statistics
+
+### Central Tendency
+
+```typescript
+import { mean, median, mode, geometricMean, harmonicMean } from 'deepbox/stats';
+import { tensor } from 'deepbox/ndarray';
+
+const data = tensor([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+
+const avg = mean(data);           // 5
+const mid = median(data);         // 5
+const most = mode(data);          // Most frequent value
+const geomMean = geometricMean(data);
+const harmMean = harmonicMean(data);
+```
+
+### Dispersion
+
+```typescript
+import { variance, std } from 'deepbox/stats';
+
+const data = tensor([2, 4, 4, 4, 5, 5, 7, 9]);
+
+const var_ = variance(data);      // Variance
+const stdDev = std(data);         // Standard deviation
+```
+
+### Distribution Shape
+
+```typescript
+import { skewness, kurtosis, moment } from 'deepbox/stats';
+
+const data = tensor([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+
+// Measure asymmetry
+const skew = skewness(data);
+
+// Measure tailedness
+const kurt = kurtosis(data);
+
+// General moments
+const thirdMoment = moment(data, 3);
+```
+
+### Quantiles and Percentiles
+
+```typescript
+import { quantile, percentile } from 'deepbox/stats';
+
+const data = tensor([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+
+// Quartiles
+const q1 = quantile(data, 0.25);  // 25th percentile
+const q2 = quantile(data, 0.50);  // Median
+const q3 = quantile(data, 0.75);  // 75th percentile
+
+// Percentiles
+const p90 = percentile(data, 90); // 90th percentile
+```
+
+### Robust Statistics
+
+```typescript
+import { trimMean } from 'deepbox/stats';
+
+const data = tensor([1, 2, 3, 4, 5, 100]);  // 100 is outlier
+
+// Trim 10% from each end before computing mean
+const robustMean = trimMean(data, 0.1);
+```
+
+## Correlation Analysis
+
+### Pearson Correlation
+
+```typescript
+import { pearsonr, corrcoef } from 'deepbox/stats';
+import { tensor } from 'deepbox/ndarray';
+
+const x = tensor([1, 2, 3, 4, 5]);
+const y = tensor([2, 4, 5, 4, 5]);
+
+// Correlation coefficient and p-value
+const { correlation, pvalue } = pearsonr(x, y);
+
+// Correlation matrix
+const data = tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]]);
+const corrMatrix = corrcoef(data);
+```
+
+### Spearman Rank Correlation
+
+```typescript
+import { spearmanr } from 'deepbox/stats';
+
+const x = tensor([1, 2, 3, 4, 5]);
+const y = tensor([5, 6, 7, 8, 7]);
+
+// Rank-based correlation (robust to outliers)
+const { correlation, pvalue } = spearmanr(x, y);
+```
+
+### Kendall Tau Correlation
+
+```typescript
+import { kendalltau } from 'deepbox/stats';
+
+const x = tensor([12, 2, 1, 12, 2]);
+const y = tensor([1, 4, 7, 1, 0]);
+
+// Kendall's tau correlation
+const { correlation, pvalue } = kendalltau(x, y);
+```
+
+### Covariance
+
+```typescript
+import { cov } from 'deepbox/stats';
+
+const x = tensor([1, 2, 3, 4, 5]);
+const y = tensor([2, 4, 5, 4, 5]);
+
+// Covariance matrix
+const covMatrix = cov([x, y]);
+```
+
+## Hypothesis Testing
+
+### t-Tests
+
+```typescript
+import { ttest_1samp, ttest_ind, ttest_rel } from 'deepbox/stats';
+import { tensor } from 'deepbox/ndarray';
+
+// One-sample t-test (compare to population mean)
+const sample = tensor([1.2, 1.5, 1.8, 2.0, 1.9]);
+const result1 = ttest_1samp(sample, 1.5);
+console.log(result1.statistic, result1.pvalue);
+
+// Independent two-sample t-test
+const group1 = tensor([1, 2, 3, 4, 5]);
+const group2 = tensor([2, 3, 4, 5, 6]);
+const result2 = ttest_ind(group1, group2);
+
+// Paired t-test
+const before = tensor([10, 12, 14, 16, 18]);
+const after = tensor([12, 13, 15, 17, 20]);
+const result3 = ttest_rel(before, after);
+```
+
+### ANOVA
+
+```typescript
+import { f_oneway, kruskal } from 'deepbox/stats';
+
+// One-way ANOVA (parametric)
+const group1 = tensor([1, 2, 3, 4, 5]);
+const group2 = tensor([2, 3, 4, 5, 6]);
+const group3 = tensor([3, 4, 5, 6, 7]);
+
+const anova = f_oneway(group1, group2, group3);
+console.log(anova.statistic, anova.pvalue);
+
+// Kruskal-Wallis H-test (non-parametric alternative)
+const kruskalResult = kruskal(group1, group2, group3);
+```
+
+### Normality Tests
+
+```typescript
+import { shapiro, normaltest, kstest, anderson } from 'deepbox/stats';
+
+const data = tensor([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+
+// Shapiro-Wilk test
+const shapiroResult = shapiro(data);
+
+// D'Agostino-Pearson test
+const normaltestResult = normaltest(data);
+
+// Kolmogorov-Smirnov test
+const ksResult = kstest(data, 'norm');
+
+// Anderson-Darling test
+const andersonResult = anderson(data);
+```
+
+### Non-parametric Tests
+
+```typescript
+import { mannwhitneyu, wilcoxon, friedmanchisquare } from 'deepbox/stats';
+
+// Mann-Whitney U test (independent samples)
+const sample1 = tensor([1, 2, 3, 4, 5]);
+const sample2 = tensor([2, 3, 4, 5, 6]);
+const mwResult = mannwhitneyu(sample1, sample2);
+
+// Wilcoxon signed-rank test (paired samples)
+const before = tensor([10, 12, 14, 16, 18]);
+const after = tensor([12, 13, 15, 17, 20]);
+const wilcoxonResult = wilcoxon(before, after);
+
+// Friedman test (repeated measures)
+const measure1 = tensor([1, 2, 3, 4, 5]);
+const measure2 = tensor([2, 3, 4, 5, 6]);
+const measure3 = tensor([3, 4, 5, 6, 7]);
+const friedmanResult = friedmanchisquare(measure1, measure2, measure3);
+```
+
+### Chi-Square Tests
+
+```typescript
+import { chisquare } from 'deepbox/stats';
+
+// Chi-square goodness of fit test
+const observed = tensor([16, 18, 16, 14, 12, 12]);
+const expected = tensor([16, 16, 16, 16, 16, 8]);
+
+const chiResult = chisquare(observed, expected);
+console.log(chiResult.statistic, chiResult.pvalue);
+```
+
+### Variance Tests
+
+```typescript
+import { bartlett, levene } from 'deepbox/stats';
+
+// Bartlett's test for equal variances
+const group1 = tensor([1, 2, 3, 4, 5]);
+const group2 = tensor([2, 3, 4, 5, 6]);
+const group3 = tensor([3, 4, 5, 6, 7]);
+
+const bartlettResult = bartlett(group1, group2, group3);
+
+// Levene's test (more robust to non-normality)
+const leveneResult = levene(group1, group2, group3);
+```
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="A/B Testing">
+    Compare two groups to determine if there's a significant difference:
+    
+    ```typescript
+    import { ttest_ind } from 'deepbox/stats';
+    import { tensor } from 'deepbox/ndarray';
+    
+    // Control vs Treatment
+    const control = tensor([0.1, 0.2, 0.15, 0.18, 0.12]);
+    const treatment = tensor([0.25, 0.30, 0.28, 0.32, 0.27]);
+    
+    const result = ttest_ind(control, treatment);
+    
+    if (result.pvalue < 0.05) {
+      console.log('Significant difference detected!');
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Data Quality Assessment">
+    Check if data follows expected distributions:
+    
+    ```typescript
+    import { shapiro, anderson } from 'deepbox/stats';
+    import { tensor } from 'deepbox/ndarray';
+    
+    const data = tensor([...]);  // Your data
+    
+    // Test for normality
+    const shapiroTest = shapiro(data);
+    
+    if (shapiroTest.pvalue > 0.05) {
+      console.log('Data appears normally distributed');
+    } else {
+      console.log('Data may not be normal, use non-parametric tests');
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="Feature Correlation Analysis">
+    Identify correlations between features:
+    
+    ```typescript
+    import { corrcoef, pearsonr } from 'deepbox/stats';
+    import { tensor } from 'deepbox/ndarray';
+    
+    const feature1 = tensor([...]);
+    const feature2 = tensor([...]);
+    
+    const { correlation, pvalue } = pearsonr(feature1, feature2);
+    
+    if (Math.abs(correlation) > 0.7) {
+      console.log('Strong correlation detected');
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## API Reference
+
+### Descriptive Statistics
+
+- `mean(x)` - Arithmetic mean
+- `median(x)` - Median value
+- `mode(x)` - Most frequent value
+- `variance(x)` - Variance
+- `std(x)` - Standard deviation
+- `skewness(x)` - Measure of asymmetry
+- `kurtosis(x)` - Measure of tailedness
+- `moment(x, n)` - nth moment
+- `quantile(x, q)` - Quantile
+- `percentile(x, p)` - Percentile
+- `geometricMean(x)` - Geometric mean
+- `harmonicMean(x)` - Harmonic mean
+- `trimMean(x, proportion)` - Trimmed mean
+
+### Correlation
+
+- `pearsonr(x, y)` - Pearson correlation coefficient
+- `spearmanr(x, y)` - Spearman rank correlation
+- `kendalltau(x, y)` - Kendall's tau
+- `corrcoef(x)` - Correlation matrix
+- `cov(x)` - Covariance matrix
+
+### Hypothesis Tests
+
+**t-tests**
+- `ttest_1samp(a, popmean)` - One-sample t-test
+- `ttest_ind(a, b)` - Independent two-sample t-test
+- `ttest_rel(a, b)` - Paired t-test
+
+**ANOVA**
+- `f_oneway(...samples)` - One-way ANOVA
+- `kruskal(...samples)` - Kruskal-Wallis H-test
+- `friedmanchisquare(...samples)` - Friedman test
+
+**Normality Tests**
+- `shapiro(x)` - Shapiro-Wilk test
+- `normaltest(x)` - D'Agostino-Pearson test
+- `kstest(x, cdf)` - Kolmogorov-Smirnov test
+- `anderson(x)` - Anderson-Darling test
+
+**Non-parametric Tests**
+- `mannwhitneyu(x, y)` - Mann-Whitney U test
+- `wilcoxon(x, y)` - Wilcoxon signed-rank test
+
+**Other Tests**
+- `chisquare(f_obs, f_exp)` - Chi-square test
+- `bartlett(...samples)` - Bartlett's test
+- `levene(...samples)` - Levene's test
+
+### Test Results
+
+All hypothesis tests return a `TestResult` object with:
+
+```typescript
+interface TestResult {
+  statistic: number;  // Test statistic
+  pvalue: number;     // p-value
+}
+```
+
+## Statistical Best Practices
+
+<Tip>
+  Always check assumptions before applying parametric tests. Use normality tests and Q-Q plots to verify data distribution.
+</Tip>
+
+<Tip>
+  For small sample sizes (n < 30), prefer non-parametric tests like Mann-Whitney U or Wilcoxon signed-rank.
+</Tip>
+
+<Warning>
+  Correlation does not imply causation. Always consider confounding variables and experimental design.
+</Warning>
+
+<Warning>
+  Multiple testing increases false positive rates. Apply corrections like Bonferroni when performing many tests.
+</Warning>
+
+## Related Modules
+
+<CardGroup cols={3}>
+  <Card title="NDArray" icon="grid" href="/modules/ndarray">
+    Tensor operations for statistics
+  </Card>
+  <Card title="DataFrame" icon="table" href="/modules/dataframe">
+    Tabular data analysis
+  </Card>
+  <Card title="Metrics" icon="bullseye" href="/modules/metrics">
+    Model evaluation metrics
+  </Card>
+</CardGroup>
+
+## Learn More
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="book" href="/api/stats">
+    Complete API documentation
+  </Card>
+  <Card title="Tutorial" icon="graduation-cap" href="/tutorials/statistics">
+    Statistical analysis guide
+  </Card>
+</CardGroup>

@@ -1,0 +1,456 @@
+---
+title: Random Module
+description: Random number generation and probability distributions
+icon: dice
+---
+
+The Random module provides comprehensive random number generation capabilities with support for multiple probability distributions, seeded reproducibility, and tensor-based sampling. All functions work seamlessly with Deepbox tensors.
+
+## Overview
+
+The random module offers:
+
+- **Uniform & Normal**: Basic random distributions
+- **Statistical Distributions**: Binomial, Poisson, Exponential, Gamma, Beta
+- **Integer Sampling**: Random integers with configurable ranges
+- **Array Operations**: Choice, shuffle, permutation
+- **Reproducibility**: Seed management for deterministic results
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Rich Distributions" icon="chart-line">
+    10+ probability distributions for scientific computing.
+  </Card>
+  <Card title="Seeded RNG" icon="seedling">
+    Full reproducibility with seed management.
+  </Card>
+  <Card title="Tensor Native" icon="cube">
+    Generate random tensors directly.
+  </Card>
+  <Card title="High Quality" icon="star">
+    Cryptographically secure when unseeded.
+  </Card>
+</CardGroup>
+
+## Seed Management
+
+### Setting Seeds for Reproducibility
+
+```typescript
+import { setSeed, clearSeed, getSeed, rand } from 'deepbox/random';
+
+// Set seed for reproducible results
+setSeed(42);
+const a = rand([3]);
+
+// Reset seed to get same values
+setSeed(42);
+const b = rand([3]);
+
+// a and b are identical
+console.log(a);  // [0.374, 0.950, 0.731]
+console.log(b);  // [0.374, 0.950, 0.731]
+
+// Get current seed
+const currentSeed = getSeed();  // 42
+
+// Clear seed to use crypto RNG
+clearSeed();
+const c = rand([3]);  // Non-deterministic
+```
+
+## Uniform Distributions
+
+### Uniform [0, 1)
+
+```typescript
+import { rand } from 'deepbox/random';
+
+// Random values in [0, 1)
+const x = rand([3, 4]);  // 3x4 matrix
+
+// With specific dtype
+const y = rand([5], { dtype: 'float64' });
+```
+
+### Uniform [low, high)
+
+```typescript
+import { uniform } from 'deepbox/random';
+
+// Random values in custom range
+const x = uniform(-1, 1, [3, 3]);  // Values in [-1, 1)
+
+// Random weights between 0 and 0.1
+const weights = uniform(0, 0.1, [10, 20]);
+```
+
+### Random Integers
+
+```typescript
+import { randint } from 'deepbox/random';
+
+// Random integers in [low, high)
+const dice = randint(1, 7, [10]);  // 10 dice rolls (1-6)
+
+// Random indices
+const indices = randint(0, 100, [50]);
+
+// With int64 dtype
+const bigInts = randint(0, 1000000, [100], { dtype: 'int64' });
+```
+
+## Normal Distribution
+
+### Standard Normal
+
+```typescript
+import { randn } from 'deepbox/random';
+
+// Standard normal (mean=0, std=1)
+const z = randn([3, 3]);
+
+// Generate noise for regularization
+const noise = randn([100, 10]).mul(0.1);  // std=0.1
+```
+
+### Normal with Custom Parameters
+
+```typescript
+import { normal } from 'deepbox/random';
+
+// Normal distribution with custom mean and std
+const x = normal(5, 2, [1000]);  // mean=5, std=2
+
+// Generate data with specific statistics
+const data = normal(100, 15, [50]);  // mean=100, std=15
+```
+
+## Discrete Distributions
+
+### Binomial Distribution
+
+```typescript
+import { binomial } from 'deepbox/random';
+
+// Number of successes in n trials
+const heads = binomial(10, 0.5, [100]);  // 10 coin flips, 100 times
+
+// Customer conversions (20 visitors, 15% conversion rate)
+const conversions = binomial(20, 0.15, [365]);  // Daily for a year
+```
+
+### Poisson Distribution
+
+```typescript
+import { poisson } from 'deepbox/random';
+
+// Number of events in fixed interval
+const events = poisson(5, [100]);  // Average 5 events per interval
+
+// Website visits per hour (average 30)
+const visits = poisson(30, [24]);  // 24 hours
+```
+
+## Continuous Distributions
+
+### Exponential Distribution
+
+```typescript
+import { exponential } from 'deepbox/random';
+
+// Time between events
+const waitTimes = exponential(2, [100]);  // Mean wait time = 2
+
+// Server response times
+const responseTimes = exponential(0.5, [1000]);
+```
+
+### Gamma Distribution
+
+```typescript
+import { gamma } from 'deepbox/random';
+
+// Gamma distribution
+const x = gamma(2, 2, [100]);  // shape=2, scale=2
+
+// Model waiting times
+const waitTimes = gamma(3, 1, [500]);
+```
+
+### Beta Distribution
+
+```typescript
+import { beta } from 'deepbox/random';
+
+// Beta distribution (values in [0, 1])
+const x = beta(2, 5, [100]);  // alpha=2, beta=5
+
+// Model proportions or probabilities
+const proportions = beta(3, 3, [1000]);
+```
+
+## Array Sampling
+
+### Random Choice
+
+```typescript
+import { choice } from 'deepbox/random';
+import { tensor } from 'deepbox/ndarray';
+
+// Sample from array with replacement
+const values = tensor([1, 2, 3, 4, 5]);
+const samples = choice(values, 10);  // 10 samples
+
+// Sample without replacement
+const unique = choice(values, 3, false);
+
+// Weighted sampling
+const weights = tensor([0.1, 0.1, 0.1, 0.1, 0.6]);
+const weighted = choice(values, 100, true, weights);
+
+// Sample from range
+const indices = choice(100, 10);  // Random 10 from 0-99
+```
+
+### Shuffle
+
+```typescript
+import { shuffle } from 'deepbox/random';
+import { tensor } from 'deepbox/ndarray';
+
+// Shuffle array in-place
+const data = tensor([1, 2, 3, 4, 5]);
+shuffle(data);  // data is now shuffled
+
+console.log(data);  // e.g., [3, 1, 5, 2, 4]
+
+// Shuffle training data
+const X = tensor([[...], [...], ...]);
+const y = tensor([...]);
+
+// Create shuffled indices
+const indices = tensor(Array.from({ length: X.shape[0] }, (_, i) => i));
+shuffle(indices);
+
+const XShuffled = X.gather(indices);
+const yShuffled = y.gather(indices);
+```
+
+### Permutation
+
+```typescript
+import { permutation } from 'deepbox/random';
+import { tensor } from 'deepbox/ndarray';
+
+// Random permutation (returns new array)
+const indices = permutation(10);  // [3, 7, 0, 5, 9, 1, 4, 2, 8, 6]
+
+// Permutation of array
+const original = tensor([10, 20, 30, 40, 50]);
+const shuffled = permutation(original);
+
+// original is unchanged
+console.log(original);  // [10, 20, 30, 40, 50]
+console.log(shuffled);  // e.g., [30, 10, 50, 20, 40]
+```
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="Weight Initialization">
+    Initialize neural network weights:
+    
+    ```typescript
+    import { randn, uniform } from 'deepbox/random';
+    
+    // Xavier/Glorot initialization
+    const fanIn = 128;
+    const fanOut = 64;
+    const limit = Math.sqrt(6 / (fanIn + fanOut));
+    const weights = uniform(-limit, limit, [fanIn, fanOut]);
+    
+    // He initialization (for ReLU)
+    const scale = Math.sqrt(2 / fanIn);
+    const heWeights = randn([fanIn, fanOut]).mul(scale);
+    ```
+  </Accordion>
+
+  <Accordion title="Data Augmentation">
+    Add noise for regularization:
+    
+    ```typescript
+    import { normal } from 'deepbox/random';
+    import { tensor } from 'deepbox/ndarray';
+    
+    const images = tensor([...]);  // Original images
+    
+    // Add Gaussian noise
+    const noise = normal(0, 0.1, images.shape);
+    const augmented = images.add(noise);
+    ```
+  </Accordion>
+
+  <Accordion title="Monte Carlo Simulation">
+    Run statistical simulations:
+    
+    ```typescript
+    import { normal, setSeed } from 'deepbox/random';
+    
+    setSeed(42);  // Reproducible results
+    
+    // Simulate stock returns
+    const nSimulations = 10000;
+    const nDays = 252;  // Trading days
+    
+    const returns = normal(0.0005, 0.02, [nSimulations, nDays]);
+    const cumReturns = returns.cumsum(1);
+    
+    // Analyze outcomes
+    const finalReturns = cumReturns.slice([null, -1]);
+    const profitProb = finalReturns.greater(0).mean();
+    ```
+  </Accordion>
+
+  <Accordion title="Bootstrapping">
+    Resample data for confidence intervals:
+    
+    ```typescript
+    import { choice } from 'deepbox/random';
+    import { mean } from 'deepbox/stats';
+    
+    const data = tensor([...]);  // Your data
+    const nBootstrap = 1000;
+    const bootstrapMeans = [];
+    
+    for (let i = 0; i < nBootstrap; i++) {
+      const sample = choice(data, data.size, true);
+      bootstrapMeans.push(mean(sample));
+    }
+    
+    // Compute confidence interval
+    const sorted = bootstrapMeans.sort();
+    const ci95 = [
+      sorted[Math.floor(0.025 * nBootstrap)],
+      sorted[Math.floor(0.975 * nBootstrap)]
+    ];
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Complete Example: Data Generation
+
+```typescript
+import { 
+  setSeed, 
+  normal, 
+  binomial, 
+  choice,
+  shuffle 
+} from 'deepbox/random';
+import { tensor } from 'deepbox/ndarray';
+import { DataFrame } from 'deepbox/dataframe';
+
+// Set seed for reproducibility
+setSeed(42);
+
+// Generate synthetic dataset
+const nSamples = 1000;
+
+// Features (normal distribution)
+const age = normal(35, 10, [nSamples]);
+const income = normal(50000, 15000, [nSamples]);
+const creditScore = normal(700, 50, [nSamples]).clip(300, 850);
+
+// Binary target (binomial)
+const probs = creditScore.sub(300).div(550);  // Scale to [0, 1]
+const approved = binomial(1, probs.mean(), [nSamples]);
+
+// Categorical feature (random choice)
+const categories = ['A', 'B', 'C', 'D'];
+const categoryIndices = choice(4, nSamples);
+const category = categoryIndices.toArray().map(i => categories[i]);
+
+// Create DataFrame
+const df = new DataFrame({
+  age: age.toArray(),
+  income: income.toArray(),
+  creditScore: creditScore.toArray(),
+  category,
+  approved: approved.toArray()
+});
+
+// Shuffle data
+const indices = permutation(nSamples);
+const dfShuffled = df.iloc(indices.toArray());
+
+console.log(dfShuffled.head());
+```
+
+## Distribution Reference
+
+### Continuous Distributions
+
+| Distribution | Function | Parameters | Use Case |
+|-------------|----------|------------|----------|
+| Uniform | `uniform(low, high, shape)` | low, high | Equal probability |
+| Normal | `normal(mean, std, shape)` | mean, std | Natural phenomena |
+| Exponential | `exponential(scale, shape)` | scale (1/λ) | Time between events |
+| Gamma | `gamma(shape, scale, shape)` | shape (k), scale (θ) | Waiting times |
+| Beta | `beta(alpha, beta, shape)` | alpha (α), beta (β) | Proportions [0,1] |
+
+### Discrete Distributions
+
+| Distribution | Function | Parameters | Use Case |
+|-------------|----------|------------|----------|
+| Randint | `randint(low, high, shape)` | low, high | Uniform integers |
+| Binomial | `binomial(n, p, shape)` | n, p | Success counts |
+| Poisson | `poisson(lambda, shape)` | lambda (λ) | Event counts |
+
+## Best Practices
+
+<Tip>
+  Always set a seed at the start of experiments for reproducibility.
+</Tip>
+
+<Tip>
+  Use `clearSeed()` in production to ensure cryptographically secure randomness.
+</Tip>
+
+<Tip>
+  For large-scale simulations, generate random numbers in batches to improve performance.
+</Tip>
+
+<Warning>
+  `shuffle()` modifies the input tensor in-place. Use `permutation()` if you need the original unchanged.
+</Warning>
+
+<Warning>
+  Seeded random numbers are deterministic and not suitable for cryptographic applications.
+</Warning>
+
+## Related Modules
+
+<CardGroup cols={3}>
+  <Card title="NDArray" icon="grid" href="/modules/ndarray">
+    Tensor operations on random data
+  </Card>
+  <Card title="Statistics" icon="chart-simple" href="/modules/stats">
+    Statistical analysis of distributions
+  </Card>
+  <Card title="Neural Networks" icon="brain" href="/modules/nn">
+    Weight initialization
+  </Card>
+</CardGroup>
+
+## Learn More
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="book" href="/api/random">
+    Complete API documentation
+  </Card>
+  <Card title="Tutorial" icon="graduation-cap" href="/tutorials/random-sampling">
+    Random sampling guide
+  </Card>
+</CardGroup>

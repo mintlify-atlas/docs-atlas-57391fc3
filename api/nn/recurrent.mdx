@@ -1,0 +1,446 @@
+---
+title: Recurrent Layers
+description: RNN, LSTM, and GRU layers for sequence modeling
+---
+
+Recurrent layers process sequential data by maintaining hidden states across time steps.
+
+## RNN
+
+Simple Recurrent Neural Network layer.
+
+### Constructor
+
+```typescript
+class RNN extends Module
+
+constructor(
+  inputSize: number,
+  hiddenSize: number,
+  options?: {
+    numLayers?: number;
+    nonlinearity?: "tanh" | "relu";
+    bias?: boolean;
+    batchFirst?: boolean;
+  }
+)
+```
+
+**Parameters:**
+- `inputSize` - Number of input features
+- `hiddenSize` - Number of hidden features
+- `options.numLayers` - Number of stacked RNN layers (default: 1)
+- `options.nonlinearity` - Activation function: 'tanh' or 'relu' (default: 'tanh')
+- `options.bias` - If true, adds bias (default: true)
+- `options.batchFirst` - If true, input is (batch, seq, features) instead of (seq, batch, features) (default: true)
+
+### Formula
+
+```
+h_t = tanh(W_ih * x_t + b_ih + W_hh * h_{t-1} + b_hh)
+```
+
+Where:
+- `h_t` is the hidden state at time t
+- `x_t` is the input at time t
+- `W_ih`, `W_hh` are weight matrices
+- `b_ih`, `b_hh` are bias vectors
+
+### Shape
+
+**Input:** `(batch, seq_len, input_size)` if `batchFirst=true`
+         or `(seq_len, batch, input_size)` if `batchFirst=false`
+
+**Output:** `(batch, seq_len, hidden_size)` if `batchFirst=true`
+          or `(seq_len, batch, hidden_size)` if `batchFirst=false`
+
+### Methods
+
+#### forward
+
+```typescript
+forward(input: Tensor, hx?: Tensor): Tensor
+```
+
+Processes input sequence through the RNN.
+
+**Parameters:**
+- `input` - Input sequence tensor
+- `hx` - Initial hidden state (optional)
+
+**Returns:** Output sequence tensor
+
+#### forwardWithState
+
+```typescript
+forwardWithState(input: AnyTensor, hx?: AnyTensor): [Tensor, Tensor]
+```
+
+Processes input and returns both output and final hidden state.
+
+**Returns:** Tuple of [output, hidden_state]
+
+### Example
+
+```typescript
+import { RNN } from 'deepbox/nn';
+import { tensor } from 'deepbox/ndarray';
+
+const rnn = new RNN(10, 20, { numLayers: 2 });
+
+// Input: (batch=3, seq_len=5, input_size=10)
+const x = tensor(/* ... */);
+const output = rnn.forward(x);
+// Output: (batch=3, seq_len=5, hidden_size=20)
+
+// With initial hidden state
+const h0 = tensor(/* ... */); // (num_layers=2, batch=3, hidden_size=20)
+const output2 = rnn.forward(x, h0);
+
+// Get final hidden state
+const [output3, hn] = rnn.forwardWithState(x);
+```
+
+---
+
+## LSTM
+
+Long Short-Term Memory layer.
+
+### Constructor
+
+```typescript
+class LSTM extends Module
+
+constructor(
+  inputSize: number,
+  hiddenSize: number,
+  options?: {
+    numLayers?: number;
+    bias?: boolean;
+    batchFirst?: boolean;
+  }
+)
+```
+
+**Parameters:**
+- `inputSize` - Number of input features
+- `hiddenSize` - Number of hidden features
+- `options.numLayers` - Number of stacked LSTM layers (default: 1)
+- `options.bias` - If true, adds bias (default: true)
+- `options.batchFirst` - If true, input is (batch, seq, features) (default: true)
+
+### Formulas
+
+```
+i_t = σ(W_ii * x_t + b_ii + W_hi * h_{t-1} + b_hi)  [Input gate]
+f_t = σ(W_if * x_t + b_if + W_hf * h_{t-1} + b_hf)  [Forget gate]
+g_t = tanh(W_ig * x_t + b_ig + W_hg * h_{t-1} + b_hg)  [Cell gate]
+o_t = σ(W_io * x_t + b_io + W_ho * h_{t-1} + b_ho)  [Output gate]
+c_t = f_t * c_{t-1} + i_t * g_t  [Cell state]
+h_t = o_t * tanh(c_t)  [Hidden state]
+```
+
+Where σ is the sigmoid function.
+
+### Shape
+
+**Input:** `(batch, seq_len, input_size)` if `batchFirst=true`
+
+**Output:** `(batch, seq_len, hidden_size)` if `batchFirst=true`
+
+### Methods
+
+#### forward
+
+```typescript
+forward(input: Tensor, hx?: Tensor, cx?: Tensor): Tensor
+```
+
+Processes input sequence through the LSTM.
+
+**Parameters:**
+- `input` - Input sequence tensor
+- `hx` - Initial hidden state (optional)
+- `cx` - Initial cell state (optional)
+
+**Returns:** Output sequence tensor
+
+#### forwardWithState
+
+```typescript
+forwardWithState(input: AnyTensor, hx?: AnyTensor, cx?: AnyTensor): [Tensor, [Tensor, Tensor]]
+```
+
+Processes input and returns output with final hidden and cell states.
+
+**Returns:** Tuple of [output, [hidden_state, cell_state]]
+
+### Example
+
+```typescript
+import { LSTM } from 'deepbox/nn';
+import { tensor } from 'deepbox/ndarray';
+
+const lstm = new LSTM(10, 20, { numLayers: 2 });
+
+// Input: (batch=3, seq_len=5, input_size=10)
+const x = tensor(/* ... */);
+const output = lstm.forward(x);
+// Output: (batch=3, seq_len=5, hidden_size=20)
+
+// With initial states
+const h0 = tensor(/* ... */); // (num_layers=2, batch=3, hidden_size=20)
+const c0 = tensor(/* ... */); // (num_layers=2, batch=3, hidden_size=20)
+const output2 = lstm.forward(x, h0, c0);
+
+// Get final states
+const [output3, [hn, cn]] = lstm.forwardWithState(x);
+```
+
+### Properties
+
+- Solves vanishing gradient problem
+- Remembers long-term dependencies
+- More complex than simple RNN
+- Gates control information flow
+
+---
+
+## GRU
+
+Gated Recurrent Unit layer.
+
+### Constructor
+
+```typescript
+class GRU extends Module
+
+constructor(
+  inputSize: number,
+  hiddenSize: number,
+  options?: {
+    numLayers?: number;
+    bias?: boolean;
+    batchFirst?: boolean;
+  }
+)
+```
+
+**Parameters:**
+- `inputSize` - Number of input features
+- `hiddenSize` - Number of hidden features
+- `options.numLayers` - Number of stacked GRU layers (default: 1)
+- `options.bias` - If true, adds bias (default: true)
+- `options.batchFirst` - If true, input is (batch, seq, features) (default: true)
+
+### Formulas
+
+```
+r_t = σ(W_ir * x_t + b_ir + W_hr * h_{t-1} + b_hr)  [Reset gate]
+z_t = σ(W_iz * x_t + b_iz + W_hz * h_{t-1} + b_hz)  [Update gate]
+n_t = tanh(W_in * x_t + b_in + r_t * (W_hn * h_{t-1} + b_hn))  [New gate]
+h_t = (1 - z_t) * n_t + z_t * h_{t-1}  [Hidden state]
+```
+
+### Shape
+
+**Input:** `(batch, seq_len, input_size)` if `batchFirst=true`
+
+**Output:** `(batch, seq_len, hidden_size)` if `batchFirst=true`
+
+### Methods
+
+#### forward
+
+```typescript
+forward(input: Tensor, hx?: Tensor): Tensor
+```
+
+Processes input sequence through the GRU.
+
+**Parameters:**
+- `input` - Input sequence tensor
+- `hx` - Initial hidden state (optional)
+
+**Returns:** Output sequence tensor
+
+#### forwardWithState
+
+```typescript
+forwardWithState(input: AnyTensor, hx?: AnyTensor): [Tensor, Tensor]
+```
+
+Processes input and returns both output and final hidden state.
+
+**Returns:** Tuple of [output, hidden_state]
+
+### Example
+
+```typescript
+import { GRU } from 'deepbox/nn';
+import { tensor } from 'deepbox/ndarray';
+
+const gru = new GRU(10, 20, { numLayers: 2 });
+
+// Input: (batch=3, seq_len=5, input_size=10)
+const x = tensor(/* ... */);
+const output = gru.forward(x);
+// Output: (batch=3, seq_len=5, hidden_size=20)
+
+// With initial hidden state
+const h0 = tensor(/* ... */); // (num_layers=2, batch=3, hidden_size=20)
+const output2 = gru.forward(x, h0);
+
+// Get final hidden state
+const [output3, hn] = gru.forwardWithState(x);
+```
+
+### Properties
+
+- Simpler than LSTM (fewer parameters)
+- Comparable performance to LSTM
+- Faster training than LSTM
+- Good for shorter sequences
+
+---
+
+## Comparison
+
+| Feature | RNN | LSTM | GRU |
+|---------|-----|------|----- |
+| Parameters | Fewest | Most | Medium |
+| Training Speed | Fastest | Slowest | Fast |
+| Long-term Memory | Poor | Excellent | Good |
+| Complexity | Simple | Complex | Medium |
+| Use Case | Short sequences | Long sequences | General purpose |
+
+---
+
+## Complete Examples
+
+### Sequence Classification
+
+```typescript
+import { Module, LSTM, Linear } from 'deepbox/nn';
+import type { Tensor } from 'deepbox/ndarray';
+
+class SequenceClassifier extends Module {
+  private lstm: LSTM;
+  private fc: Linear;
+
+  constructor(vocabSize: number, embedDim: number, hiddenSize: number, numClasses: number) {
+    super();
+    this.lstm = new LSTM(embedDim, hiddenSize, { numLayers: 2 });
+    this.fc = new Linear(hiddenSize, numClasses);
+    this.registerModule('lstm', this.lstm);
+    this.registerModule('fc', this.fc);
+  }
+
+  forward(x: Tensor): Tensor {
+    // x: (batch, seq_len, embed_dim)
+    const [output, [hn, cn]] = this.lstm.forwardWithState(x);
+    
+    // Use final hidden state for classification
+    // hn: (num_layers, batch, hidden_size)
+    // Take last layer: (batch, hidden_size)
+    const lastHidden = hn.slice([[-1, null], [0, null], [0, null]]);
+    const squeezed = lastHidden.reshape([x.shape[0] ?? 0, -1]);
+    
+    return this.fc.forward(squeezed);
+  }
+}
+```
+
+### Sequence-to-Sequence
+
+```typescript
+import { Module, GRU, Linear } from 'deepbox/nn';
+import type { Tensor } from 'deepbox/ndarray';
+
+class Encoder extends Module {
+  private gru: GRU;
+
+  constructor(inputSize: number, hiddenSize: number) {
+    super();
+    this.gru = new GRU(inputSize, hiddenSize);
+    this.registerModule('gru', this.gru);
+  }
+
+  forward(x: Tensor): Tensor {
+    const [output, hidden] = this.gru.forwardWithState(x);
+    return hidden; // Context vector
+  }
+}
+
+class Decoder extends Module {
+  private gru: GRU;
+  private fc: Linear;
+
+  constructor(hiddenSize: number, outputSize: number) {
+    super();
+    this.gru = new GRU(outputSize, hiddenSize);
+    this.fc = new Linear(hiddenSize, outputSize);
+    this.registerModule('gru', this.gru);
+    this.registerModule('fc', this.fc);
+  }
+
+  forward(x: Tensor, hidden: Tensor): [Tensor, Tensor] {
+    const [output, newHidden] = this.gru.forwardWithState(x, hidden);
+    const predictions = this.fc.forward(output);
+    return [predictions, newHidden];
+  }
+}
+```
+
+### Bidirectional RNN
+
+```typescript
+import { Module, LSTM, Linear } from 'deepbox/nn';
+import { concat, type Tensor } from 'deepbox/ndarray';
+
+class BiLSTM extends Module {
+  private forwardLSTM: LSTM;
+  private backwardLSTM: LSTM;
+  private fc: Linear;
+
+  constructor(inputSize: number, hiddenSize: number, outputSize: number) {
+    super();
+    this.forwardLSTM = new LSTM(inputSize, hiddenSize);
+    this.backwardLSTM = new LSTM(inputSize, hiddenSize);
+    this.fc = new Linear(hiddenSize * 2, outputSize);
+    
+    this.registerModule('forwardLSTM', this.forwardLSTM);
+    this.registerModule('backwardLSTM', this.backwardLSTM);
+    this.registerModule('fc', this.fc);
+  }
+
+  forward(x: Tensor): Tensor {
+    const forward = this.forwardLSTM.forward(x);
+    
+    // Reverse sequence for backward pass
+    const xReversed = x.flip([1]); // Flip seq dimension
+    const backward = this.backwardLSTM.forward(xReversed);
+    const backwardFlipped = backward.flip([1]); // Flip back
+    
+    // Concatenate forward and backward
+    const combined = concat([forward, backwardFlipped], -1);
+    
+    return this.fc.forward(combined);
+  }
+}
+```
+
+## Tips
+
+1. **Use LSTM/GRU** for sequences with long-term dependencies
+2. **Use GRU** when training speed is important and sequences are moderate length
+3. **Stack layers** with `numLayers > 1` for more capacity
+4. **Gradient clipping** helps prevent exploding gradients
+5. **Batch first** is more intuitive: `(batch, seq, features)`
+
+## See Also
+
+- [Attention Layers](/api/nn/attention) - For transformer models
+- [Linear Layer](/api/nn/layers) - For output projections
+- [Activation Functions](/api/nn/activations) - tanh, sigmoid

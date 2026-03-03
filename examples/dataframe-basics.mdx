@@ -1,0 +1,168 @@
+---
+title: DataFrame Basics
+description: Learn fundamental DataFrame operations for working with tabular data
+---
+
+DataFrames provide a powerful interface for working with tabular data. This guide covers creation, selection, filtering, and sorting.
+
+## Working with DataFrames
+
+<Steps>
+
+### Create a DataFrame
+
+Create a DataFrame from an object with column arrays:
+
+```typescript
+import { DataFrame } from "deepbox/dataframe";
+
+const df = new DataFrame({
+  name: ["Alice", "Bob", "Charlie", "David", "Eve"],
+  age: [25, 30, 35, 28, 32],
+  salary: [50000, 60000, 75000, 55000, 70000],
+  department: ["IT", "HR", "IT", "Sales", "HR"],
+});
+
+console.log("Full DataFrame:");
+console.log(df.toString());
+console.log(`\nShape: ${df.shape[0]} rows × ${df.shape[1]} columns`);
+```
+
+**Output:**
+```
+Full DataFrame:
+     name      age  salary  department
+0   Alice       25   50000          IT
+1     Bob       30   60000          HR
+2 Charlie       35   75000          IT
+3   David       28   55000       Sales
+4     Eve       32   70000          HR
+
+Shape: 5 rows × 4 columns
+```
+
+### Access columns
+
+Retrieve individual or multiple columns:
+
+```typescript
+// Get column names
+console.log("Columns:", df.columns.join(", "));
+
+// Get a single column as a Series
+const ages = df.get("age");
+console.log("Age column:");
+console.log(ages.toString());
+
+// Select multiple columns
+const subset = df.select(["name", "salary"]);
+console.log("\nSelected columns (name, salary):");
+console.log(subset.toString());
+```
+
+**Output:**
+```
+Columns: name, age, salary, department
+
+Age column:
+0    25
+1    30
+2    35
+3    28
+4    32
+
+Selected columns (name, salary):
+     name  salary
+0   Alice   50000
+1     Bob   60000
+2 Charlie   75000
+3   David   55000
+4     Eve   70000
+```
+
+### Filter rows
+
+Filter data based on conditions:
+
+```typescript
+const expectNumber = (value: unknown): number => {
+  if (typeof value !== "number") {
+    throw new Error("Expected number");
+  }
+  return value;
+};
+
+// Filter for high earners
+const highEarners = df.filter((row) => expectNumber(row.salary) > 60000);
+console.log("Employees with salary > 60000:");
+console.log(highEarners.toString());
+```
+
+**Output:**
+```
+Employees with salary > 60000:
+     name  age  salary department
+2 Charlie   35   75000         IT
+4     Eve   32   70000         HR
+```
+
+### Sort data
+
+Sort by any column in ascending or descending order:
+
+```typescript
+// Sort by salary (descending)
+const sortedBySalary = df.sort("salary", false);
+console.log("Sorted by salary (descending):");
+console.log(sortedBySalary.toString());
+```
+
+**Output:**
+```
+Sorted by salary (descending):
+     name  age  salary department
+2 Charlie   35   75000         IT
+4     Eve   32   70000         HR
+1     Bob   30   60000         HR
+3   David   28   55000      Sales
+0   Alice   25   50000         IT
+```
+
+### View subsets
+
+Use `head()` and `tail()` to preview data:
+
+```typescript
+console.log("First 3 rows:");
+console.log(df.head(3).toString());
+
+console.log("\nLast 2 rows:");
+console.log(df.tail(2).toString());
+```
+
+**Output:**
+```
+First 3 rows:
+     name  age  salary department
+0   Alice   25   50000         IT
+1     Bob   30   60000         HR
+2 Charlie   35   75000         IT
+
+Last 2 rows:
+   name  age  salary department
+3 David   28   55000      Sales
+4   Eve   32   70000         HR
+```
+
+</Steps>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="GroupBy Operations" icon="layer-group" href="/api-reference/dataframe/groupby">
+    Aggregate and analyze data by groups
+  </Card>
+  <Card title="Data Analysis" icon="chart-line" href="/examples/data-preprocessing">
+    Learn comprehensive data analysis techniques
+  </Card>
+</CardGroup>

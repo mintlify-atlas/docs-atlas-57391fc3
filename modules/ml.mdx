@@ -1,0 +1,446 @@
+---
+title: Machine Learning Module
+description: Classical ML algorithms for classification, regression, and clustering
+icon: robot
+---
+
+The Machine Learning (ML) module provides scikit-learn style implementations of classical machine learning algorithms. It includes supervised learning (classification and regression), unsupervised learning (clustering and dimensionality reduction), and model selection utilities.
+
+## Overview
+
+The ML module offers a comprehensive suite of machine learning algorithms:
+
+- **Linear Models**: Linear/Logistic Regression, Ridge, Lasso
+- **Tree-Based**: Decision Trees, Random Forests, Gradient Boosting
+- **Support Vector Machines**: LinearSVC, LinearSVR
+- **Neighbors**: K-Nearest Neighbors for classification and regression
+- **Clustering**: K-Means, DBSCAN
+- **Dimensionality Reduction**: PCA, t-SNE
+- **Naive Bayes**: Gaussian Naive Bayes classifier
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Scikit-learn API" icon="python">
+    Familiar fit/predict interface compatible with scikit-learn.
+  </Card>
+  <Card title="Complete Pipeline" icon="arrow-progress">
+    From data preprocessing to model evaluation.
+  </Card>
+  <Card title="Ensemble Methods" icon="layer-group">
+    Random Forests and Gradient Boosting for better accuracy.
+  </Card>
+  <Card title="TypeScript Native" icon="code">
+    Full type safety and modern JavaScript features.
+  </Card>
+</CardGroup>
+
+## Linear Models
+
+### Linear Regression
+
+```typescript
+import { LinearRegression } from 'deepbox/ml';
+import { tensor } from 'deepbox/ndarray';
+
+// Training data
+const X = tensor([[1, 1], [1, 2], [2, 2], [2, 3]]);
+const y = tensor([1, 2, 2, 3]);
+
+// Create and fit model
+const model = new LinearRegression({ fitIntercept: true });
+model.fit(X, y);
+
+// Make predictions
+const X_test = tensor([[3, 5]]);
+const predictions = model.predict(X_test);
+
+// Evaluate
+const score = model.score(X, y);  // R² score
+```
+
+### Logistic Regression
+
+```typescript
+import { LogisticRegression } from 'deepbox/ml';
+
+const X = tensor([[1, 2], [2, 3], [3, 1], [4, 2]]);
+const y = tensor([0, 0, 1, 1]);
+
+const model = new LogisticRegression({ 
+  penalty: 'l2',
+  C: 1.0,
+  maxIter: 100 
+});
+
+model.fit(X, y);
+const predictions = model.predict(X);
+const probabilities = model.predictProba(X);
+```
+
+### Ridge and Lasso
+
+```typescript
+import { Ridge, Lasso } from 'deepbox/ml';
+
+// Ridge regression (L2 regularization)
+const ridge = new Ridge({ alpha: 1.0 });
+ridge.fit(X_train, y_train);
+
+// Lasso regression (L1 regularization)
+const lasso = new Lasso({ alpha: 0.1, maxIter: 1000 });
+lasso.fit(X_train, y_train);
+```
+
+## Tree-Based Models
+
+### Decision Trees
+
+```typescript
+import { DecisionTreeClassifier, DecisionTreeRegressor } from 'deepbox/ml';
+
+// Classification
+const clf = new DecisionTreeClassifier({
+  maxDepth: 5,
+  minSamplesSplit: 2,
+  minSamplesLeaf: 1
+});
+
+clf.fit(X_train, y_train);
+const y_pred = clf.predict(X_test);
+
+// Regression
+const reg = new DecisionTreeRegressor({ maxDepth: 10 });
+reg.fit(X_train, y_train);
+```
+
+### Random Forest
+
+```typescript
+import { RandomForestClassifier, RandomForestRegressor } from 'deepbox/ml';
+
+// Random Forest Classifier
+const rf = new RandomForestClassifier({
+  nEstimators: 100,
+  maxDepth: 10,
+  minSamplesSplit: 2,
+  randomState: 42
+});
+
+rf.fit(X_train, y_train);
+const predictions = rf.predict(X_test);
+const accuracy = rf.score(X_test, y_test);
+
+// Feature importance
+const importance = rf.featureImportances();
+```
+
+### Gradient Boosting
+
+```typescript
+import { GradientBoostingClassifier, GradientBoostingRegressor } from 'deepbox/ml';
+
+// Gradient Boosting for classification
+const gbc = new GradientBoostingClassifier({
+  nEstimators: 100,
+  learningRate: 0.1,
+  maxDepth: 3,
+  subsample: 0.8
+});
+
+gbc.fit(X_train, y_train);
+const y_pred = gbc.predict(X_test);
+
+// For regression
+const gbr = new GradientBoostingRegressor({
+  nEstimators: 100,
+  learningRate: 0.1
+});
+```
+
+## Support Vector Machines
+
+```typescript
+import { LinearSVC, LinearSVR } from 'deepbox/ml';
+
+// Linear Support Vector Classifier
+const svc = new LinearSVC({
+  C: 1.0,
+  maxIter: 1000,
+  tol: 1e-4
+});
+
+svc.fit(X_train, y_train);
+const predictions = svc.predict(X_test);
+
+// Linear Support Vector Regressor
+const svr = new LinearSVR({ C: 1.0, epsilon: 0.1 });
+svr.fit(X_train, y_train);
+```
+
+## K-Nearest Neighbors
+
+```typescript
+import { KNeighborsClassifier, KNeighborsRegressor } from 'deepbox/ml';
+
+// KNN Classifier
+const knn_clf = new KNeighborsClassifier({
+  nNeighbors: 5,
+  weights: 'distance',
+  metric: 'euclidean'
+});
+
+knn_clf.fit(X_train, y_train);
+const y_pred = knn_clf.predict(X_test);
+
+// KNN Regressor
+const knn_reg = new KNeighborsRegressor({ nNeighbors: 3 });
+knn_reg.fit(X_train, y_train);
+```
+
+## Clustering
+
+### K-Means
+
+```typescript
+import { KMeans } from 'deepbox/ml';
+import { tensor } from 'deepbox/ndarray';
+
+const X = tensor([
+  [1, 2], [1.5, 1.8], [5, 8], [8, 8], [1, 0.6], [9, 11]
+]);
+
+const kmeans = new KMeans({
+  nClusters: 3,
+  maxIter: 300,
+  randomState: 42
+});
+
+kmeans.fit(X);
+
+// Get cluster assignments
+const labels = kmeans.labels();
+
+// Get cluster centers
+const centers = kmeans.clusterCenters();
+
+// Predict cluster for new data
+const newPoint = tensor([[0, 0]]);
+const cluster = kmeans.predict(newPoint);
+```
+
+### DBSCAN
+
+```typescript
+import { DBSCAN } from 'deepbox/ml';
+
+const dbscan = new DBSCAN({
+  eps: 0.5,
+  minSamples: 5,
+  metric: 'euclidean'
+});
+
+dbscan.fit(X);
+const labels = dbscan.labels();
+
+// -1 indicates noise points
+const corePoints = dbscan.corePointIndices();
+```
+
+## Dimensionality Reduction
+
+### PCA (Principal Component Analysis)
+
+```typescript
+import { PCA } from 'deepbox/ml';
+import { tensor } from 'deepbox/ndarray';
+
+const X = tensor([
+  [2.5, 2.4],
+  [0.5, 0.7],
+  [2.2, 2.9],
+  [1.9, 2.2]
+]);
+
+const pca = new PCA({ nComponents: 1 });
+pca.fit(X);
+
+// Transform data to lower dimensions
+const X_reduced = pca.transform(X);
+
+// Get explained variance ratio
+const variance = pca.explainedVarianceRatio();
+
+// Get principal components
+const components = pca.components();
+```
+
+### t-SNE
+
+```typescript
+import { TSNE } from 'deepbox/ml';
+
+const tsne = new TSNE({
+  nComponents: 2,
+  perplexity: 30,
+  learningRate: 200,
+  nIter: 1000
+});
+
+const X_embedded = tsne.fitTransform(X);
+```
+
+## Naive Bayes
+
+```typescript
+import { GaussianNB } from 'deepbox/ml';
+
+const gnb = new GaussianNB();
+gnb.fit(X_train, y_train);
+
+const predictions = gnb.predict(X_test);
+const probabilities = gnb.predictProba(X_test);
+```
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="Binary Classification">
+    Classify data into two categories:
+    
+    ```typescript
+    import { LogisticRegression } from 'deepbox/ml';
+    import { tensor } from 'deepbox/ndarray';
+    import { accuracy } from 'deepbox/metrics';
+    
+    // Spam detection example
+    const X_train = tensor([...]); // Features
+    const y_train = tensor([0, 1, 0, 1, ...]);  // 0=ham, 1=spam
+    
+    const model = new LogisticRegression();
+    model.fit(X_train, y_train);
+    
+    const y_pred = model.predict(X_test);
+    const acc = accuracy(y_test, y_pred);
+    ```
+  </Accordion>
+
+  <Accordion title="Multi-class Classification">
+    Classify into multiple categories:
+    
+    ```typescript
+    import { RandomForestClassifier } from 'deepbox/ml';
+    
+    // Iris species classification
+    const model = new RandomForestClassifier({ nEstimators: 100 });
+    model.fit(X_train, y_train);  // y has classes 0, 1, 2
+    
+    const predictions = model.predict(X_test);
+    const probabilities = model.predictProba(X_test);
+    ```
+  </Accordion>
+
+  <Accordion title="Customer Segmentation">
+    Group customers by behavior:
+    
+    ```typescript
+    import { KMeans } from 'deepbox/ml';
+    import { tensor } from 'deepbox/ndarray';
+    
+    // Customer features: [age, income, spending_score]
+    const customers = tensor([...]);
+    
+    const kmeans = new KMeans({ nClusters: 4 });
+    kmeans.fit(customers);
+    
+    const segments = kmeans.labels();
+    const centers = kmeans.clusterCenters();
+    ```
+  </Accordion>
+
+  <Accordion title="Feature Reduction">
+    Reduce dimensionality while preserving information:
+    
+    ```typescript
+    import { PCA } from 'deepbox/ml';
+    
+    // High-dimensional data
+    const X = tensor([...]);  // Shape: [n_samples, 100]
+    
+    const pca = new PCA({ nComponents: 10 });
+    pca.fit(X);
+    
+    const X_reduced = pca.transform(X);  // Shape: [n_samples, 10]
+    console.log(pca.explainedVarianceRatio().sum());
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Model Selection
+
+All estimators follow the same interface:
+
+```typescript
+interface Estimator {
+  fit(X: Tensor, y?: Tensor): this;
+}
+
+interface Classifier extends Estimator {
+  predict(X: Tensor): Tensor;
+  predictProba(X: Tensor): Tensor;
+  score(X: Tensor, y: Tensor): number;
+}
+
+interface Regressor extends Estimator {
+  predict(X: Tensor): Tensor;
+  score(X: Tensor, y: Tensor): number;  // R² score
+}
+
+interface Clusterer extends Estimator {
+  predict(X: Tensor): Tensor;
+  labels(): Tensor;
+}
+```
+
+## Performance Tips
+
+<Tip>
+  For large datasets, start with linear models (LinearRegression, LogisticRegression) before trying more complex models.
+</Tip>
+
+<Tip>
+  Use Random Forests or Gradient Boosting when you need high accuracy and can afford longer training times.
+</Tip>
+
+<Tip>
+  Scale your features before using distance-based algorithms (KNN, SVM, clustering).
+</Tip>
+
+<Warning>
+  Decision Trees and Random Forests can overfit on small datasets. Use cross-validation and limit tree depth.
+</Warning>
+
+## Related Modules
+
+<CardGroup cols={3}>
+  <Card title="Preprocessing" icon="filter" href="/modules/preprocess">
+    Data scaling and encoding
+  </Card>
+  <Card title="Metrics" icon="bullseye" href="/modules/metrics">
+    Model evaluation metrics
+  </Card>
+  <Card title="Neural Networks" icon="brain" href="/modules/nn">
+    Deep learning models
+  </Card>
+</CardGroup>
+
+## Learn More
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="book" href="/api/ml">
+    Complete API documentation
+  </Card>
+  <Card title="Examples" icon="code" href="/examples/machine-learning">
+    End-to-end ML examples
+  </Card>
+</CardGroup>

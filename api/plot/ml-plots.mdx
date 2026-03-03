@@ -1,0 +1,261 @@
+---
+title: ML Plots
+description: Specialized plots for machine learning evaluation
+---
+
+## Overview
+
+Machine learning plotting functions provide visualizations for model evaluation and diagnostics.
+
+## Classification Visualizations
+
+### plotConfusionMatrix
+
+Plot a confusion matrix as a heatmap.
+
+```ts
+function plotConfusionMatrix(
+  cm: Tensor,
+  labels?: readonly string[],
+  options?: PlotOptions
+): void
+```
+
+<ParamField path="cm" type="Tensor" required>
+  Confusion matrix tensor (2D)
+</ParamField>
+
+<ParamField path="labels" type="string[]">
+  Class labels for axis annotations
+</ParamField>
+
+<ParamField path="options" type="PlotOptions">
+  Plot styling options
+</ParamField>
+
+Displays a confusion matrix with proper axis labels and annotations. Rows represent true labels, columns represent predicted labels.
+
+**Example:**
+
+```ts
+import { plotConfusionMatrix, confusionMatrix, tensor } from 'deepbox';
+
+const yTrue = tensor([0, 1, 1, 0, 1, 2, 2, 0]);
+const yPred = tensor([0, 1, 0, 0, 1, 2, 1, 0]);
+const cm = confusionMatrix(yTrue, yPred);
+plotConfusionMatrix(cm, ['Class 0', 'Class 1', 'Class 2']);
+```
+
+### plotRocCurve
+
+Plot a ROC curve with optional AUC annotation.
+
+```ts
+function plotRocCurve(
+  fpr: Tensor,
+  tpr: Tensor,
+  auc?: number,
+  options?: PlotOptions
+): void
+```
+
+<ParamField path="fpr" type="Tensor" required>
+  False positive rates
+</ParamField>
+
+<ParamField path="tpr" type="Tensor" required>
+  True positive rates
+</ParamField>
+
+<ParamField path="auc" type="number">
+  Area under curve (optional, for title annotation)
+</ParamField>
+
+<ParamField path="options" type="PlotOptions">
+  Plot styling options
+</ParamField>
+
+Plots the Receiver Operating Characteristic curve and includes a diagonal reference line representing random chance.
+
+**Example:**
+
+```ts
+import { plotRocCurve, rocCurve, rocAucScore, tensor } from 'deepbox';
+
+const yTrue = tensor([0, 0, 1, 1]);
+const yScore = tensor([0.1, 0.4, 0.35, 0.8]);
+const [fpr, tpr, _] = rocCurve(yTrue, yScore);
+const auc = rocAucScore(yTrue, yScore);
+plotRocCurve(fpr, tpr, auc);
+```
+
+### plotPrecisionRecallCurve
+
+Plot a precision-recall curve with optional AP annotation.
+
+```ts
+function plotPrecisionRecallCurve(
+  precision: Tensor,
+  recall: Tensor,
+  averagePrecision?: number,
+  options?: PlotOptions
+): void
+```
+
+<ParamField path="precision" type="Tensor" required>
+  Precision values
+</ParamField>
+
+<ParamField path="recall" type="Tensor" required>
+  Recall values
+</ParamField>
+
+<ParamField path="averagePrecision" type="number">
+  Average precision score (optional, for title annotation)
+</ParamField>
+
+<ParamField path="options" type="PlotOptions">
+  Plot styling options
+</ParamField>
+
+Plots the precision-recall curve, which is particularly useful for imbalanced datasets.
+
+**Example:**
+
+```ts
+import { plotPrecisionRecallCurve, precisionRecallCurve, averagePrecisionScore, tensor } from 'deepbox';
+
+const yTrue = tensor([0, 0, 1, 1]);
+const yScore = tensor([0.1, 0.4, 0.35, 0.8]);
+const [prec, rec, _] = precisionRecallCurve(yTrue, yScore);
+const ap = averagePrecisionScore(yTrue, yScore);
+plotPrecisionRecallCurve(prec, rec, ap);
+```
+
+### plotDecisionBoundary
+
+Plot a classifier decision boundary on a 2D feature space.
+
+```ts
+function plotDecisionBoundary(
+  X: Tensor,
+  y: Tensor,
+  model: { predict: (x: Tensor) => Tensor },
+  options?: PlotOptions
+): void
+```
+
+<ParamField path="X" type="Tensor" required>
+  Feature matrix of shape [n_samples, 2]
+</ParamField>
+
+<ParamField path="y" type="Tensor" required>
+  Class labels of shape [n_samples]
+</ParamField>
+
+<ParamField path="model" type="object" required>
+  Model with a `predict` method that accepts a tensor and returns predictions
+</ParamField>
+
+<ParamField path="options" type="PlotOptions">
+  Plot styling options (colormap, colors, size, etc.)
+</ParamField>
+
+Visualizes the decision boundary learned by a 2D classifier, showing how the model partitions the feature space.
+
+**Example:**
+
+```ts
+import { plotDecisionBoundary, tensor } from 'deepbox';
+
+// Assuming you have a trained model
+const X = tensor([[1, 2], [2, 3], [3, 1], [5, 6]]);
+const y = tensor([0, 0, 1, 1]);
+plotDecisionBoundary(X, y, trainedModel);
+```
+
+## Training Visualizations
+
+### plotLearningCurve
+
+Plot training and validation learning curves.
+
+```ts
+function plotLearningCurve(
+  trainSizes: Tensor,
+  trainScores: Tensor,
+  valScores: Tensor,
+  options?: PlotOptions
+): void
+```
+
+<ParamField path="trainSizes" type="Tensor" required>
+  Training set sizes
+</ParamField>
+
+<ParamField path="trainScores" type="Tensor" required>
+  Training scores at each size
+</ParamField>
+
+<ParamField path="valScores" type="Tensor" required>
+  Validation scores at each size
+</ParamField>
+
+<ParamField path="options" type="PlotOptions">
+  Plot styling options (colors, etc.)
+</ParamField>
+
+Visualizes how model performance changes with training set size, useful for diagnosing bias and variance.
+
+**Example:**
+
+```ts
+import { plotLearningCurve, tensor } from 'deepbox';
+
+const trainSizes = tensor([100, 200, 300, 400, 500]);
+const trainScores = tensor([0.85, 0.87, 0.88, 0.89, 0.90]);
+const valScores = tensor([0.75, 0.78, 0.80, 0.81, 0.82]);
+plotLearningCurve(trainSizes, trainScores, valScores);
+```
+
+### plotValidationCurve
+
+Plot training and validation curves across hyperparameter values.
+
+```ts
+function plotValidationCurve(
+  paramRange: Tensor,
+  trainScores: Tensor,
+  valScores: Tensor,
+  options?: PlotOptions
+): void
+```
+
+<ParamField path="paramRange" type="Tensor" required>
+  Hyperparameter values
+</ParamField>
+
+<ParamField path="trainScores" type="Tensor" required>
+  Training scores for each parameter value
+</ParamField>
+
+<ParamField path="valScores" type="Tensor" required>
+  Validation scores for each parameter value
+</ParamField>
+
+<ParamField path="options" type="PlotOptions">
+  Plot styling options
+</ParamField>
+
+Visualizes model performance across a range of hyperparameter values, useful for hyperparameter tuning.
+
+**Example:**
+
+```ts
+import { plotValidationCurve, tensor } from 'deepbox';
+
+const alphaValues = tensor([0.001, 0.01, 0.1, 1.0, 10.0]);
+const trainScores = tensor([0.92, 0.90, 0.88, 0.85, 0.80]);
+const valScores = tensor([0.78, 0.82, 0.85, 0.84, 0.79]);
+plotValidationCurve(alphaValues, trainScores, valScores);
+```

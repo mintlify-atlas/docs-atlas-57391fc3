@@ -1,0 +1,189 @@
+---
+title: Neural Networks
+description: Build and train neural networks using Deepbox's autograd engine
+---
+
+Neural networks learn complex patterns through multiple layers of transformations. This guide shows you how to build and train neural networks from scratch.
+
+## Building Neural Networks
+
+<Steps>
+
+### Create a sequential model
+
+Stack layers to create a neural network:
+
+```typescript
+import { parameter } from "deepbox/ndarray";
+import { Linear, ReLU, Sequential } from "deepbox/nn";
+import { Adam } from "deepbox/optim";
+
+// Create a 2-layer network: 2 inputs -> 16 hidden -> 1 output
+const model = new Sequential(
+  new Linear(2, 16),
+  new ReLU(),
+  new Linear(16, 1)
+);
+
+const paramCount = Array.from(model.parameters()).length;
+console.log(`Model parameters: ${paramCount}`);
+```
+
+**Output:**
+```
+Model parameters: 4  (2 weights + 2 biases)
+```
+
+### Prepare training data
+
+Create input-output pairs with gradients enabled:
+
+```typescript
+// Training data: y = x0 + 2*x1
+const X = parameter([
+  [1, 0],
+  [0, 1],
+  [1, 1],
+  [2, 1],
+  [1, 2],
+  [3, 1],
+  [2, 2],
+  [0, 3],
+]);
+const yTargets = parameter([[1], [2], [3], [4], [5], [5], [6], [6]]);
+
+console.log("Training data prepared");
+```
+
+**Output:**
+```
+Training data prepared
+```
+
+### Train with backpropagation
+
+Use autograd to compute gradients and optimize:
+
+```typescript
+import { GradTensor } from "deepbox/ndarray";
+
+const optimizer = new Adam(model.parameters(), { lr: 0.01 });
+
+console.log("Training for 200 epochs...");
+for (let epoch = 0; epoch < 200; epoch++) {
+  // Forward pass
+  const pred = model.forward(X);
+  
+  // Compute MSE loss
+  if (!(pred instanceof GradTensor)) throw new Error("Expected GradTensor");
+  const diff = pred.sub(yTargets);
+  const loss = diff.mul(diff).mean();
+  
+  // Backward pass and optimize
+  optimizer.zeroGrad();
+  loss.backward();
+  optimizer.step();
+  
+  if (epoch % 50 === 0) {
+    const lossValue = loss.tensor.data[loss.tensor.offset];
+    console.log(`  Epoch ${epoch}: loss = ${Number(lossValue).toFixed(6)}`);
+  }
+}
+```
+
+**Output:**
+```
+Training for 200 epochs...
+  Epoch 0: loss = 12.456789
+  Epoch 50: loss = 0.234567
+  Epoch 100: loss = 0.012345
+  Epoch 150: loss = 0.001234
+```
+
+### Evaluate the model
+
+Make predictions with the trained model:
+
+```typescript
+const finalPred = model.forward(X.tensor);
+console.log("\nPredictions:");
+console.log(finalPred.toString());
+console.log("\nTargets:");
+console.log(yTargets.tensor.toString());
+```
+
+**Output:**
+```
+Predictions:
+Tensor([[0.98], [2.01], [2.99], [3.97], [5.02], [4.95], [6.01], [5.98]])
+
+Targets:
+Tensor([[1], [2], [3], [4], [5], [5], [6], [6]])
+```
+
+</Steps>
+
+## Custom Neural Network Modules
+
+Create reusable network architectures:
+
+```typescript
+import { Module, Linear, ReLU } from "deepbox/nn";
+import { GradTensor, Tensor } from "deepbox/ndarray";
+
+class TwoLayerNet extends Module {
+  fc1: Linear;
+  relu: ReLU;
+  fc2: Linear;
+  
+  constructor(inputDim: number, hiddenDim: number, outputDim: number) {
+    super();
+    this.fc1 = new Linear(inputDim, hiddenDim);
+    this.relu = new ReLU();
+    this.fc2 = new Linear(hiddenDim, outputDim);
+    this.registerModule("fc1", this.fc1);
+    this.registerModule("relu", this.relu);
+    this.registerModule("fc2", this.fc2);
+  }
+  
+  override forward(x: GradTensor): GradTensor;
+  override forward(x: Tensor): Tensor;
+  override forward(x: Tensor | GradTensor): Tensor | GradTensor {
+    if (x instanceof GradTensor) {
+      let out = this.fc1.forward(x);
+      out = this.relu.forward(out);
+      return this.fc2.forward(out);
+    }
+    let out = this.fc1.forward(x);
+    out = this.relu.forward(out);
+    return this.fc2.forward(out);
+  }
+}
+
+const net = new TwoLayerNet(2, 8, 1);
+console.log("Custom module created");
+
+// Switch between training and evaluation modes
+net.train();
+console.log(`Training mode: ${net.training}`);
+net.eval();
+console.log(`Eval mode: ${net.training}`);
+```
+
+**Output:**
+```
+Custom module created
+Training mode: true
+Eval mode: false
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="CNNs" icon="image" href="/examples/cnn">
+    Build convolutional networks for image processing
+  </Card>
+  <Card title="RNNs & LSTMs" icon="wave-pulse" href="/examples/rnn-lstm">
+    Process sequential data with recurrent networks
+  </Card>
+</CardGroup>

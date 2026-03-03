@@ -1,0 +1,565 @@
+---
+title: 'Descriptive Statistics'
+description: 'Statistical measures for summarizing and describing data distributions'
+icon: 'chart-simple'
+---
+
+## Central Tendency
+
+### mean
+
+Computes the arithmetic mean along specified axes.
+
+```typescript
+function mean(
+  t: Tensor,
+  axis?: number | number[],
+  keepdims?: boolean
+): Tensor
+```
+
+<ParamField path="t" type="Tensor" required>
+  Input tensor
+</ParamField>
+
+<ParamField path="axis" type="number | number[]">
+  Axis or axes along which to compute the mean. If undefined, computes mean of all elements.
+</ParamField>
+
+<ParamField path="keepdims" type="boolean" default="false">
+  If true, reduced axes are retained with size 1
+</ParamField>
+
+<ResponseField name="return" type="Tensor">
+  Tensor containing mean values
+</ResponseField>
+
+The mean is the sum of all values divided by the count. Supports axis-wise reduction with optional dimension preservation.
+
+**Statistical Context:** The arithmetic mean is the most common measure of central tendency. It's sensitive to outliers and follows IEEE 754 semantics for special values (NaN inputs propagate to NaN output, Infinity is handled according to standard arithmetic rules).
+
+```typescript
+const t = tensor([[1, 2, 3], [4, 5, 6]]);
+mean(t);           // tensor([3.5]) - mean of all elements
+mean(t, 0);        // tensor([2.5, 3.5, 4.5]) - column means
+mean(t, 1);        // tensor([2, 5]) - row means
+mean(t, 1, true);  // tensor([[2], [5]]) - keepdims
+```
+
+---
+
+### median
+
+Computes the median (50th percentile) along specified axes.
+
+```typescript
+function median(
+  t: Tensor,
+  axis?: number | number[],
+  keepdims?: boolean
+): Tensor
+```
+
+<ParamField path="t" type="Tensor" required>
+  Input tensor
+</ParamField>
+
+<ParamField path="axis" type="number | number[]">
+  Axis or axes along which to compute the median. If undefined, computes median of all elements.
+</ParamField>
+
+<ParamField path="keepdims" type="boolean" default="false">
+  If true, reduced axes are retained with size 1
+</ParamField>
+
+<ResponseField name="return" type="Tensor">
+  Tensor containing median values
+</ResponseField>
+
+The median is the middle value when data is sorted. For even-sized arrays, it's the average of the two middle values.
+
+**Statistical Context:** More robust to outliers than mean. The median is a better measure of central tendency for skewed distributions. NaN inputs result in NaN output, and Infinity values are sorted naturally.
+
+```typescript
+const t = tensor([1, 2, 3, 4, 5]);
+median(t);  // tensor([3])
+
+const t2 = tensor([1, 2, 3, 4]);
+median(t2); // tensor([2.5]) - average of 2 and 3
+```
+
+---
+
+### mode
+
+Computes the mode (most frequent value) along specified axis.
+
+```typescript
+function mode(
+  t: Tensor,
+  axis?: number | number[]
+): Tensor
+```
+
+<ParamField path="t" type="Tensor" required>
+  Input tensor
+</ParamField>
+
+<ParamField path="axis" type="number | number[]">
+  Axis or axes along which to compute the mode. If undefined, computes mode of all elements.
+</ParamField>
+
+<ResponseField name="return" type="Tensor">
+  Tensor containing mode values
+</ResponseField>
+
+The mode is the value that appears most frequently in the dataset. If multiple values have the same maximum frequency, returns the smallest value.
+
+**Statistical Context:** Useful for categorical data and identifying the most common value. NaN inputs propagate to NaN output.
+
+```typescript
+const t = tensor([1, 2, 2, 3, 3, 3]);
+mode(t);  // tensor([3]) - most frequent value
+
+const t2 = tensor([[1, 2, 2], [3, 3, 4]]);
+mode(t2, 1);  // tensor([2, 3]) - mode of each row
+```
+
+---
+
+### geometricMean
+
+Computes the geometric mean along specified axis.
+
+```typescript
+function geometricMean(
+  t: Tensor,
+  axis?: number | number[]
+): Tensor
+```
+
+<ParamField path="t" type="Tensor" required>
+  Input tensor (all values must be > 0)
+</ParamField>
+
+<ParamField path="axis" type="number | number[]">
+  Axis or axes along which to compute geometric mean
+</ParamField>
+
+<ResponseField name="return" type="Tensor">
+  Tensor containing geometric mean values
+</ResponseField>
+
+The geometric mean is the n-th root of the product of n values. Computed as `exp(mean(log(x)))` for numerical stability.
+
+**Statistical Context:** Useful for averaging ratios, growth rates, and multiplicative processes. Requires all values to be positive. More appropriate than arithmetic mean for data that grows exponentially.
+
+```typescript
+const t = tensor([1, 2, 4, 8]);
+geometricMean(t);  // ~2.83 (⁴√(1*2*4*8))
+
+// Growth rates: 10% and 20% growth
+const growth = tensor([1.1, 1.2]);
+geometricMean(growth);  // ~1.149 (average growth rate)
+```
+
+---
+
+### harmonicMean
+
+Computes the harmonic mean along specified axis.
+
+```typescript
+function harmonicMean(
+  t: Tensor,
+  axis?: number | number[]
+): Tensor
+```
+
+<ParamField path="t" type="Tensor" required>
+  Input tensor (all values must be > 0)
+</ParamField>
+
+<ParamField path="axis" type="number | number[]">
+  Axis or axes along which to compute harmonic mean
+</ParamField>
+
+<ResponseField name="return" type="Tensor">
+  Tensor containing harmonic mean values
+</ResponseField>
+
+The harmonic mean is the reciprocal of the arithmetic mean of reciprocals. Computed as `n / sum(1/x)`.
+
+**Statistical Context:** Useful for averaging rates and ratios (e.g., speeds, densities). Gives more weight to smaller values. Appropriate when averaging quantities defined as ratios.
+
+```typescript
+const t = tensor([1, 2, 4]);
+harmonicMean(t);  // ~1.71 (3 / (1/1 + 1/2 + 1/4))
+
+// Average speed: 60 mph for half distance, 40 mph for other half
+const speeds = tensor([60, 40]);
+harmonicMean(speeds);  // 48 mph (correct average)
+```
+
+---
+
+### trimMean
+
+Computes the trimmed mean (mean after removing outliers from both tails).
+
+```typescript
+function trimMean(
+  t: Tensor,
+  proportiontocut: number,
+  axis?: number | number[]
+): Tensor
+```
+
+<ParamField path="t" type="Tensor" required>
+  Input tensor
+</ParamField>
+
+<ParamField path="proportiontocut" type="number" required>
+  Fraction to cut from each tail, in range [0, 0.5)
+</ParamField>
+
+<ParamField path="axis" type="number | number[]">
+  Axis or axes along which to compute trimmed mean
+</ParamField>
+
+<ResponseField name="return" type="Tensor">
+  Tensor containing trimmed mean values
+</ResponseField>
+
+Removes a specified proportion of extreme values from both ends before computing mean.
+
+**Statistical Context:** More robust to outliers than regular mean, less extreme than median. A 10% trimmed mean (proportiontocut=0.1) removes the highest and lowest 10% of values.
+
+```typescript
+const t = tensor([1, 2, 3, 4, 5, 100]); // 100 is outlier
+mean(t);                    // ~19.17 (affected by outlier)
+trimMean(t, 0.2);          // 3.5 (removes 1 and 100)
+trimMean(t, 0.1);          // ~22.8 (removes only 100)
+```
+
+---
+
+## Dispersion
+
+### variance
+
+Computes the variance along specified axes.
+
+```typescript
+function variance(
+  t: Tensor,
+  axis?: number | number[],
+  keepdims?: boolean,
+  ddof?: number
+): Tensor
+```
+
+<ParamField path="t" type="Tensor" required>
+  Input tensor
+</ParamField>
+
+<ParamField path="axis" type="number | number[]">
+  Axis or axes along which to compute variance
+</ParamField>
+
+<ParamField path="keepdims" type="boolean" default="false">
+  If true, reduced axes are retained with size 1
+</ParamField>
+
+<ParamField path="ddof" type="number" default="0">
+  Delta degrees of freedom. Use 0 for population variance, 1 for sample variance.
+</ParamField>
+
+<ResponseField name="return" type="Tensor">
+  Tensor containing variance values
+</ResponseField>
+
+Variance measures the average squared deviation from the mean. Uses Welford's online algorithm for numerical stability.
+
+**Statistical Context:** Variance quantifies the spread of data. Squaring deviations makes variance sensitive to outliers. Use ddof=0 for population variance (divide by n), ddof=1 for sample variance (divide by n-1).
+
+```typescript
+const t = tensor([1, 2, 3, 4, 5]);
+variance(t);              // 2.0 - population variance
+variance(t, 0, false, 1); // 2.5 - sample variance
+```
+
+---
+
+### std
+
+Computes the standard deviation along specified axes.
+
+```typescript
+function std(
+  t: Tensor,
+  axis?: number | number[],
+  keepdims?: boolean,
+  ddof?: number
+): Tensor
+```
+
+<ParamField path="t" type="Tensor" required>
+  Input tensor
+</ParamField>
+
+<ParamField path="axis" type="number | number[]">
+  Axis or axes along which to compute standard deviation
+</ParamField>
+
+<ParamField path="keepdims" type="boolean" default="false">
+  If true, reduced axes are retained with size 1
+</ParamField>
+
+<ParamField path="ddof" type="number" default="0">
+  Delta degrees of freedom. Use 0 for population std, 1 for sample std.
+</ParamField>
+
+<ResponseField name="return" type="Tensor">
+  Tensor containing standard deviation values
+</ResponseField>
+
+Standard deviation is the square root of variance, measuring spread of data in the same units as the original data.
+
+**Statistical Context:** More interpretable than variance because it's in the same units as the data. In a normal distribution, approximately 68% of values fall within one standard deviation of the mean.
+
+```typescript
+const t = tensor([1, 2, 3, 4, 5]);
+std(t);        // Population std (ddof=0)
+std(t, 0, false, 1);  // Sample std (ddof=1)
+```
+
+---
+
+## Shape
+
+### skewness
+
+Computes the skewness (third standardized moment) along specified axis.
+
+```typescript
+function skewness(
+  t: Tensor,
+  axis?: number | number[],
+  bias?: boolean
+): Tensor
+```
+
+<ParamField path="t" type="Tensor" required>
+  Input tensor
+</ParamField>
+
+<ParamField path="axis" type="number | number[]">
+  Axis or axes along which to compute skewness
+</ParamField>
+
+<ParamField path="bias" type="boolean" default="true">
+  If false, applies the unbiased Fisher-Pearson correction
+</ParamField>
+
+<ResponseField name="return" type="Tensor">
+  Tensor containing skewness values
+</ResponseField>
+
+Skewness measures the asymmetry of the probability distribution.
+
+**Statistical Context:**
+- **Negative skew:** Left tail is longer (mean < median), data concentrated on the right
+- **Zero skew:** Symmetric distribution (normal distribution)
+- **Positive skew:** Right tail is longer (mean > median), data concentrated on the left
+
+Uses Fisher's moment coefficient: E[(X - μ)³] / σ³. Unbiased correction requires at least 3 samples.
+
+```typescript
+const t = tensor([1, 2, 3, 4, 5]);
+skewness(t);  // ~0 (symmetric)
+
+const t2 = tensor([1, 2, 2, 3, 3, 3, 4, 4, 4, 4]);
+skewness(t2); // Positive skew (right-tailed)
+```
+
+---
+
+### kurtosis
+
+Computes the kurtosis (fourth standardized moment) along specified axis.
+
+```typescript
+function kurtosis(
+  t: Tensor,
+  axis?: number | number[],
+  fisher?: boolean,
+  bias?: boolean
+): Tensor
+```
+
+<ParamField path="t" type="Tensor" required>
+  Input tensor
+</ParamField>
+
+<ParamField path="axis" type="number | number[]">
+  Axis or axes along which to compute kurtosis
+</ParamField>
+
+<ParamField path="fisher" type="boolean" default="true">
+  If true, returns excess kurtosis (subtract 3). If false, returns raw kurtosis.
+</ParamField>
+
+<ParamField path="bias" type="boolean" default="true">
+  If false, applies bias correction (requires at least 4 samples)
+</ParamField>
+
+<ResponseField name="return" type="Tensor">
+  Tensor containing kurtosis values
+</ResponseField>
+
+Kurtosis measures the "tailedness" of the probability distribution.
+
+**Statistical Context:**
+- **Negative excess kurtosis:** Lighter tails than normal (platykurtic), fewer outliers
+- **Zero excess kurtosis:** Same tails as normal distribution (mesokurtic)
+- **Positive excess kurtosis:** Heavier tails than normal (leptokurtic), more outliers
+
+Uses Fisher's definition: E[(X - μ)⁴] / σ⁴ - 3 (excess kurtosis). The normal distribution has excess kurtosis of 0.
+
+```typescript
+const t = tensor([1, 2, 3, 4, 5]);
+kurtosis(t, undefined, true);  // Excess kurtosis (Fisher)
+kurtosis(t, undefined, false); // Raw kurtosis (Pearson)
+```
+
+---
+
+### moment
+
+Computes the n-th central moment about the mean.
+
+```typescript
+function moment(
+  t: Tensor,
+  n: number,
+  axis?: number | number[]
+): Tensor
+```
+
+<ParamField path="t" type="Tensor" required>
+  Input tensor
+</ParamField>
+
+<ParamField path="n" type="number" required>
+  Order of the moment (must be non-negative integer)
+</ParamField>
+
+<ParamField path="axis" type="number | number[]">
+  Axis or axes along which to compute moment
+</ParamField>
+
+<ResponseField name="return" type="Tensor">
+  Tensor containing moment values
+</ResponseField>
+
+The n-th moment is defined as: E[(X - μ)ⁿ]
+
+**Statistical Context:**
+- **n=1:** Always 0 (by definition of mean)
+- **n=2:** Variance
+- **n=3:** Related to skewness
+- **n=4:** Related to kurtosis
+
+Higher moments describe increasingly subtle aspects of the distribution shape.
+
+```typescript
+const t = tensor([1, 2, 3, 4, 5]);
+moment(t, 1);  // ~0 (first moment about mean)
+moment(t, 2);  // variance
+moment(t, 3);  // third moment (related to skewness)
+```
+
+---
+
+## Quantiles
+
+### quantile
+
+Computes quantiles along specified axes.
+
+```typescript
+function quantile(
+  t: Tensor,
+  q: number | number[],
+  axis?: number | number[]
+): Tensor
+```
+
+<ParamField path="t" type="Tensor" required>
+  Input tensor
+</ParamField>
+
+<ParamField path="q" type="number | number[]" required>
+  Quantile(s) to compute, in range [0, 1] (0.5 = median)
+</ParamField>
+
+<ParamField path="axis" type="number | number[]">
+  Axis or axes along which to compute quantiles
+</ParamField>
+
+<ResponseField name="return" type="Tensor">
+  Tensor containing quantile values. If multiple quantiles requested, first dimension contains quantile values.
+</ResponseField>
+
+Quantiles are cut points dividing the range of a probability distribution. Uses linear interpolation between data points.
+
+**Statistical Context:** Quantiles partition data into equal probability intervals. The 0.25 quantile (first quartile) has 25% of data below it. Common quantiles include quartiles (0.25, 0.5, 0.75) and percentiles.
+
+```typescript
+const t = tensor([1, 2, 3, 4, 5]);
+quantile(t, 0.5);        // tensor([3]) - median
+quantile(t, [0.25, 0.75]); // tensor([2, 4]) - quartiles
+quantile(t, 0.95);       // tensor([4.8]) - 95th percentile
+```
+
+---
+
+### percentile
+
+Computes percentiles along specified axes.
+
+```typescript
+function percentile(
+  t: Tensor,
+  q: number | number[],
+  axis?: number | number[]
+): Tensor
+```
+
+<ParamField path="t" type="Tensor" required>
+  Input tensor
+</ParamField>
+
+<ParamField path="q" type="number | number[]" required>
+  Percentile(s) to compute, in range [0, 100] (50 = median)
+</ParamField>
+
+<ParamField path="axis" type="number | number[]">
+  Axis or axes along which to compute percentiles
+</ParamField>
+
+<ResponseField name="return" type="Tensor">
+  Tensor containing percentile values
+</ResponseField>
+
+Percentiles are quantiles expressed as percentages (0-100 instead of 0-1). This is a convenience wrapper around `quantile()`.
+
+**Statistical Context:** Percentiles are commonly used in standardized testing and growth charts. The 90th percentile means 90% of values are below this point.
+
+```typescript
+const t = tensor([1, 2, 3, 4, 5]);
+percentile(t, 50);       // tensor([3]) - median
+percentile(t, [25, 75]); // tensor([2, 4]) - quartiles
+percentile(t, 95);       // tensor([4.8]) - 95th percentile
+```

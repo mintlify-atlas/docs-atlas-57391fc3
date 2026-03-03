@@ -1,0 +1,278 @@
+---
+title: Linear System Solvers
+description: Solve linear equations and least squares problems
+---
+
+## Overview
+
+Linear system solvers find solutions to matrix equations. These functions handle square systems, overdetermined systems (more equations than unknowns), and underdetermined systems (fewer equations than unknowns).
+
+---
+
+## solve
+
+Solve linear system **A × x = b**.
+
+Finds vector x that satisfies the equation using LU decomposition with partial pivoting.
+
+```ts
+import { solve } from 'deepbox/linalg';
+import { tensor } from 'deepbox/ndarray';
+
+const A = tensor([[3, 1], [1, 2]]);
+const b = tensor([9, 8]);
+const x = solve(A, b);
+
+// Verify: A @ x ≈ b
+console.log(x);  // [2, 3]
+```
+
+### Signature
+
+```ts
+function solve(a: Tensor, b: Tensor): Tensor
+```
+
+### Parameters
+
+<ParamField path="a" type="Tensor" required>
+  Coefficient matrix of shape (N, N). Must be square and non-singular.
+</ParamField>
+
+<ParamField path="b" type="Tensor" required>
+  Right-hand side of shape (N,) or (N, K) for multiple RHS.
+</ParamField>
+
+### Returns
+
+Solution x of same shape as b
+
+### Algorithm
+
+LU decomposition with partial pivoting (Golub & Van Loan, Algorithm 3.4.1):
+1. Factor A into P × L × U
+2. Solve L × y = P × b by forward substitution
+3. Solve U × x = y by backward substitution
+
+### Requirements
+
+- A must be square matrix
+- A must be non-singular (invertible)
+- Number of rows in A must equal length of b
+
+### Errors
+
+- **ShapeError**: If A is not square or dimensions don't match
+- **DTypeError**: If input has string dtype
+- **DataValidationError**: If A is singular
+- **DataValidationError**: If input contains non-finite values (NaN, Infinity)
+
+---
+
+## solveTriangular
+
+Solve triangular system.
+
+More efficient than `solve()` when A is already triangular (from QR or Cholesky decomposition).
+
+```ts
+import { solveTriangular } from 'deepbox/linalg';
+import { tensor } from 'deepbox/ndarray';
+
+const L = tensor([[2, 0], [3, 4]]);  // Lower triangular
+const b = tensor([6, 18]);
+const x = solveTriangular(L, b, true);
+
+console.log(x);  // [3, 2.25]
+```
+
+### Signature
+
+```ts
+function solveTriangular(
+  a: Tensor,
+  b: Tensor,
+  lower?: boolean
+): Tensor
+```
+
+### Parameters
+
+<ParamField path="a" type="Tensor" required>
+  Triangular matrix of shape (N, N).
+</ParamField>
+
+<ParamField path="b" type="Tensor" required>
+  Right-hand side of shape (N,) or (N, K).
+</ParamField>
+
+<ParamField path="lower" type="boolean" default="true">
+  If true, A is lower triangular; if false, upper triangular.
+</ParamField>
+
+### Returns
+
+Solution x of same shape as b
+
+### Algorithm
+
+- **Lower triangular**: Forward substitution
+- **Upper triangular**: Backward substitution
+
+Time complexity: O(N²) compared to O(N³) for general solve()
+
+### Requirements
+
+- A must be square matrix
+- A must be triangular (elements ignored based on lower parameter)
+- Diagonal elements must be non-zero
+
+### Errors
+
+- **ShapeError**: If A is not square or dimensions don't match
+- **DTypeError**: If input has string dtype
+- **DataValidationError**: If A is singular (zero diagonal)
+- **DataValidationError**: If input contains non-finite values (NaN, Infinity)
+
+---
+
+## lstsq
+
+Least squares solution to **A × x = b**.
+
+Finds x that minimizes ||A×x - b||² (Euclidean norm). Works for overdetermined (M > N), underdetermined (M < N), and square systems.
+
+```ts
+import { lstsq } from 'deepbox/linalg';
+import { tensor } from 'deepbox/ndarray';
+
+// Overdetermined system (more equations than unknowns)
+const A = tensor([[1, 1], [1, 2], [1, 3]]);
+const b = tensor([2, 3, 5]);
+const result = lstsq(A, b);
+
+console.log(result.x);         // Best fit solution
+console.log(result.residuals); // Residual error
+console.log(result.rank);      // Effective rank of A
+console.log(result.s);         // Singular values
+```
+
+### Signature
+
+```ts
+function lstsq(
+  a: Tensor,
+  b: Tensor,
+  rcond?: number
+): {
+  x: Tensor;
+  residuals: Tensor;
+  rank: number;
+  s: Tensor;
+}
+```
+
+### Parameters
+
+<ParamField path="a" type="Tensor" required>
+  Coefficient matrix of shape (M, N). Can be any M × N matrix.
+</ParamField>
+
+<ParamField path="b" type="Tensor" required>
+  Target values of shape (M,) or (M, K).
+</ParamField>
+
+<ParamField path="rcond" type="number">
+  Cutoff for small singular values. Default: machine epsilon × max(M, N).
+  Singular values smaller than rcond × largest_singular_value are treated as zero.
+</ParamField>
+
+### Returns
+
+Object with four properties:
+
+<ParamField path="x" type="Tensor">
+  Least squares solution of shape (N,) or (N, K)
+</ParamField>
+
+<ParamField path="residuals" type="Tensor">
+  Sum of squared residuals ||b - A×x||² for each column.
+  Scalar for 1D b, vector for 2D b.
+</ParamField>
+
+<ParamField path="rank" type="number">
+  Effective rank of matrix A (number of singular values > rcond threshold)
+</ParamField>
+
+<ParamField path="s" type="Tensor">
+  Singular values of A in descending order
+</ParamField>
+
+### Algorithm
+
+SVD-based least squares (Golub & Van Loan, Algorithm 5.5.4):
+
+1. Compute SVD: A = U × Σ × V^T
+2. Compute pseudo-inverse: A^+ = V × Σ^+ × U^T
+   - Σ^+ inverts non-zero singular values
+3. Solution: x = A^+ × b
+
+This is the most robust method, handling:
+- Overdetermined systems (M > N): Minimizes error
+- Underdetermined systems (M < N): Returns minimum norm solution
+- Rank-deficient systems: Automatically handles singular matrices
+
+### Use Cases
+
+#### Overdetermined System (M > N)
+More equations than unknowns. Finds best fit solution that minimizes error.
+
+```ts
+// Fitting a line y = mx + c to data points
+const X = tensor([[1, 1], [1, 2], [1, 3], [1, 4]]);
+const y = tensor([2.1, 2.9, 4.2, 4.8]);
+const { x } = lstsq(X, y);
+console.log(x);  // [c, m] coefficients
+```
+
+#### Underdetermined System (M < N)
+Fewer equations than unknowns. Finds minimum norm solution.
+
+```ts
+const A = tensor([[1, 2, 3], [4, 5, 6]]);
+const b = tensor([7, 8]);
+const { x } = lstsq(A, b);
+// x has smallest ||x|| among all solutions
+```
+
+#### Rank-Deficient System
+Linearly dependent rows/columns.
+
+```ts
+const A = tensor([[1, 2], [2, 4]]);  // Rank 1
+const b = tensor([3, 6]);
+const { x, rank } = lstsq(A, b);
+console.log(rank);  // 1 (not full rank 2)
+```
+
+### Requirements
+
+- A can be any M × N matrix
+- First dimension of A must match first dimension of b
+
+### Errors
+
+- **ShapeError**: If A is not 2D matrix or dimensions don't match
+- **DTypeError**: If input has string dtype
+- **InvalidParameterError**: If rcond is negative or non-finite
+- **DataValidationError**: If input contains non-finite values (NaN, Infinity)
+
+### Comparison with solve()
+
+| Feature | solve() | lstsq() |
+|---------|---------|----------|
+| Input | Square N×N | Any M×N |
+| Requirement | Non-singular | Any rank |
+| Output | Exact solution | Best fit |
+| Speed | Fast (LU) | Slower (SVD) |
+| Use Case | Exact systems | Fitting, overdetermined |

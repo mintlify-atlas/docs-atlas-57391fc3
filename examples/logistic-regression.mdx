@@ -1,0 +1,148 @@
+---
+title: Logistic Regression
+description: Build a binary classification model using logistic regression
+---
+
+Logistic regression is a fundamental algorithm for binary classification. This guide shows you how to train a classifier and evaluate its performance.
+
+## Building a Logistic Regression Classifier
+
+<Steps>
+
+### Load and prepare data
+
+Use the Iris dataset for binary classification:
+
+```typescript
+import { loadIris } from "deepbox/datasets";
+import { tensor } from "deepbox/ndarray";
+import { trainTestSplit } from "deepbox/preprocess";
+
+// Load the Iris dataset
+const iris = loadIris();
+console.log(`Dataset: ${iris.data.shape[0]} samples, ${iris.data.shape[1]} features`);
+
+// Convert to binary classification: setosa (0) vs non-setosa (1)
+const y_binary: number[] = [];
+for (let i = 0; i < iris.target.size; i++) {
+  const label = Number(iris.target.data[iris.target.offset + i]);
+  y_binary.push(label === 0 ? 0 : 1);
+}
+const y = tensor(y_binary);
+```
+
+**Output:**
+```
+Dataset: 150 samples, 4 features
+```
+
+### Split and scale data
+
+Standardize features for better convergence:
+
+```typescript
+import { StandardScaler } from "deepbox/preprocess";
+
+const [X_train, X_test, y_train, y_test] = trainTestSplit(iris.data, y, {
+  testSize: 0.3,
+  randomState: 42,
+});
+
+console.log(`Training set: ${X_train.shape[0]} samples`);
+console.log(`Test set: ${X_test.shape[0]} samples`);
+
+// Standardize features (mean=0, std=1)
+const scaler = new StandardScaler();
+scaler.fit(X_train);
+const X_train_scaled = scaler.transform(X_train);
+const X_test_scaled = scaler.transform(X_test);
+
+console.log("Features scaled");
+```
+
+**Output:**
+```
+Training set: 105 samples
+Test set: 45 samples
+Features scaled
+```
+
+### Train the classifier
+
+Create and fit a logistic regression model:
+
+```typescript
+import { LogisticRegression } from "deepbox/ml";
+
+const model = new LogisticRegression({ 
+  maxIter: 1000, 
+  learningRate: 0.1 
+});
+model.fit(X_train_scaled, y_train);
+
+console.log("Model trained!");
+```
+
+**Output:**
+```
+Model trained!
+```
+
+### Evaluate performance
+
+Calculate classification metrics:
+
+```typescript
+import { accuracy, precision, recall, f1Score, confusionMatrix } from "deepbox/metrics";
+
+const y_pred = model.predict(X_test_scaled);
+
+const acc = accuracy(y_test, y_pred);
+const prec = precision(y_test, y_pred);
+const rec = recall(y_test, y_pred);
+const f1 = f1Score(y_test, y_pred);
+
+console.log("Model Performance:");
+console.log(`Accuracy:  ${(Number(acc) * 100).toFixed(2)}%`);
+console.log(`Precision: ${(Number(prec) * 100).toFixed(2)}%`);
+console.log(`Recall:    ${(Number(rec) * 100).toFixed(2)}%`);
+console.log(`F1-Score:  ${(Number(f1) * 100).toFixed(2)}%`);
+
+const cm = confusionMatrix(y_test, y_pred);
+console.log("\nConfusion Matrix:");
+console.log(cm.toString());
+```
+
+**Output:**
+```
+Model Performance:
+Accuracy:  100.00%
+Precision: 100.00%
+Recall:    100.00%
+F1-Score:  100.00%
+
+Confusion Matrix:
+Tensor([[15,  0],
+        [ 0, 30]])
+```
+
+</Steps>
+
+## Understanding the Metrics
+
+- **Accuracy**: Overall correctness (correct predictions / total predictions)
+- **Precision**: How many predicted positives are actually positive
+- **Recall**: How many actual positives were correctly identified
+- **F1-Score**: Harmonic mean of precision and recall
+- **Confusion Matrix**: Shows true positives, false positives, true negatives, false negatives
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Decision Trees" icon="diagram-project" href="/examples/decision-trees">
+    Learn non-linear classification with decision trees
+  </Card>
+  <Card title="Neural Networks" icon="brain" href="/examples/neural-network">
+    Build deep learning models for complex patterns
+  </Card>
+</CardGroup>

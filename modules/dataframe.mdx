@@ -1,0 +1,405 @@
+---
+title: DataFrame Module
+description: Tabular data manipulation and analysis with labeled rows and columns
+icon: table
+---
+
+The DataFrame module provides pandas-like data structures for working with structured, tabular data in TypeScript. It offers intuitive APIs for data cleaning, transformation, aggregation, and analysis.
+
+## Overview
+
+DataFrame is a two-dimensional labeled data structure, similar to a spreadsheet or SQL table. It provides:
+
+- **Labeled Indexing**: Access data by row and column labels
+- **Heterogeneous Data**: Store different data types in different columns
+- **Flexible Reshaping**: Pivot, melt, merge, and group operations
+- **Data Cleaning**: Handle missing values, filter, and transform data
+- **Aggregation**: Group by columns and compute statistics
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Intuitive API" icon="hand-pointer">
+    Familiar pandas-like interface for TypeScript developers.
+  </Card>
+  <Card title="Type Safety" icon="shield">
+    Full TypeScript support with type inference for columns.
+  </Card>
+  <Card title="Efficient Storage" icon="database">
+    Columnar storage for fast column operations.
+  </Card>
+  <Card title="Rich Operations" icon="wand-sparkles">
+    Filter, sort, group, merge, and aggregate with ease.
+  </Card>
+</CardGroup>
+
+## Basic Usage
+
+### Creating DataFrames
+
+```typescript
+import { DataFrame } from 'deepbox/dataframe';
+
+// From object with arrays
+const df = new DataFrame({
+  name: ['Alice', 'Bob', 'Charlie', 'Diana'],
+  age: [25, 30, 35, 28],
+  score: [85.5, 92.0, 78.5, 88.0],
+  city: ['NYC', 'LA', 'Chicago', 'NYC']
+});
+
+console.log(df.shape);    // [4, 4]
+console.log(df.columns);  // ['name', 'age', 'score', 'city']
+```
+
+### Custom Index
+
+```typescript
+const df = new DataFrame(
+  {
+    temperature: [72, 75, 68, 70],
+    humidity: [65, 70, 60, 68]
+  },
+  {
+    index: ['Mon', 'Tue', 'Wed', 'Thu']
+  }
+);
+```
+
+## Core Operations
+
+### Selecting Data
+
+```typescript
+import { DataFrame, Series } from 'deepbox/dataframe';
+
+const df = new DataFrame({
+  name: ['Alice', 'Bob', 'Charlie'],
+  age: [25, 30, 35],
+  score: [85, 92, 78]
+});
+
+// Select single column (returns Series)
+const ages: Series = df.get('age');
+
+// Select multiple columns
+const subset = df.select(['name', 'score']);
+
+// Select rows by position
+const firstRow = df.iloc(0);
+
+// Select rows by label (if custom index)
+const labeled = df.loc('row_label');
+
+// Select specific cell
+const value = df.at(1, 'name');  // 'Bob'
+```
+
+### Filtering Rows
+
+```typescript
+// Filter by condition
+const adults = df.filter((row) => row.age >= 30);
+
+// Multiple conditions
+const filtered = df.filter((row) => 
+  row.age > 25 && row.score >= 80
+);
+
+// Drop rows with missing values
+const clean = df.dropna();
+```
+
+### Sorting
+
+```typescript
+// Sort by single column
+const sorted1 = df.sort('age');
+
+// Sort descending
+const sorted2 = df.sort('score', false);
+
+// Sort by multiple columns
+const sorted3 = df.sortBy(['city', 'age']);
+```
+
+### Adding and Modifying Data
+
+```typescript
+// Add new column
+df.set('grade', ['A', 'A', 'B']);
+
+// Modify existing column
+df.set('age', [26, 31, 36]);
+
+// Add computed column
+const scores = df.get('score').values;
+df.set('normalized_score', scores.map(s => s / 100));
+
+// Drop column
+df.drop('grade');
+```
+
+## Aggregation and Grouping
+
+### GroupBy Operations
+
+```typescript
+const df = new DataFrame({
+  category: ['A', 'B', 'A', 'B', 'A'],
+  value: [10, 20, 30, 40, 50],
+  count: [1, 2, 3, 4, 5]
+});
+
+// Group by category and aggregate
+const grouped = df.groupBy('category');
+const result = grouped.agg('sum');
+
+// Multiple aggregations
+const stats = grouped.agg((values) => ({
+  sum: values.reduce((a, b) => a + b, 0),
+  mean: values.reduce((a, b) => a + b, 0) / values.length,
+  count: values.length
+}));
+```
+
+### Built-in Aggregations
+
+```typescript
+// Compute statistics
+const meanAge = df.mean('age');
+const maxScore = df.max('score');
+const minAge = df.min('age');
+
+// Aggregate entire DataFrame
+const allStats = df.describe();
+```
+
+## Series Operations
+
+A `Series` is a one-dimensional labeled array, representing a single column:
+
+```typescript
+import { Series } from 'deepbox/dataframe';
+
+// Create series
+const s = new Series([1, 2, 3, 4], { name: 'values' });
+
+// Access by index
+console.log(s.iloc(0));  // 1
+
+// Get underlying data
+console.log(s.values);   // [1, 2, 3, 4]
+
+// Series from DataFrame column
+const ages = df.get('age');
+console.log(ages.mean());
+console.log(ages.std());
+```
+
+## Advanced Operations
+
+### Merging DataFrames
+
+```typescript
+const df1 = new DataFrame({
+  id: [1, 2, 3],
+  name: ['Alice', 'Bob', 'Charlie']
+});
+
+const df2 = new DataFrame({
+  id: [1, 2, 4],
+  score: [85, 92, 78]
+});
+
+// Inner join
+const merged = df1.merge(df2, { on: 'id', how: 'inner' });
+
+// Left join
+const leftJoin = df1.merge(df2, { on: 'id', how: 'left' });
+```
+
+### Reshaping Data
+
+```typescript
+// Pivot table
+const pivoted = df.pivot({
+  index: 'date',
+  columns: 'category',
+  values: 'sales'
+});
+
+// Melt (unpivot)
+const melted = df.melt({
+  idVars: ['id', 'name'],
+  valueVars: ['score1', 'score2']
+});
+```
+
+### Data Cleaning
+
+```typescript
+// Fill missing values
+const filled = df.fillna(0);
+
+// Drop rows with any missing values
+const dropMissing = df.dropna();
+
+// Drop duplicate rows
+const unique = df.dropDuplicates();
+
+// Replace values
+const replaced = df.replace('NYC', 'New York');
+```
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="Data Analysis">
+    Explore and analyze structured datasets:
+    
+    ```typescript
+    import { DataFrame } from 'deepbox/dataframe';
+    
+    const df = new DataFrame({
+      date: ['2024-01', '2024-02', '2024-03'],
+      revenue: [10000, 12000, 15000],
+      expenses: [8000, 9000, 10000]
+    });
+    
+    // Calculate profit
+    df.set('profit', 
+      df.get('revenue').values.map((r, i) => 
+        r - df.get('expenses').values[i]
+      )
+    );
+    
+    console.log(df.describe());
+    ```
+  </Accordion>
+
+  <Accordion title="ETL Pipelines">
+    Extract, transform, and load data:
+    
+    ```typescript
+    // Load data
+    const raw = new DataFrame(rawData);
+    
+    // Transform
+    const cleaned = raw
+      .dropna()
+      .filter(row => row.value > 0)
+      .sort('timestamp');
+    
+    // Aggregate
+    const summary = cleaned
+      .groupBy('category')
+      .agg('sum');
+    ```
+  </Accordion>
+
+  <Accordion title="Machine Learning Preparation">
+    Prepare data for ML models:
+    
+    ```typescript
+    import { DataFrame } from 'deepbox/dataframe';
+    import { tensor } from 'deepbox/ndarray';
+    
+    const df = new DataFrame(data);
+    
+    // Select features
+    const features = df.select(['feature1', 'feature2', 'feature3']);
+    const target = df.get('label');
+    
+    // Convert to tensors
+    const X = tensor(features.values);
+    const y = tensor(target.values);
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## API Reference
+
+### DataFrame Methods
+
+**Selection**
+- `get(column)` - Get column as Series
+- `select(columns)` - Select multiple columns
+- `iloc(index)` - Select by position
+- `loc(label)` - Select by label
+- `at(row, col)` - Get single value
+
+**Modification**
+- `set(column, values)` - Add/update column
+- `drop(column)` - Remove column
+- `rename(mapping)` - Rename columns
+
+**Filtering & Sorting**
+- `filter(predicate)` - Filter rows
+- `sort(column, ascending)` - Sort by column
+- `sortBy(columns)` - Sort by multiple columns
+- `head(n)` - First n rows
+- `tail(n)` - Last n rows
+
+**Aggregation**
+- `groupBy(column)` - Group by column
+- `agg(function)` - Aggregate groups
+- `mean(column)`, `sum(column)`, `max(column)`, `min(column)`
+- `describe()` - Summary statistics
+
+**Reshaping**
+- `merge(other, options)` - Join DataFrames
+- `pivot(options)` - Pivot table
+- `melt(options)` - Unpivot
+
+**Cleaning**
+- `dropna()` - Remove missing values
+- `fillna(value)` - Fill missing values
+- `dropDuplicates()` - Remove duplicates
+- `replace(old, new)` - Replace values
+
+### Series Methods
+
+- `iloc(index)` - Access by position
+- `loc(label)` - Access by label
+- `values` - Get underlying array
+- `mean()`, `sum()`, `std()`, `min()`, `max()`
+
+## Performance Tips
+
+<Tip>
+  Use columnar operations instead of row-by-row iteration. Operations like `groupBy` and `agg` are optimized for performance.
+</Tip>
+
+<Tip>
+  Filter data early in your pipeline to reduce the size of DataFrames being processed.
+</Tip>
+
+<Warning>
+  Avoid creating too many intermediate DataFrames. Chain operations when possible.
+</Warning>
+
+## Related Modules
+
+<CardGroup cols={3}>
+  <Card title="NDArray" icon="grid" href="/modules/ndarray">
+    Convert DataFrames to tensors
+  </Card>
+  <Card title="Statistics" icon="chart-simple" href="/modules/stats">
+    Statistical analysis functions
+  </Card>
+  <Card title="Preprocessing" icon="filter" href="/modules/preprocess">
+    Data preparation for ML
+  </Card>
+</CardGroup>
+
+## Learn More
+
+<CardGroup cols={2}>
+  <Card title="API Reference" icon="book" href="/api/dataframe">
+    Complete API documentation
+  </Card>
+  <Card title="Tutorial" icon="graduation-cap" href="/tutorials/dataframes">
+    Learn DataFrame operations
+  </Card>
+</CardGroup>

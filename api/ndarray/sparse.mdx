@@ -1,0 +1,379 @@
+---
+title: 'Sparse Matrices'
+description: 'Compressed Sparse Row (CSR) matrix operations'
+---
+
+Sparse matrices efficiently store and operate on matrices with many zero values using Compressed Sparse Row (CSR) format.
+
+## CSRMatrix Class
+
+<ParamField path="CSRMatrix" type="class">
+  Compressed Sparse Row (CSR) matrix representation.
+
+  CSR format stores a sparse matrix using three arrays:
+  - `data`: Non-zero values in row-major order
+  - `indices`: Column indices of non-zero values
+  - `indptr`: Row pointers (indptr[i] to indptr[i+1] gives the range for row i)
+
+  This format is efficient for row slicing, matrix-vector products, and arithmetic operations.
+
+  ```ts
+  import { CSRMatrix } from 'deepbox/ndarray';
+
+  // Create a 3×3 sparse matrix with values at (0,0)=1, (1,2)=2, (2,1)=3
+  const sparse = CSRMatrix.fromCOO({
+    rows: 3, cols: 3,
+    rowIndices: new Int32Array([0, 1, 2]),
+    colIndices: new Int32Array([0, 2, 1]),
+    values: new Float64Array([1, 2, 3])
+  });
+
+  // Convert to dense for operations
+  const dense = sparse.toDense();
+  ```
+</ParamField>
+
+### Properties
+
+<ParamField path="data" type="Float64Array">
+  Non-zero values stored in row-major order.
+</ParamField>
+
+<ParamField path="indices" type="Int32Array">
+  Column indices corresponding to each value in `data`.
+</ParamField>
+
+<ParamField path="indptr" type="Int32Array">
+  Row pointers. Length is `rows + 1`. Range `[indptr[i], indptr[i+1])` contains the indices for row i.
+</ParamField>
+
+<ParamField path="shape" type="Shape">
+  Matrix dimensions `[rows, cols]`.
+</ParamField>
+
+<ParamField path="nnz" type="number">
+  Number of non-zero elements in the matrix.
+
+  ```ts
+  console.log(sparse.nnz);  // 3
+  ```
+</ParamField>
+
+<ParamField path="rows" type="number">
+  Number of rows in the matrix.
+</ParamField>
+
+<ParamField path="cols" type="number">
+  Number of columns in the matrix.
+</ParamField>
+
+### Creation
+
+<ParamField path="CSRMatrix.fromCOO" type="function">
+  Create a sparse matrix from COO (Coordinate List) format.
+
+  **Parameters:**
+  - `args.rows` (number) - Number of rows
+  - `args.cols` (number) - Number of columns
+  - `args.rowIndices` (Int32Array) - Row indices of non-zero values
+  - `args.colIndices` (Int32Array) - Column indices of non-zero values
+  - `args.values` (Float64Array) - Non-zero values
+  - `args.sort` (boolean) - Whether to sort entries (default: true)
+
+  **Returns:** New CSRMatrix
+
+  ```ts
+  import { CSRMatrix } from 'deepbox/ndarray';
+
+  // Create sparse identity matrix
+  const I = CSRMatrix.fromCOO({
+    rows: 3, cols: 3,
+    rowIndices: new Int32Array([0, 1, 2]),
+    colIndices: new Int32Array([0, 1, 2]),
+    values: new Float64Array([1, 1, 1])
+  });
+  // [[1, 0, 0],
+  //  [0, 1, 0],
+  //  [0, 0, 1]]
+  ```
+</ParamField>
+
+<ParamField path="constructor" type="function">
+  Create a CSRMatrix directly from CSR format arrays.
+
+  **Parameters:**
+  - `init.data` (Float64Array) - Non-zero values
+  - `init.indices` (Int32Array) - Column indices
+  - `init.indptr` (Int32Array) - Row pointers
+  - `init.shape` (Shape) - Matrix dimensions
+
+  **Returns:** New CSRMatrix
+
+  ```ts
+  import { CSRMatrix } from 'deepbox/ndarray';
+
+  const sparse = new CSRMatrix({
+    data: new Float64Array([1, 2, 3]),
+    indices: new Int32Array([0, 2, 1]),
+    indptr: new Int32Array([0, 1, 2, 3]),
+    shape: [3, 3]
+  });
+  ```
+</ParamField>
+
+### Conversion
+
+<ParamField path="toDense" type="function">
+  Convert the sparse matrix to a dense Tensor.
+
+  **Returns:** Dense 2D Tensor representation
+
+  ```ts
+  const dense = sparse.toDense();
+  console.log(dense.shape);  // [rows, cols]
+  ```
+</ParamField>
+
+### Arithmetic Operations
+
+<ParamField path="add" type="function">
+  Add two sparse matrices element-wise.
+
+  Both matrices must have the same shape.
+
+  **Parameters:**
+  - `other` (CSRMatrix) - Matrix to add
+
+  **Returns:** New CSRMatrix containing the sum
+
+  **Throws:** ShapeError if shapes don't match
+
+  ```ts
+  const C = A.add(B);  // C = A + B
+  ```
+</ParamField>
+
+<ParamField path="sub" type="function">
+  Subtract another sparse matrix element-wise.
+
+  Both matrices must have the same shape.
+
+  **Parameters:**
+  - `other` (CSRMatrix) - Matrix to subtract
+
+  **Returns:** New CSRMatrix containing the difference
+
+  **Throws:** ShapeError if shapes don't match
+
+  ```ts
+  const C = A.sub(B);  // C = A - B
+  ```
+</ParamField>
+
+<ParamField path="scale" type="function">
+  Multiply all elements by a scalar value.
+
+  **Parameters:**
+  - `scalar` (number) - Value to multiply by
+
+  **Returns:** New CSRMatrix with scaled values
+
+  ```ts
+  const scaled = matrix.scale(2.0);  // Double all values
+  ```
+</ParamField>
+
+<ParamField path="multiply" type="function">
+  Element-wise multiplication (Hadamard product) with another sparse matrix.
+
+  Both matrices must have the same shape.
+
+  **Parameters:**
+  - `other` (CSRMatrix) - Matrix to multiply with
+
+  **Returns:** New CSRMatrix containing the element-wise product
+
+  **Throws:** ShapeError if shapes don't match
+
+  ```ts
+  const C = A.multiply(B);  // C[i,j] = A[i,j] * B[i,j]
+  ```
+</ParamField>
+
+### Matrix Operations
+
+<ParamField path="matvec" type="function">
+  Matrix-vector multiplication.
+
+  Computes y = A × x where A is this sparse matrix and x is a dense vector.
+
+  **Parameters:**
+  - `vector` (Tensor | Float64Array) - Dense vector (1D Tensor or Float64Array)
+
+  **Returns:** Dense result vector as Tensor
+
+  **Throws:** ShapeError if vector length doesn't match matrix columns
+
+  ```ts
+  import { tensor } from 'deepbox/ndarray';
+
+  const x = tensor([1, 2, 3]);
+  const y = sparse.matvec(x);  // y = A * x
+  ```
+</ParamField>
+
+<ParamField path="matmul" type="function">
+  Matrix multiplication with a dense matrix.
+
+  Computes C = A × B where A is this sparse matrix and B is a dense matrix.
+
+  **Parameters:**
+  - `dense` (Tensor) - Dense matrix (2D Tensor)
+
+  **Returns:** Dense result matrix as Tensor
+
+  **Throws:** ShapeError if inner dimensions don't match
+
+  ```ts
+  import { tensor } from 'deepbox/ndarray';
+
+  const B = tensor([[1, 2], [3, 4], [5, 6]]);
+  const C = sparse.matmul(B);  // C = A * B
+  ```
+</ParamField>
+
+<ParamField path="transpose" type="function">
+  Transpose the sparse matrix.
+
+  **Returns:** New CSRMatrix representing the transpose
+
+  ```ts
+  const At = A.transpose();  // At[i,j] = A[j,i]
+  ```
+</ParamField>
+
+### Access Operations
+
+<ParamField path="get" type="function">
+  Get a specific element from the matrix.
+
+  **Parameters:**
+  - `row` (number) - Row index
+  - `col` (number) - Column index
+
+  **Returns:** Value at the specified position (0 if not stored)
+
+  **Throws:** IndexError if indices are out of bounds
+
+  ```ts
+  const value = matrix.get(1, 2);
+  ```
+</ParamField>
+
+<ParamField path="copy" type="function">
+  Create a copy of this matrix.
+
+  **Returns:** New CSRMatrix with copied data
+
+  ```ts
+  const clone = matrix.copy();
+  ```
+</ParamField>
+
+## Types
+
+<ParamField path="CSRMatrixInit" type="type">
+  Initialization parameters for CSRMatrix constructor.
+
+  ```ts
+  type CSRMatrixInit = {
+    data: Float64Array;
+    indices: Int32Array;
+    indptr: Int32Array;
+    shape: Shape;
+  };
+  ```
+</ParamField>
+
+## Example: Sparse Linear System
+
+```ts
+import { CSRMatrix, tensor } from 'deepbox/ndarray';
+
+// Create a sparse coefficient matrix A
+const A = CSRMatrix.fromCOO({
+  rows: 3, cols: 3,
+  rowIndices: new Int32Array([0, 0, 1, 1, 2, 2]),
+  colIndices: new Int32Array([0, 1, 1, 2, 0, 2]),
+  values: new Float64Array([4, -1, 4, -1, -1, 4])
+});
+// [[4, -1,  0],
+//  [0,  4, -1],
+//  [-1, 0,  4]]
+
+// Right-hand side vector b
+const b = tensor([1, 2, 3]);
+
+// Compute A * b
+const result = A.matvec(b);
+console.log(result.toArray());  // [2, 5, 11]
+
+// Scale the matrix
+const A2 = A.scale(0.5);
+
+// Transpose
+const At = A.transpose();
+```
+
+## Example: Sparse Matrix Arithmetic
+
+```ts
+import { CSRMatrix } from 'deepbox/ndarray';
+
+// Create two sparse matrices
+const A = CSRMatrix.fromCOO({
+  rows: 2, cols: 3,
+  rowIndices: new Int32Array([0, 1]),
+  colIndices: new Int32Array([0, 2]),
+  values: new Float64Array([1, 2])
+});
+// [[1, 0, 0],
+//  [0, 0, 2]]
+
+const B = CSRMatrix.fromCOO({
+  rows: 2, cols: 3,
+  rowIndices: new Int32Array([0, 1]),
+  colIndices: new Int32Array([1, 0]),
+  values: new Float64Array([3, 4])
+});
+// [[0, 3, 0],
+//  [4, 0, 0]]
+
+// Add matrices
+const C = A.add(B);
+// [[1, 3, 0],
+//  [4, 0, 2]]
+
+// Element-wise multiply
+const D = A.multiply(B);
+// [[0, 0, 0],
+//  [0, 0, 0]]
+
+// Subtract
+const E = A.sub(B);
+// [[1, -3,  0],
+//  [-4, 0,  2]]
+```
+
+## Performance Notes
+
+- CSR format is optimized for:
+  - Row slicing operations
+  - Matrix-vector multiplication
+  - Matrix-matrix multiplication where the left operand is sparse
+  
+- Memory usage: O(nnz + rows) vs O(rows × cols) for dense matrices
+
+- Best for matrices where nnz is much less than rows × cols (high sparsity)
+
+- Operations like column access are less efficient than row access

@@ -1,0 +1,514 @@
+---
+title: Learning Rate Schedulers
+description: Dynamic learning rate adjustment during training
+---
+
+Learning rate schedulers adjust the learning rate during training according to predefined schedules. This helps improve convergence and prevent overshooting optimal solutions.
+
+## Base Scheduler
+
+All schedulers (except `ReduceLROnPlateau`) extend the `LRScheduler` base class, which provides:
+
+- `step()` - Update learning rates for the next epoch
+- `getLr()` - Compute learning rates for current epoch
+- `getLastLr()` - Get current learning rates for all parameter groups
+- `epoch` - Get current epoch number
+
+## StepLR
+
+Decays the learning rate by `gamma` every `stepSize` epochs.
+
+**Formula:** `lr = baseLr * gamma^(epoch // stepSize)`
+
+```typescript
+import { SGD, StepLR } from 'deepbox/optim';
+
+const optimizer = new SGD(model.parameters(), { lr: 0.1 });
+const scheduler = new StepLR(optimizer, { stepSize: 30, gamma: 0.1 });
+
+for (let epoch = 0; epoch < 100; epoch++) {
+  train();
+  scheduler.step();
+}
+```
+
+### Constructor
+
+<ParamField path="optimizer" type="Optimizer" required>
+  The optimizer whose learning rate will be scheduled
+</ParamField>
+
+<ParamField path="options" type="object" required>
+  Scheduler configuration
+  
+  <Expandable title="properties">
+    <ParamField path="stepSize" type="number" required>
+      Number of epochs between learning rate decays (must be positive integer)
+    </ParamField>
+    
+    <ParamField path="gamma" type="number" default="0.1">
+      Multiplicative factor for learning rate decay (must be positive)
+    </ParamField>
+    
+    <ParamField path="lastEpoch" type="number" default="-1">
+      Index of last epoch (used for resuming training)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Example Schedule
+
+```typescript
+const scheduler = new StepLR(optimizer, { stepSize: 30, gamma: 0.1 });
+// Epochs 0-29:  lr = 0.1
+// Epochs 30-59: lr = 0.01
+// Epochs 60-89: lr = 0.001
+```
+
+## MultiStepLR
+
+Decays the learning rate by `gamma` when the epoch reaches one of the milestones.
+
+```typescript
+import { MultiStepLR } from 'deepbox/optim';
+
+const scheduler = new MultiStepLR(optimizer, {
+  milestones: [30, 80],
+  gamma: 0.1
+});
+```
+
+### Constructor
+
+<ParamField path="optimizer" type="Optimizer" required>
+  The optimizer to schedule
+</ParamField>
+
+<ParamField path="options" type="object" required>
+  Scheduler configuration
+  
+  <Expandable title="properties">
+    <ParamField path="milestones" type="number[]" required>
+      List of epoch indices at which to decay the learning rate (must be strictly increasing non-negative integers)
+    </ParamField>
+    
+    <ParamField path="gamma" type="number" default="0.1">
+      Multiplicative factor for learning rate decay
+    </ParamField>
+    
+    <ParamField path="lastEpoch" type="number" default="-1">
+      Index of last epoch
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Example Schedule
+
+```typescript
+const scheduler = new MultiStepLR(optimizer, {
+  milestones: [30, 80],
+  gamma: 0.1
+});
+// Epochs 0-29:  lr = 0.1
+// Epochs 30-79: lr = 0.01
+// Epochs 80+:   lr = 0.001
+```
+
+## ExponentialLR
+
+Decays the learning rate exponentially every epoch.
+
+**Formula:** `lr = baseLr * gamma^epoch`
+
+```typescript
+import { ExponentialLR } from 'deepbox/optim';
+
+const scheduler = new ExponentialLR(optimizer, { gamma: 0.95 });
+// lr *= 0.95 each epoch
+```
+
+### Constructor
+
+<ParamField path="optimizer" type="Optimizer" required>
+  The optimizer to schedule
+</ParamField>
+
+<ParamField path="options" type="object" required>
+  Scheduler configuration
+  
+  <Expandable title="properties">
+    <ParamField path="gamma" type="number" required>
+      Multiplicative factor for exponential decay (must be positive)
+    </ParamField>
+    
+    <ParamField path="lastEpoch" type="number" default="-1">
+      Index of last epoch
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## CosineAnnealingLR
+
+Sets the learning rate using a cosine annealing schedule. The learning rate oscillates between the base learning rate and `etaMin` following a cosine curve.
+
+**Formula:** `lr = etaMin + (baseLr - etaMin) * (1 + cos(π * epoch / T_max)) / 2`
+
+```typescript
+import { CosineAnnealingLR } from 'deepbox/optim';
+
+const scheduler = new CosineAnnealingLR(optimizer, {
+  T_max: 100,
+  etaMin: 0.001
+});
+```
+
+### Constructor
+
+<ParamField path="optimizer" type="Optimizer" required>
+  The optimizer to schedule
+</ParamField>
+
+<ParamField path="options" type="object" required>
+  Scheduler configuration
+  
+  <Expandable title="properties">
+    <ParamField path="T_max" type="number" required>
+      Maximum number of epochs (one cosine cycle period). Can also use `tMax` property name.
+    </ParamField>
+    
+    <ParamField path="etaMin" type="number" default="0">
+      Minimum learning rate (must be non-negative)
+    </ParamField>
+    
+    <ParamField path="lastEpoch" type="number" default="-1">
+      Index of last epoch
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Training Example
+
+```typescript
+const scheduler = new CosineAnnealingLR(optimizer, {
+  T_max: 100,
+  etaMin: 0.001
+});
+
+for (let epoch = 0; epoch < 100; epoch++) {
+  train();
+  scheduler.step();
+}
+```
+
+## OneCycleLR
+
+Implements the 1cycle learning rate policy. The learning rate starts at `maxLr/divFactor`, increases to `maxLr` over `pctStart` of the training, then decreases to `maxLr/finalDivFactor`.
+
+```typescript
+import { OneCycleLR } from 'deepbox/optim';
+
+const scheduler = new OneCycleLR(optimizer, {
+  maxLr: 0.1,
+  totalSteps: 1000,
+  pctStart: 0.3
+});
+```
+
+### Constructor
+
+<ParamField path="optimizer" type="Optimizer" required>
+  The optimizer to schedule
+</ParamField>
+
+<ParamField path="options" type="object" required>
+  Scheduler configuration
+  
+  <Expandable title="properties">
+    <ParamField path="maxLr" type="number" required>
+      Maximum learning rate (must be positive)
+    </ParamField>
+    
+    <ParamField path="totalSteps" type="number" required>
+      Total number of training steps (must be positive integer)
+    </ParamField>
+    
+    <ParamField path="pctStart" type="number" default="0.3">
+      Percentage of cycle spent increasing learning rate (range: 0-1)
+    </ParamField>
+    
+    <ParamField path="divFactor" type="number" default="25">
+      Initial learning rate divisor: `initialLr = maxLr / divFactor`
+    </ParamField>
+    
+    <ParamField path="finalDivFactor" type="number" default="1e4">
+      Final learning rate divisor: `minLr = maxLr / finalDivFactor`
+    </ParamField>
+    
+    <ParamField path="annealStrategy" type="'cos' | 'linear'" default="'cos'">
+      Annealing strategy for decreasing phase
+    </ParamField>
+    
+    <ParamField path="lastEpoch" type="number" default="-1">
+      Index of last epoch
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Training Example
+
+```typescript
+const totalSteps = numEpochs * stepsPerEpoch;
+const scheduler = new OneCycleLR(optimizer, {
+  maxLr: 0.1,
+  totalSteps: totalSteps,
+  pctStart: 0.3
+});
+
+for (let epoch = 0; epoch < numEpochs; epoch++) {
+  for (const batch of dataLoader) {
+    train(batch);
+    scheduler.step();  // Step per batch, not per epoch
+  }
+}
+```
+
+## ReduceLROnPlateau
+
+Reduces learning rate when a metric has stopped improving. Unlike other schedulers, this one requires a metric value to be passed to `step()`.
+
+```typescript
+import { ReduceLROnPlateau } from 'deepbox/optim';
+
+const scheduler = new ReduceLROnPlateau(optimizer, {
+  mode: 'min',
+  factor: 0.1,
+  patience: 10
+});
+
+for (let epoch = 0; epoch < 100; epoch++) {
+  train();
+  const valLoss = validate();
+  scheduler.step(valLoss);
+}
+```
+
+### Constructor
+
+<ParamField path="optimizer" type="Optimizer" required>
+  The optimizer to schedule
+</ParamField>
+
+<ParamField path="options" type="object">
+  Scheduler configuration
+  
+  <Expandable title="properties">
+    <ParamField path="mode" type="'min' | 'max'" default="'min'">
+      Whether to minimize or maximize the metric
+    </ParamField>
+    
+    <ParamField path="factor" type="number" default="0.1">
+      Factor by which to reduce learning rate (range: 0-1)
+    </ParamField>
+    
+    <ParamField path="patience" type="number" default="10">
+      Number of epochs with no improvement before reducing learning rate
+    </ParamField>
+    
+    <ParamField path="threshold" type="number" default="1e-4">
+      Threshold for measuring improvement
+    </ParamField>
+    
+    <ParamField path="cooldown" type="number" default="0">
+      Number of epochs to wait before resuming normal operation after lr reduction
+    </ParamField>
+    
+    <ParamField path="minLr" type="number" default="0">
+      Minimum learning rate (lower bound)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Methods
+
+<ParamField path="step" type="(metric: number) => void">
+  Update learning rates based on the metric value. Reduces learning rate if no improvement for `patience` epochs.
+</ParamField>
+
+<ParamField path="getLastLr" type="() => number[]">
+  Get current learning rates for all parameter groups
+</ParamField>
+
+### Training Example
+
+```typescript
+const scheduler = new ReduceLROnPlateau(optimizer, {
+  mode: 'min',
+  factor: 0.1,
+  patience: 10,
+  threshold: 1e-4
+});
+
+for (let epoch = 0; epoch < numEpochs; epoch++) {
+  trainLoss = train();
+  valLoss = validate();
+  
+  // Reduce LR if validation loss plateaus
+  scheduler.step(valLoss);
+  
+  console.log(`Epoch ${epoch}: LR = ${scheduler.getLastLr()[0]}`);
+}
+```
+
+## WarmupLR
+
+Linearly increases the learning rate from 0 to the base learning rate over `warmupEpochs`, then delegates to a wrapped scheduler.
+
+```typescript
+import { WarmupLR, CosineAnnealingLR } from 'deepbox/optim';
+
+const baseScheduler = new CosineAnnealingLR(optimizer, { T_max: 100 });
+const scheduler = new WarmupLR(optimizer, baseScheduler, {
+  warmupEpochs: 5
+});
+```
+
+### Constructor
+
+<ParamField path="optimizer" type="Optimizer" required>
+  The optimizer to schedule
+</ParamField>
+
+<ParamField path="afterScheduler" type="LRScheduler | null" required>
+  Scheduler to use after warmup period completes. Pass `null` to maintain base learning rate after warmup.
+</ParamField>
+
+<ParamField path="options" type="object" required>
+  Scheduler configuration
+  
+  <Expandable title="properties">
+    <ParamField path="warmupEpochs" type="number" required>
+      Number of epochs for warmup (must be positive integer)
+    </ParamField>
+    
+    <ParamField path="lastEpoch" type="number" default="-1">
+      Index of last epoch
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Training Example
+
+```typescript
+// Warmup for 5 epochs, then cosine annealing
+const baseScheduler = new CosineAnnealingLR(optimizer, { T_max: 95 });
+const scheduler = new WarmupLR(optimizer, baseScheduler, {
+  warmupEpochs: 5
+});
+
+for (let epoch = 0; epoch < 100; epoch++) {
+  train();
+  scheduler.step();
+}
+```
+
+### Warmup without Base Scheduler
+
+```typescript
+// Just warmup, no scheduler after
+const scheduler = new WarmupLR(optimizer, null, { warmupEpochs: 5 });
+```
+
+## Usage Patterns
+
+### Basic Usage
+
+```typescript
+import { SGD, StepLR } from 'deepbox/optim';
+
+const optimizer = new SGD(model.parameters(), { lr: 0.1 });
+const scheduler = new StepLR(optimizer, { stepSize: 10, gamma: 0.1 });
+
+for (let epoch = 0; epoch < 100; epoch++) {
+  // Training loop
+  for (const batch of dataLoader) {
+    optimizer.zeroGrad();
+    const loss = computeLoss(batch);
+    loss.backward();
+    optimizer.step();
+  }
+  
+  // Step scheduler after each epoch
+  scheduler.step();
+}
+```
+
+### Combining Schedulers with Warmup
+
+```typescript
+import { AdamW, WarmupLR, CosineAnnealingLR } from 'deepbox/optim';
+
+const optimizer = new AdamW(model.parameters(), { lr: 0.001 });
+const cosineScheduler = new CosineAnnealingLR(optimizer, {
+  T_max: 95,
+  etaMin: 1e-6
+});
+const scheduler = new WarmupLR(optimizer, cosineScheduler, {
+  warmupEpochs: 5
+});
+
+for (let epoch = 0; epoch < 100; epoch++) {
+  train();
+  scheduler.step();
+}
+```
+
+### Metric-Based Scheduling
+
+```typescript
+import { Adam, ReduceLROnPlateau } from 'deepbox/optim';
+
+const optimizer = new Adam(model.parameters(), { lr: 0.001 });
+const scheduler = new ReduceLROnPlateau(optimizer, {
+  mode: 'min',
+  factor: 0.5,
+  patience: 5,
+  minLr: 1e-6
+});
+
+for (let epoch = 0; epoch < 100; epoch++) {
+  trainLoss = train();
+  valLoss = validate();
+  
+  // Scheduler monitors validation loss
+  scheduler.step(valLoss);
+  
+  const currentLr = scheduler.getLastLr()[0];
+  console.log(`Epoch ${epoch}: val_loss=${valLoss}, lr=${currentLr}`);
+}
+```
+
+### Resuming Training
+
+```typescript
+const optimizer = new SGD(model.parameters(), { lr: 0.1 });
+const scheduler = new StepLR(optimizer, {
+  stepSize: 10,
+  gamma: 0.1,
+  lastEpoch: 49  // Resume from epoch 50
+});
+
+for (let epoch = 50; epoch < 100; epoch++) {
+  train();
+  scheduler.step();
+}
+```
+
+## Choosing a Scheduler
+
+- **StepLR** - Simple and effective, good for initial experiments
+- **MultiStepLR** - More control over when to decay, common in computer vision
+- **ExponentialLR** - Smooth exponential decay
+- **CosineAnnealingLR** - Popular for transformers and modern architectures
+- **OneCycleLR** - Fast convergence with super-convergence phenomenon
+- **ReduceLROnPlateau** - Adaptive based on validation metrics
+- **WarmupLR** - Essential for training large models (transformers, vision transformers)

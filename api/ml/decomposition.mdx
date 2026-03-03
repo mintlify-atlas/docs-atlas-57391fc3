@@ -1,0 +1,255 @@
+---
+title: Dimensionality Reduction
+description: PCA and t-SNE for Deepbox
+---
+
+## PCA
+
+Principal Component Analysis (PCA).
+
+Linear dimensionality reduction using Singular Value Decomposition (SVD) to project data to a lower dimensional space.
+
+**Algorithm:**
+1. Center the data by subtracting the mean
+2. Compute SVD: X = U * Σ * V^T
+3. Principal components are columns of V
+4. Transform data by projecting onto principal components
+
+**Time Complexity:** O(min(n*d^2, d*n^2)) where n=samples, d=features
+
+### Constructor
+
+```typescript
+new PCA(options?: {
+  nComponents?: number;
+  whiten?: boolean;
+})
+```
+
+<ParamField path="options.nComponents" type="number">
+  Number of components to keep. If undefined, keeps min(n_samples, n_features).
+</ParamField>
+
+<ParamField path="options.whiten" type="boolean" default="false">
+  Whether to whiten the data. When true, the components are divided by the square root of the explained variance, ensuring unit variance.
+</ParamField>
+
+### Methods
+
+#### fit
+
+```typescript
+fit(X: Tensor, y?: Tensor): this
+```
+
+Fit PCA on training data.
+
+<ParamField path="X" type="Tensor" required>
+  Training data of shape (n_samples, n_features)
+</ParamField>
+
+**Returns:** The fitted estimator
+
+#### transform
+
+```typescript
+transform(X: Tensor): Tensor
+```
+
+Transform data to principal component space.
+
+<ParamField path="X" type="Tensor" required>
+  Data of shape (n_samples, n_features)
+</ParamField>
+
+**Returns:** Transformed data of shape (n_samples, n_components)
+
+#### fitTransform
+
+```typescript
+fitTransform(X: Tensor, y?: Tensor): Tensor
+```
+
+Fit and transform in one step.
+
+**Returns:** Transformed data
+
+#### inverseTransform
+
+```typescript
+inverseTransform(X: Tensor): Tensor
+```
+
+Transform data back to original space.
+
+<ParamField path="X" type="Tensor" required>
+  Transformed data of shape (n_samples, n_components)
+</ParamField>
+
+**Returns:** Reconstructed data of shape (n_samples, n_features)
+
+### Properties
+
+<ResponseField name="components" type="Tensor">
+  Principal components of shape (n_components, n_features)
+</ResponseField>
+
+<ResponseField name="explainedVariance" type="Tensor">
+  Amount of variance explained by each component
+</ResponseField>
+
+<ResponseField name="explainedVarianceRatio" type="Tensor">
+  Percentage of variance explained by each component
+</ResponseField>
+
+### Example
+
+```typescript
+import { PCA } from 'deepbox/ml';
+import { tensor } from 'deepbox/ndarray';
+
+const X = tensor([[2.5, 2.4], [0.5, 0.7], [2.2, 2.9], [1.9, 2.2], [3.1, 3.0]]);
+const pca = new PCA({ nComponents: 1 });
+pca.fit(X);
+
+const XTransformed = pca.transform(X);
+console.log('Explained variance ratio:', pca.explainedVarianceRatio);
+```
+
+---
+
+## TSNE
+
+t-Distributed Stochastic Neighbor Embedding (t-SNE).
+
+A nonlinear dimensionality reduction technique for embedding high-dimensional data into a low-dimensional space (typically 2D or 3D) for visualization.
+
+**Algorithm:** Exact t-SNE with an optional sampling-based approximation
+- Computes pairwise affinities in high-dimensional space using Gaussian kernel (exact)
+- Computes pairwise affinities in low-dimensional space using Student-t distribution
+- Minimizes KL divergence between the two distributions
+
+**Scalability Note:** Exact t-SNE is O(n^2) in time and memory. For large datasets, use `method: "approximate"` (sampled neighbors + negative sampling) or reduce samples.
+
+### Constructor
+
+```typescript
+new TSNE(options?: {
+  nComponents?: number;
+  perplexity?: number;
+  learningRate?: number;
+  nIter?: number;
+  earlyExaggeration?: number;
+  earlyExaggerationIter?: number;
+  randomState?: number;
+  minGradNorm?: number;
+  method?: "exact" | "approximate";
+  maxExactSamples?: number;
+  approximateNeighbors?: number;
+  negativeSamples?: number;
+})
+```
+
+<ParamField path="options.nComponents" type="number" default="2">
+  Number of dimensions in the embedding (typically 2 or 3).
+</ParamField>
+
+<ParamField path="options.perplexity" type="number" default="30">
+  Perplexity parameter (related to number of nearest neighbors). Should be between 5 and 50.
+</ParamField>
+
+<ParamField path="options.learningRate" type="number" default="200">
+  Learning rate for gradient descent.
+</ParamField>
+
+<ParamField path="options.nIter" type="number" default="1000">
+  Number of iterations.
+</ParamField>
+
+<ParamField path="options.earlyExaggeration" type="number" default="12">
+  Early exaggeration factor. Helps form tight clusters.
+</ParamField>
+
+<ParamField path="options.earlyExaggerationIter" type="number" default="250">
+  Number of iterations with early exaggeration.
+</ParamField>
+
+<ParamField path="options.randomState" type="number">
+  Random seed for reproducibility.
+</ParamField>
+
+<ParamField path="options.minGradNorm" type="number" default="1e-7">
+  Minimum gradient norm for convergence.
+</ParamField>
+
+<ParamField path="options.method" type="string" default="exact">
+  Method for computing affinities: 'exact' (full pairwise) or 'approximate' (sampling for large datasets).
+</ParamField>
+
+<ParamField path="options.maxExactSamples" type="number" default="2000">
+  Maximum samples allowed for exact mode before requiring approximate.
+</ParamField>
+
+<ParamField path="options.approximateNeighbors" type="number">
+  Number of neighbors to sample per point in approximate mode. Default: max(5, floor(perplexity * 3)).
+</ParamField>
+
+<ParamField path="options.negativeSamples" type="number">
+  Number of negative samples per point in approximate mode. Default: max(10, floor(perplexity * 2)).
+</ParamField>
+
+### Methods
+
+#### fit
+
+```typescript
+fit(X: Tensor): this
+```
+
+Fit the t-SNE model (same as fitTransform for t-SNE).
+
+#### transform
+
+```typescript
+transform(X?: Tensor): Tensor
+```
+
+Return the fitted embedding. For t-SNE, transform is equivalent to returning the already-computed embedding (t-SNE is non-parametric).
+
+**Returns:** Low-dimensional embedding of shape (n_samples, n_components)
+
+#### fitTransform
+
+```typescript
+fitTransform(X: Tensor): Tensor
+```
+
+Fit the t-SNE model and return the embedding.
+
+<ParamField path="X" type="Tensor" required>
+  Training data of shape (n_samples, n_features)
+</ParamField>
+
+**Returns:** Low-dimensional embedding of shape (n_samples, n_components)
+
+**Throws:** `InvalidParameterError` if perplexity >= n_samples or if exact mode used with too many samples
+
+### Properties
+
+<ResponseField name="embeddingResult" type="Tensor">
+  The fitted embedding after calling fit or fitTransform.
+</ResponseField>
+
+### Example
+
+```typescript
+import { TSNE } from 'deepbox/ml';
+import { tensor } from 'deepbox/ndarray';
+
+const X = tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]]);
+
+const tsne = new TSNE({ nComponents: 2, perplexity: 5 });
+const embedding = tsne.fitTransform(X);
+
+console.log('2D embedding:', embedding);
+```

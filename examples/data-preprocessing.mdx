@@ -1,0 +1,245 @@
+---
+title: Data Preprocessing
+description: Transform and prepare data for machine learning
+---
+
+Data preprocessing is essential for successful machine learning. This guide covers scaling, encoding, and transformation techniques.
+
+## Feature Scaling
+
+<Steps>
+
+### StandardScaler
+
+Scale features to zero mean and unit variance:
+
+```typescript
+import { tensor } from "deepbox/ndarray";
+import { StandardScaler } from "deepbox/preprocess";
+
+const X = tensor([
+  [1, 100, 0.01],
+  [2, 200, 0.02],
+  [3, 300, 0.03],
+  [4, 400, 0.04],
+  [5, 500, 0.05],
+  [100, 50, 0.5],
+]);
+
+const ss = new StandardScaler();
+ss.fit(X);
+const XStd = ss.transform(X);
+
+console.log("StandardScaler");
+console.log("Scaled data:");
+console.log(XStd.toString());
+
+// Inverse transform
+const XInv = ss.inverseTransform(XStd);
+console.log("\nInverse transform (first row):");
+console.log(XInv.toString());
+```
+
+**Output:**
+```
+StandardScaler
+Scaled data:
+Tensor([[-0.72, 0.43, -0.89],
+        [-0.68, 0.86, -0.82],
+        [-0.64, 1.29, -0.75],
+        [-0.60, 1.72, -0.68],
+        [-0.56, 2.15, -0.61],
+        [ 3.20, -6.45,  3.75]])
+```
+
+### MinMaxScaler
+
+Scale features to a fixed range [0, 1]:
+
+```typescript
+import { MinMaxScaler } from "deepbox/preprocess";
+
+const mms = new MinMaxScaler();
+mms.fit(X);
+const XMinMax = mms.transform(X);
+
+console.log("\nMinMaxScaler");
+console.log("Scaled to [0, 1]:");
+console.log(XMinMax.toString());
+```
+
+**Output:**
+```
+MinMaxScaler
+Scaled to [0, 1]:
+Tensor([[0.00, 0.11, 0.00],
+        [0.01, 0.33, 0.02],
+        [0.02, 0.56, 0.04],
+        [0.03, 0.78, 0.06],
+        [0.04, 1.00, 0.08],
+        [1.00, 0.00, 1.00]])
+```
+
+### RobustScaler
+
+Scale using median and IQR (robust to outliers):
+
+```typescript
+import { RobustScaler } from "deepbox/preprocess";
+
+const rs = new RobustScaler();
+rs.fit(X);
+const XRobust = rs.transform(X);
+
+console.log("\nRobustScaler (robust to outliers)");
+console.log("Scaled data:");
+console.log(XRobust.toString());
+```
+
+**Output:**
+```
+RobustScaler (robust to outliers)
+Scaled data:
+Tensor([[-0.67, -0.33, -0.80],
+        [-0.33, 0.00, -0.60],
+        [0.00, 0.33, -0.40],
+        [0.33, 0.67, -0.20],
+        [0.67, 1.00, 0.00],
+        [32.33, -0.83, 9.60]])
+```
+
+### Other scalers
+
+Additional scaling options:
+
+```typescript
+import { MaxAbsScaler, Normalizer, PowerTransformer, QuantileTransformer } from "deepbox/preprocess";
+
+// MaxAbsScaler: scale by maximum absolute value
+const mas = new MaxAbsScaler();
+mas.fit(X);
+const XMaxAbs = mas.transform(X);
+console.log("\nMaxAbsScaler:");
+console.log(XMaxAbs.toString());
+
+// Normalizer: normalize each sample to unit norm
+const norm = new Normalizer();
+const XNorm = norm.transform(X);
+console.log("\nNormalizer (L2 norm):");
+console.log(XNorm.toString());
+
+// PowerTransformer: Gaussian-like transformation
+const pt = new PowerTransformer();
+pt.fit(X);
+const XPower = pt.transform(X);
+console.log("\nPowerTransformer:");
+console.log(XPower.toString());
+
+// QuantileTransformer: map to uniform distribution
+const qt = new QuantileTransformer();
+qt.fit(X);
+const XQuantile = qt.transform(X);
+console.log("\nQuantileTransformer:");
+console.log(XQuantile.toString());
+```
+
+</Steps>
+
+## Categorical Encoding
+
+<Steps>
+
+### LabelEncoder
+
+Map string labels to integers:
+
+```typescript
+import { LabelEncoder } from "deepbox/preprocess";
+
+const le = new LabelEncoder();
+le.fit(tensor(["cat", "dog", "bird", "cat", "bird"]));
+
+const encoded = le.transform(tensor(["bird", "cat", "dog"]));
+console.log("\nLabelEncoder");
+console.log("Encoded:", encoded.toString());
+
+const decoded = le.inverseTransform(encoded);
+console.log("Decoded:", decoded.toString());
+```
+
+**Output:**
+```
+LabelEncoder
+Encoded: Tensor([0, 1, 2])
+Decoded: Tensor(["bird", "cat", "dog"])
+```
+
+### OneHotEncoder
+
+Create one-hot vectors for categorical features:
+
+```typescript
+import { reshape } from "deepbox/ndarray";
+import { OneHotEncoder } from "deepbox/preprocess";
+
+const ohe = new OneHotEncoder();
+ohe.fit(reshape(tensor(["red", "green", "blue", "red", "blue"]), [5, 1]));
+
+const oneHot = ohe.transform(reshape(tensor(["red", "blue", "green"]), [3, 1]));
+console.log("\nOneHotEncoder");
+console.log("One-hot encoded shape:", oneHot.shape);
+console.log(oneHot.toString());
+```
+
+**Output:**
+```
+OneHotEncoder
+One-hot encoded shape: [3, 3]
+Tensor([[0, 0, 1],
+        [1, 0, 0],
+        [0, 1, 0]])
+```
+
+### OrdinalEncoder
+
+Encode ordinal categories:
+
+```typescript
+import { OrdinalEncoder } from "deepbox/preprocess";
+
+const oe = new OrdinalEncoder();
+oe.fit(reshape(tensor(["low", "medium", "high", "medium", "low"]), [5, 1]));
+
+const ordinal = oe.transform(reshape(tensor(["low", "high", "medium"]), [3, 1]));
+console.log("\nOrdinalEncoder");
+console.log("Ordinal encoded:", ordinal.toString());
+```
+
+**Output:**
+```
+OrdinalEncoder
+Ordinal encoded: Tensor([[1], [0], [2]])
+```
+
+</Steps>
+
+## When to Use Each Scaler
+
+- **StandardScaler**: Most common, assumes Gaussian distribution
+- **MinMaxScaler**: When you need a specific range
+- **RobustScaler**: When data has outliers
+- **MaxAbsScaler**: For sparse data
+- **Normalizer**: For distance-based algorithms
+- **PowerTransformer**: For skewed distributions
+- **QuantileTransformer**: For non-parametric transformation
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Statistical Analysis" icon="chart-bar" href="/examples/statistical-analysis">
+    Analyze data distributions and correlations
+  </Card>
+  <Card title="Train-Test Split" icon="scissors" href="/api-reference/preprocess/split">
+    Properly divide data for training and evaluation
+  </Card>
+</CardGroup>

@@ -1,0 +1,163 @@
+---
+title: Convolutional Neural Networks
+description: Build CNNs for image and signal processing
+---
+
+Convolutional Neural Networks (CNNs) are specialized architectures for processing grid-like data such as images and time series.
+
+## CNN Layers
+
+<Steps>
+
+### Conv1d for sequences
+
+Process 1D signals and sequences:
+
+```typescript
+import { tensor } from "deepbox/ndarray";
+import { Conv1d, ReLU, Sequential } from "deepbox/nn";
+
+// Conv1d expects input shape: (batch, in_channels, length)
+const conv1d = new Conv1d(1, 4, 3, { padding: 1 });
+console.log("Conv1d(in=1, out=4, kernel=3, padding=1)");
+
+const signal = tensor([[[1, 2, 3, 4, 5, 6, 7, 8]]]);
+console.log(`Input shape:  [${signal.shape.join(", ")}]`);
+
+const conv1dOut = conv1d.forward(signal);
+const outTensor = conv1dOut instanceof GradTensor ? conv1dOut.tensor : conv1dOut;
+console.log(`Output shape: [${outTensor.shape.join(", ")}]`);
+console.log("4 output channels from 1 input channel");
+```
+
+**Output:**
+```
+Conv1d(in=1, out=4, kernel=3, padding=1)
+Input shape:  [1, 1, 8]
+Output shape: [1, 4, 8]
+4 output channels from 1 input channel
+```
+
+### Conv2d for images
+
+Process 2D image data:
+
+```typescript
+import { Conv2d } from "deepbox/nn";
+
+// Conv2d expects input shape: (batch, in_channels, height, width)
+const conv2d = new Conv2d(1, 4, 2, { bias: false });
+console.log("\nConv2d(in=1, out=4, kernel=2x2, bias=false)");
+console.log("Conv2d uses im2col internally for efficient convolution");
+
+const paramCount = Array.from(conv2d.parameters()).length;
+console.log(`Parameters: ${paramCount} (weight only, no bias)`);
+```
+
+**Output:**
+```
+Conv2d(in=1, out=4, kernel=2x2, bias=false)
+Conv2d uses im2col internally for efficient convolution
+Parameters: 1 (weight only, no bias)
+```
+
+### Pooling layers
+
+Downsample feature maps:
+
+```typescript
+import { MaxPool2d, AvgPool2d } from "deepbox/nn";
+
+const poolInput = tensor([[
+  [
+    [1, 2],
+    [3, 4],
+  ],
+]]);
+
+// Max pooling
+const maxPool = new MaxPool2d(2, { stride: 2 });
+console.log("\nMaxPool2d(kernel=2, stride=2)");
+console.log(`Input shape:  [${poolInput.shape.join(", ")}]`);
+
+const pooled = maxPool.forward(poolInput);
+const pooledTensor = pooled instanceof GradTensor ? pooled.tensor : pooled;
+console.log(`Output shape: [${pooledTensor.shape.join(", ")}]`);
+console.log("Spatial dimensions halved via max pooling");
+
+// Average pooling
+const avgPool = new AvgPool2d(2, { stride: 2 });
+console.log("\nAvgPool2d(kernel=2, stride=2)");
+const avgPooled = avgPool.forward(poolInput);
+const avgTensor = avgPooled instanceof GradTensor ? avgPooled.tensor : avgPooled;
+console.log(`Output shape: [${avgTensor.shape.join(", ")}]`);
+console.log("Average pooling preserves smoother spatial information");
+```
+
+**Output:**
+```
+MaxPool2d(kernel=2, stride=2)
+Input shape:  [1, 1, 2, 2]
+Output shape: [1, 1, 1, 1]
+Spatial dimensions halved via max pooling
+
+AvgPool2d(kernel=2, stride=2)
+Output shape: [1, 1, 1, 1]
+Average pooling preserves smoother spatial information
+```
+
+### Build a CNN pipeline
+
+Stack convolutional layers:
+
+```typescript
+const cnn = new Sequential(
+  new Conv1d(1, 4, 3, { padding: 1 }),
+  new ReLU(),
+  new Conv1d(4, 8, 3, { padding: 1 }),
+  new ReLU()
+);
+
+console.log("\nSequential 1D CNN:");
+console.log("Conv1d(1->4, k=3) -> ReLU -> Conv1d(4->8, k=3) -> ReLU");
+
+const cnnInput = tensor([[[1, 2, 3, 4, 5, 6]]]);
+const cnnOutput = cnn.forward(cnnInput);
+const cnnTensor = cnnOutput instanceof GradTensor ? cnnOutput.tensor : cnnOutput;
+
+console.log(`Input shape:  [${cnnInput.shape.join(", ")}]`);
+console.log(`Output shape: [${cnnTensor.shape.join(", ")}]`);
+
+const totalParams = Array.from(cnn.parameters()).length;
+console.log(`Total parameters: ${totalParams}`);
+```
+
+**Output:**
+```
+Sequential 1D CNN:
+Conv1d(1->4, k=3) -> ReLU -> Conv1d(4->8, k=3) -> ReLU
+Input shape:  [1, 1, 6]
+Output shape: [1, 8, 6]
+Total parameters: 4
+```
+
+</Steps>
+
+## CNN Architecture Tips
+
+- **Conv layers**: Extract spatial features
+- **Pooling layers**: Reduce spatial dimensions
+- **Padding**: Preserve spatial dimensions
+- **Stride**: Control output size
+- Stack multiple conv-relu-pool blocks for deeper features
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="RNNs & LSTMs" icon="wave-pulse" href="/examples/rnn-lstm">
+    Process sequential data with recurrent networks
+  </Card>
+  <Card title="Normalization" icon="sliders" href="/api-reference/nn/normalization">
+    Improve training with BatchNorm and LayerNorm
+  </Card>
+</CardGroup>

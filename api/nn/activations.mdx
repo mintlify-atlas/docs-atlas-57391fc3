@@ -1,0 +1,403 @@
+---
+title: Activation Functions
+description: Non-linear activation functions for neural networks
+---
+
+Activation functions introduce non-linearity into neural networks, allowing them to learn complex patterns.
+
+## ReLU
+
+Rectified Linear Unit activation function.
+
+```typescript
+class ReLU extends Module
+```
+
+**Formula:** `ReLU(x) = max(0, x)`
+
+**Properties:**
+- Most widely used activation function
+- Helps prevent vanishing gradient problem
+- Computationally efficient
+- Can cause "dying ReLU" problem (neurons always output 0)
+
+**Example:**
+```typescript
+import { ReLU } from 'deepbox/nn';
+import { tensor } from 'deepbox/ndarray';
+
+const relu = new ReLU();
+const x = tensor([-2, -1, 0, 1, 2]);
+const y = relu.forward(x); // [0, 0, 0, 1, 2]
+```
+
+---
+
+## Sigmoid
+
+Sigmoid activation function.
+
+```typescript
+class Sigmoid extends Module
+```
+
+**Formula:** `Sigmoid(x) = 1 / (1 + exp(-x))`
+
+**Properties:**
+- Output range: (0, 1)
+- Used for binary classification
+- Can cause vanishing gradients for extreme values
+- Outputs can be interpreted as probabilities
+
+**Example:**
+```typescript
+import { Sigmoid } from 'deepbox/nn';
+import { tensor } from 'deepbox/ndarray';
+
+const sigmoid = new Sigmoid();
+const x = tensor([-2, -1, 0, 1, 2]);
+const y = sigmoid.forward(x); // [0.119, 0.269, 0.5, 0.731, 0.881]
+```
+
+---
+
+## Tanh
+
+Hyperbolic Tangent activation function.
+
+```typescript
+class Tanh extends Module
+```
+
+**Formula:** `Tanh(x) = (exp(x) - exp(-x)) / (exp(x) + exp(-x))`
+
+**Properties:**
+- Output range: (-1, 1)
+- Zero-centered (better than sigmoid)
+- Still suffers from vanishing gradients
+- Common in RNNs and LSTMs
+
+**Example:**
+```typescript
+import { Tanh } from 'deepbox/nn';
+import { tensor } from 'deepbox/ndarray';
+
+const tanh = new Tanh();
+const x = tensor([-2, -1, 0, 1, 2]);
+const y = tanh.forward(x); // [-0.964, -0.762, 0, 0.762, 0.964]
+```
+
+---
+
+## LeakyReLU
+
+Leaky Rectified Linear Unit activation.
+
+```typescript
+class LeakyReLU extends Module
+
+constructor(alpha: number = 0.01)
+```
+
+**Formula:** `LeakyReLU(x) = max(alpha * x, x)`
+
+**Parameters:**
+- `alpha` - Slope for negative values (default: 0.01)
+
+**Properties:**
+- Prevents dying ReLU problem
+- Allows small gradient when x < 0
+- Common alternative to ReLU
+
+**Example:**
+```typescript
+import { LeakyReLU } from 'deepbox/nn';
+import { tensor } from 'deepbox/ndarray';
+
+const leaky = new LeakyReLU(0.01);
+const x = tensor([-2, -1, 0, 1, 2]);
+const y = leaky.forward(x); // [-0.02, -0.01, 0, 1, 2]
+```
+
+---
+
+## ELU
+
+Exponential Linear Unit activation.
+
+```typescript
+class ELU extends Module
+
+constructor(alpha: number = 1.0)
+```
+
+**Formula:**
+```
+ELU(x) = x                    if x > 0
+       = alpha * (exp(x) - 1) if x <= 0
+```
+
+**Parameters:**
+- `alpha` - Scale for negative values (default: 1.0)
+
+**Properties:**
+- Can produce negative outputs
+- Pushes mean activations closer to zero
+- Smooth function everywhere
+- More computationally expensive than ReLU
+
+**Example:**
+```typescript
+import { ELU } from 'deepbox/nn';
+import { tensor } from 'deepbox/ndarray';
+
+const elu = new ELU(1.0);
+const x = tensor([-2, -1, 0, 1, 2]);
+const y = elu.forward(x);
+```
+
+---
+
+## GELU
+
+Gaussian Error Linear Unit activation.
+
+```typescript
+class GELU extends Module
+```
+
+**Formula:** `GELU(x) = x * Phi(x)`
+
+Where `Phi(x)` is the cumulative distribution function of the standard normal distribution.
+
+**Properties:**
+- Used in BERT and GPT models
+- Smooth approximation of ReLU
+- Better than ReLU for transformers
+- State-of-the-art for many NLP tasks
+
+**Example:**
+```typescript
+import { GELU } from 'deepbox/nn';
+import { tensor } from 'deepbox/ndarray';
+
+const gelu = new GELU();
+const x = tensor([-2, -1, 0, 1, 2]);
+const y = gelu.forward(x);
+```
+
+---
+
+## Softmax
+
+Softmax activation function for multi-class classification.
+
+```typescript
+class Softmax extends Module
+
+constructor(axis: Axis = -1)
+```
+
+**Formula:** `Softmax(x_i) = exp(x_i) / sum(exp(x_j))`
+
+**Parameters:**
+- `axis` - Axis along which to compute softmax (default: -1, last axis)
+
+**Properties:**
+- Converts logits to probability distribution
+- Output sums to 1.0
+- Used in final layer for classification
+- Numerically stable implementation
+
+**Example:**
+```typescript
+import { Softmax } from 'deepbox/nn';
+import { tensor } from 'deepbox/ndarray';
+
+const softmax = new Softmax(-1);
+const logits = tensor([[2.0, 1.0, 0.1]]);
+const probs = softmax.forward(logits); // [[0.659, 0.242, 0.099]]
+// Probabilities sum to 1.0
+```
+
+**Multi-class Classification:**
+```typescript
+import { Sequential, Linear, Softmax } from 'deepbox/nn';
+
+const classifier = new Sequential(
+  new Linear(128, 10),  // 10 classes
+  new Softmax(-1)       // Convert to probabilities
+);
+```
+
+---
+
+## LogSoftmax
+
+Log Softmax activation function.
+
+```typescript
+class LogSoftmax extends Module
+
+constructor(axis: Axis = -1)
+```
+
+**Formula:** `LogSoftmax(x_i) = log(exp(x_i) / sum(exp(x_j)))`
+
+**Parameters:**
+- `axis` - Axis along which to compute log-softmax (default: -1)
+
+**Properties:**
+- More numerically stable than `log(softmax(x))`
+- Used with NLLLoss for classification
+- Prevents numerical underflow
+- Preferred over Softmax + Log
+
+**Example:**
+```typescript
+import { LogSoftmax } from 'deepbox/nn';
+import { tensor } from 'deepbox/ndarray';
+
+const logsoftmax = new LogSoftmax(-1);
+const logits = tensor([[2.0, 1.0, 0.1]]);
+const logprobs = logsoftmax.forward(logits);
+```
+
+**With Cross Entropy Loss:**
+```typescript
+import { Sequential, Linear, LogSoftmax } from 'deepbox/nn';
+import { crossEntropyLoss } from 'deepbox/nn/losses';
+
+const model = new Sequential(
+  new Linear(784, 10),
+  new LogSoftmax(-1)
+);
+
+const output = model.forward(input);
+const loss = crossEntropyLoss(output, target);
+```
+
+---
+
+## Softplus
+
+Softplus activation function.
+
+```typescript
+class Softplus extends Module
+```
+
+**Formula:** `Softplus(x) = log(1 + exp(x))`
+
+**Properties:**
+- Smooth approximation of ReLU
+- Always positive output
+- Differentiable everywhere
+- Can cause numerical overflow for large x
+
+**Example:**
+```typescript
+import { Softplus } from 'deepbox/nn';
+import { tensor } from 'deepbox/ndarray';
+
+const softplus = new Softplus();
+const x = tensor([-2, -1, 0, 1, 2]);
+const y = softplus.forward(x);
+```
+
+---
+
+## Swish
+
+Swish (SiLU) activation function.
+
+```typescript
+class Swish extends Module
+```
+
+**Formula:** `Swish(x) = x * sigmoid(x)`
+
+**Properties:**
+- Also known as SiLU (Sigmoid Linear Unit)
+- Self-gated activation
+- Outperforms ReLU in some deep networks
+- Used in EfficientNet and other architectures
+
+**Example:**
+```typescript
+import { Swish } from 'deepbox/nn';
+import { tensor } from 'deepbox/ndarray';
+
+const swish = new Swish();
+const x = tensor([-2, -1, 0, 1, 2]);
+const y = swish.forward(x);
+```
+
+---
+
+## Mish
+
+Mish activation function.
+
+```typescript
+class Mish extends Module
+```
+
+**Formula:** `Mish(x) = x * tanh(softplus(x))`
+
+**Properties:**
+- Self-regularizing
+- Smooth and non-monotonic
+- Better than ReLU and Swish in some tasks
+- More computationally expensive
+
+**Example:**
+```typescript
+import { Mish } from 'deepbox/nn';
+import { tensor } from 'deepbox/ndarray';
+
+const mish = new Mish();
+const x = tensor([-2, -1, 0, 1, 2]);
+const y = mish.forward(x);
+```
+
+---
+
+## Choosing an Activation Function
+
+### For Hidden Layers:
+
+1. **ReLU** - Default choice, fast and effective
+2. **LeakyReLU** - If dying ReLU is a problem
+3. **GELU** - For transformers and attention models
+4. **Swish/Mish** - For very deep networks
+5. **Tanh** - For RNNs and when zero-centered is important
+
+### For Output Layers:
+
+1. **Softmax** - Multi-class classification (mutually exclusive)
+2. **Sigmoid** - Binary classification or multi-label
+3. **Linear (none)** - Regression tasks
+4. **Tanh** - Regression with output in [-1, 1]
+
+### Example Network
+
+```typescript
+import { Sequential, Linear, ReLU, GELU, Softmax } from 'deepbox/nn';
+
+// Image classifier
+const model = new Sequential(
+  new Linear(784, 512),
+  new ReLU(),             // Hidden layer activation
+  new Linear(512, 256),
+  new GELU(),             // Alternative activation
+  new Linear(256, 10),
+  new Softmax(-1)         // Output layer activation
+);
+```
+
+## See Also
+
+- [Linear Layer](/api/nn/layers) - Fully connected layers
+- [Loss Functions](/api/nn/losses) - Training objectives
+- [Module](/api/nn/module) - Base class for all layers
