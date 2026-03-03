@@ -1,0 +1,241 @@
+{
+  "projectType": "sdk-library",
+  "projectName": "Deepbox",
+  "projectDescription": "A comprehensive TypeScript library for numerical computing, data manipulation, and machine learning.",
+  "theme": "palm",
+  "primaryColor": "#3B82F6",
+  "lightColor": "#60A5FA",
+  "darkColor": "#2563EB",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/tensors",
+              "concepts/autograd",
+              "concepts/broadcasting"
+            ]
+          },
+          {
+            "group": "Modules",
+            "pages": [
+              "modules/ndarray",
+              "modules/dataframe",
+              "modules/linalg",
+              "modules/stats",
+              "modules/ml",
+              "modules/nn",
+              "modules/optim",
+              "modules/preprocess",
+              "modules/metrics",
+              "modules/random",
+              "modules/plot",
+              "modules/datasets"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "NDArray",
+            "pages": [
+              "api/ndarray/tensor",
+              "api/ndarray/operations",
+              "api/ndarray/autograd",
+              "api/ndarray/sparse"
+            ]
+          },
+          {
+            "group": "DataFrame",
+            "pages": [
+              "api/dataframe/dataframe",
+              "api/dataframe/series"
+            ]
+          },
+          {
+            "group": "Linear Algebra",
+            "pages": [
+              "api/linalg/decompositions",
+              "api/linalg/solvers",
+              "api/linalg/operations"
+            ]
+          },
+          {
+            "group": "Statistics",
+            "pages": [
+              "api/stats/descriptive",
+              "api/stats/correlation",
+              "api/stats/tests"
+            ]
+          },
+          {
+            "group": "Machine Learning",
+            "pages": [
+              "api/ml/linear-models",
+              "api/ml/tree-models",
+              "api/ml/ensemble",
+              "api/ml/neighbors",
+              "api/ml/svm",
+              "api/ml/naive-bayes",
+              "api/ml/clustering",
+              "api/ml/decomposition"
+            ]
+          },
+          {
+            "group": "Neural Networks",
+            "pages": [
+              "api/nn/module",
+              "api/nn/layers",
+              "api/nn/activations",
+              "api/nn/convolution",
+              "api/nn/recurrent",
+              "api/nn/attention",
+              "api/nn/normalization",
+              "api/nn/losses"
+            ]
+          },
+          {
+            "group": "Optimization",
+            "pages": [
+              "api/optim/optimizers",
+              "api/optim/schedulers"
+            ]
+          },
+          {
+            "group": "Preprocessing",
+            "pages": [
+              "api/preprocess/scalers",
+              "api/preprocess/encoders",
+              "api/preprocess/splitting"
+            ]
+          },
+          {
+            "group": "Metrics",
+            "pages": [
+              "api/metrics/classification",
+              "api/metrics/regression",
+              "api/metrics/clustering"
+            ]
+          },
+          {
+            "group": "Random",
+            "pages": [
+              "api/random/distributions",
+              "api/random/sampling"
+            ]
+          },
+          {
+            "group": "Plotting",
+            "pages": [
+              "api/plot/basic-plots",
+              "api/plot/statistical-plots",
+              "api/plot/ml-plots"
+            ]
+          },
+          {
+            "group": "Datasets",
+            "pages": [
+              "api/datasets/builtin",
+              "api/datasets/generators"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Examples",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "examples/tensor-basics",
+              "examples/dataframe-basics"
+            ]
+          },
+          {
+            "group": "Machine Learning",
+            "pages": [
+              "examples/linear-regression",
+              "examples/logistic-regression",
+              "examples/decision-trees",
+              "examples/random-forests",
+              "examples/clustering"
+            ]
+          },
+          {
+            "group": "Deep Learning",
+            "pages": [
+              "examples/neural-network",
+              "examples/cnn",
+              "examples/rnn-lstm",
+              "examples/attention-transformer"
+            ]
+          },
+          {
+            "group": "Data Analysis",
+            "pages": [
+              "examples/data-preprocessing",
+              "examples/statistical-analysis",
+              "examples/visualization"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "N-dimensional tensors with automatic differentiation",
+    "DataFrame and Series for tabular data",
+    "90+ tensor operations with broadcasting",
+    "Classical ML models (Linear, Tree-based, SVM, KNN, Naive Bayes)",
+    "Neural network layers (Linear, Conv, RNN, LSTM, GRU, Attention)",
+    "Optimizers (SGD, Adam, AdamW, RMSprop) with LR schedulers",
+    "Linear algebra operations (SVD, QR, LU, Cholesky, Eigenvalue)",
+    "Statistical functions and hypothesis tests",
+    "Data preprocessing (scalers, encoders, cross-validation)",
+    "40+ ML metrics for classification, regression, clustering",
+    "Built-in datasets and synthetic generators",
+    "SVG/PNG plotting with ML visualization support"
+  ],
+  "publicApiSurface": [
+    "tensor, zeros, ones, arange, linspace, eye, full, empty",
+    "add, sub, mul, div, matmul, dot, pow, sqrt, exp, log",
+    "parameter, GradTensor, noGrad, backward",
+    "DataFrame, Series, readCSV, writeCSV",
+    "LinearRegression, Ridge, Lasso, LogisticRegression",
+    "DecisionTreeClassifier, DecisionTreeRegressor, RandomForestClassifier, RandomForestRegressor",
+    "GradientBoostingClassifier, GradientBoostingRegressor",
+    "KMeans, DBSCAN, PCA, TSNE",
+    "KNeighborsClassifier, KNeighborsRegressor, LinearSVC, LinearSVR, GaussianNB",
+    "Sequential, Linear, Conv1d, Conv2d, RNN, LSTM, GRU",
+    "MultiheadAttention, TransformerEncoderLayer",
+    "ReLU, Sigmoid, Tanh, GELU, Softmax, Dropout, BatchNorm1d, LayerNorm",
+    "mseLoss, maeLoss, crossEntropyLoss, binaryCrossEntropyLoss, huberLoss",
+    "SGD, Adam, AdamW, Nadam, RMSprop, Adagrad, AdaDelta",
+    "StepLR, MultiStepLR, ExponentialLR, CosineAnnealingLR, OneCycleLR, ReduceLROnPlateau",
+    "StandardScaler, MinMaxScaler, RobustScaler, LabelEncoder, OneHotEncoder",
+    "trainTestSplit, KFold, StratifiedKFold",
+    "accuracy, precision, recall, f1Score, rocAucScore, confusionMatrix",
+    "meanSquaredError, meanAbsoluteError, r2Score",
+    "svd, qr, lu, cholesky, eig, eigh, inv, pinv, det, solve, lstsq",
+    "mean, median, mode, variance, std, skewness, kurtosis, quantile",
+    "pearsonr, spearmanr, kendalltau, corrcoef, cov",
+    "ttest_1samp, ttest_ind, ttest_rel, f_oneway, chisquare, shapiro, anderson",
+    "uniform, normal, binomial, poisson, exponential, gamma, beta",
+    "scatter, plot, bar, hist, heatmap, contour, boxplot, violinplot",
+    "plotConfusionMatrix, plotRocCurve, plotPrecisionRecallCurve, plotDecisionBoundary",
+    "loadIris, loadDigits, loadBreastCancer, loadWine, makeClassification, makeRegression"
+  ]
+}
